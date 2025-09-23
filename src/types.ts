@@ -3,6 +3,7 @@ export type ApiResponse<T> = {
     message?: string
     timestamp?: string
     data?: T | null
+    code?: string
 }
 
 export type DaDataPartyShortResponse = {
@@ -61,6 +62,7 @@ export type CreateCreativeRequest = {
     contentUrls?: string[]
     targetAudience?: string
     text?: string
+    name?: string
 }
 
 export type CreateCreativeResponse = {

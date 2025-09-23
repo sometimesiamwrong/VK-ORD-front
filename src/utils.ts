@@ -33,6 +33,14 @@ export function loadFromLocalStorage<T>(key: string, defaultValue: T): T {
     }
 }
 
+export function isFirstTimeUser(key: string): boolean {
+    try {
+        return localStorage.getItem(key) === null
+    } catch {
+        return true
+    }
+}
+
 export function getPartyDisplayName(name: unknown): string {
     if (name == null) return ''
     if (typeof name === 'string') return name
@@ -59,6 +67,33 @@ export function getPartyShortWithOpf(name: unknown): string {
         return shortWithOpf || short || value || ''
     }
     return ''
+}
+
+export function saveToCookie(key: string, value: string, days = 30): void {
+    try {
+        const expires = new Date()
+        expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000)
+        document.cookie = `${key}=${encodeURIComponent(value)};expires=${expires.toUTCString()};path=/`
+    } catch {
+        // ignore cookie errors
+    }
+}
+
+export function loadFromCookie(key: string): string | null {
+    try {
+        const name = `${key}=`
+        const decodedCookie = decodeURIComponent(document.cookie)
+        const ca = decodedCookie.split(';')
+        for (let c of ca) {
+            c = c.trim()
+            if (c.indexOf(name) === 0) {
+                return c.substring(name.length)
+            }
+        }
+        return null
+    } catch {
+        return null
+    }
 }
 
 
