@@ -1,15 +1,22 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { api } from './api'
 import type { ApiResponse, CreateContractRequest, CreateCreativeRequest, VkCreativeForm, AiKktyItem } from './types'
-import { generateContractExternalId, getPartyDisplayName, getPartyShortWithOpf, isValidInn, loadFromLocalStorage, nowTimestampString, saveToLocalStorage } from './utils'
+import { generateContractExternalId, getPartyDisplayName, getPartyShortWithOpf, isValidInn, loadFromLocalStorage, nowTimestampString, saveToLocalStorage, loadFromCookie, isFirstTimeUser } from './utils'
 import { TagSelector } from './TagSelector'
+import { VkApiKeyInput } from './VkApiKeyInput'
+import { CustomSelect } from './CustomSelect'
 
 type WizardState = {
     step: 1 | 2 | 3 | 4
     consent: boolean
+    // VK API settings
+    vkApiKey?: string | null
+    useSandbox: boolean
     // step 1
     advertiserInn: string
     contractorInn: string
+    advertiserRole: ('advertiser' | 'agency' | 'ors' | 'publisher')[]
+    contractorRole: ('advertiser' | 'agency' | 'ors' | 'publisher')[]
     advertiserName?: string | null
     contractorName?: string | null
     advertiserShortWithOpf?: string | null
@@ -28,6 +35,7 @@ type WizardState = {
     contentUrls: string[]
     targetAudience?: string | null
     text?: string | null
+    name?: string | null
     // result
     erid?: string | null
     // local history for suggestions
@@ -45,8 +53,13 @@ const LOCAL_KEY = 'vkord-wizard-state'
 const initialState: WizardState = {
     step: 1,
     consent: false,
+    // VK API settings
+    vkApiKey: null,
+    useSandbox: false,
     advertiserInn: '',
     contractorInn: '',
+    advertiserRole: ['advertiser'],
+    contractorRole: ['publisher'],
     advertiserName: null,
     contractorName: null,
     advertiserShortWithOpf: null,
@@ -59,12 +72,13 @@ const initialState: WizardState = {
     creativeExternalId: nowTimestampString(),
     contractExternalIds: [],
     kktyCodes: [],
-    format: 'banner',
+    format: 'banner' as VkCreativeForm,
     contentUrls: [],
     targetAudience: null,
     text: null,
-    erid: null
-    ,partyHistory: []
+    name: null,
+    erid: null,
+    partyHistory: []
 }
 
 function parseList(input: string): string[] {
@@ -75,9 +89,32 @@ function parseList(input: string): string[] {
 }
 
 export const App: React.FC = () => {
-    const [state, setState] = useState<WizardState>(() => loadFromLocalStorage(LOCAL_KEY, initialState))
+    const [state, setState] = useState<WizardState>(() => {
+        const isNewUser = isFirstTimeUser(LOCAL_KEY)
+        const localState = loadFromLocalStorage(LOCAL_KEY, initialState)
+        
+        // Load VK API settings from cookies
+        const vkApiKey = loadFromCookie('vkord-api-key')
+        const useSandbox = loadFromCookie('vkord-use-sandbox') === 'true'
+        
+        // For new users, set default roles; for returning users, keep their saved roles
+        const finalState = {
+            ...localState,
+            vkApiKey,
+            useSandbox
+        }
+        
+        if (isNewUser) {
+            finalState.advertiserRole = ['advertiser']
+            finalState.contractorRole = ['publisher']
+        }
+        
+        return finalState
+    })
     const [loading, setLoading] = useState<{ [k: string]: boolean }>({})
     const [message, setMessage] = useState<string>('')
+    const [messageStatus, setMessageStatus] = useState<'success' | 'error' | 'info'>('info')
+    const [alertHighlight, setAlertHighlight] = useState<boolean>(false)
     const [kktyHints, setKktyHints] = useState<AiKktyItem[]>([])
 
     const canNextFromStep1 = useMemo(() => isValidInn(state.advertiserInn) && isValidInn(state.contractorInn) && state.consent, [state])
@@ -99,67 +136,88 @@ export const App: React.FC = () => {
         setLoading(x => ({ ...x, [key]: v }))
     }
 
-    function showMsg(apiResp?: ApiResponse<unknown> | null, fallback?: string) {
-        if (apiResp) setMessage(apiResp.message || '')
-        else if (fallback) setMessage(fallback)
-        else setMessage('')
+    function showMsg(apiResp?: ApiResponse<unknown> | null, fallback?: string, status?: 'success' | 'error' | 'info') {
+        if (apiResp) {
+            let message = apiResp.message || ''
+            if (apiResp.code === 'MISSING_HEADERS') {
+                message = 'API ключ не установлен или не подходит для выбранного сервиса'
+            }
+            setMessage(message)
+            setMessageStatus(status || (apiResp.success ? 'success' : 'error'))
+            // Выделяем alert при появлении сообщения
+            setAlertHighlight(true)
+            setTimeout(() => setAlertHighlight(false), 600) // Убираем выделение через 600ms (длительность анимации)
+        } else if (fallback) {
+            setMessage(fallback)
+            setMessageStatus(status || 'info')
+            // Выделяем alert при появлении сообщения
+            setAlertHighlight(true)
+            setTimeout(() => setAlertHighlight(false), 600)
+        } else {
+            setMessage('')
+            setMessageStatus('info')
+            setAlertHighlight(false)
+        }
     }
 
     async function lookupInn(kind: 'advertiser' | 'contractor') {
         const inn = kind === 'advertiser' ? state.advertiserInn : state.contractorInn
         if (!isValidInn(inn)) {
-            setMessage('ИНН должен содержать 10 или 12 цифр')
+            showMsg(undefined, 'ИНН должен содержать 10 или 12 цифр', 'error')
             return
         }
         setLoad(`lookup-${kind}`, true)
         try {
             const resp = await api.partyLookup(inn)
             showMsg(resp)
-            const display = resp?.data ? getPartyDisplayName(resp.data.name) : ''
-            const shortWithOpf = resp?.data ? getPartyShortWithOpf(resp.data.name) : ''
-            const t = resp?.data?.type || ''
-            const info = display ? `${display}${t ? ` (${t})` : ''}` : null
-            setState(prev => ({
-                ...prev,
-                [`${kind}Info`]: info,
-                [`${kind}Name`]: display || null,
-                [`${kind}ShortWithOpf`]: shortWithOpf || null
-            } as WizardState))
-            // upsert history
-            setState(prev => {
-                const list = prev.partyHistory || []
-                const innKey = inn
-                const idx = list.findIndex(i => i.inn === innKey)
-                const item = {
-                    inn: innKey,
-                    shortWithOpf: shortWithOpf || display || null,
-                    fullName: display || null,
-                    type: (t as string) || null,
-                    timestamp: Date.now()
-                }
-                const next = idx >= 0 ? [...list.slice(0, idx), item, ...list.slice(idx + 1)] : [item, ...list]
-                // keep up to 10
-                return { ...prev, partyHistory: next.slice(0, 10) }
-            })
+            if (resp.success && resp.data) {
+                const display = getPartyDisplayName(resp.data.name)
+                const shortWithOpf = getPartyShortWithOpf(resp.data.name)
+                const t = resp.data.type || ''
+                const info = display ? `${display}${t ? ` (${t})` : ''}` : null
+                setState(prev => ({
+                    ...prev,
+                    [`${kind}Info`]: info,
+                    [`${kind}Name`]: display || null,
+                    [`${kind}ShortWithOpf`]: shortWithOpf || null
+                } as WizardState))
+                // upsert history
+                setState(prev => {
+                    const list = prev.partyHistory || []
+                    const innKey = inn
+                    const idx = list.findIndex(i => i.inn === innKey)
+                    const item = {
+                        inn: innKey,
+                        shortWithOpf: shortWithOpf || display || null,
+                        fullName: display || null,
+                        type: (t as string) || null,
+                        timestamp: Date.now()
+                    }
+                    const next = idx >= 0 ? [...list.slice(0, idx), item, ...list.slice(idx + 1)] : [item, ...list]
+                    // keep up to 10
+                    return { ...prev, partyHistory: next.slice(0, 10) }
+                })
+            }
         } catch (e: any) {
-            setMessage(`Ошибка поиска: ${e?.message || e}`)
+            showMsg(undefined, `Ошибка поиска: ${e?.message || e}`, 'error')
         } finally {
             setLoad(`lookup-${kind}`, false)
         }
     }
 
-    async function createCounterparty(kind: 'advertiser' | 'contractor') {
+    async function createCounterparty(kind: 'advertiser' | 'publisher') {
         const inn = kind === 'advertiser' ? state.advertiserInn : state.contractorInn
+        const role = kind === 'advertiser' ? state.advertiserRole : state.contractorRole
         if (!isValidInn(inn)) {
-            setMessage('ИНН должен содержать 10 или 12 цифр')
+            showMsg(undefined, 'ИНН должен содержать 10 или 12 цифр', 'error')
             return
         }
         setLoad(`create-${kind}`, true)
         try {
-            const resp = await api.setCounterparty(inn)
+            const resp = await api.setCounterparty(inn, role)
             showMsg(resp)
         } catch (e: any) {
-            setMessage(`Ошибка создания контрагента: ${e?.message || e}`)
+            showMsg(undefined, `Ошибка создания контрагента: ${e?.message || e}`, 'error')
         } finally {
             setLoad(`create-${kind}`, false)
         }
@@ -186,7 +244,7 @@ export const App: React.FC = () => {
                 setState(prev => ({ ...prev, contractExternalId: resp.data!.externalId, contractExternalIds: [resp.data!.externalId] }))
             }
         } catch (e: any) {
-            setMessage(`Ошибка создания договора: ${e?.message || e}`)
+            showMsg(undefined, `Ошибка создания договора: ${e?.message || e}`, 'error')
         } finally {
             setLoad('contract', false)
         }
@@ -200,7 +258,8 @@ export const App: React.FC = () => {
             format: state.format,
             contentUrls: state.contentUrls.length ? state.contentUrls : undefined,
             targetAudience: state.targetAudience || undefined,
-            text: state.text || undefined
+            text: state.text || undefined,
+            name: state.name || undefined
         }
         setLoad('creative', true)
         try {
@@ -214,7 +273,7 @@ export const App: React.FC = () => {
             }
             if (erid) setState(prev => ({ ...prev, erid, step: 4 }))
         } catch (e: any) {
-            setMessage(`Ошибка создания креатива: ${e?.message || e}`)
+            showMsg(undefined, `Ошибка создания креатива: ${e?.message || e}`, 'error')
         } finally {
             setLoad('creative', false)
         }
@@ -223,7 +282,7 @@ export const App: React.FC = () => {
 	async function guessKktyByText() {
 		const text = state.text?.trim() || ''
 		if (!text) {
-			setMessage('Введите текст для подбора ККТУ')
+			showMsg(undefined, 'Введите текст для подбора ККТУ', 'info')
 			return
 		}
 		setLoad('ai-kkty', true)
@@ -237,7 +296,7 @@ export const App: React.FC = () => {
 				setState(prev => ({ ...prev, kktyCodes: Array.from(new Set([...(prev.kktyCodes || []), ...codes])) }))
 			}
 		} catch (e: any) {
-			setMessage(`Ошибка подбора ККТУ: ${e?.message || e}`)
+			showMsg(undefined, `Ошибка подбора ККТУ: ${e?.message || e}`, 'error')
 		} finally {
 			setLoad('ai-kkty', false)
 		}
@@ -265,9 +324,9 @@ export const App: React.FC = () => {
             try {
                 const parsed = JSON.parse(String(reader.result)) as WizardState
                 setState(parsed)
-                showMsg(undefined, 'Импорт выполнен')
+                showMsg(undefined, 'Импорт выполнен', 'success')
             } catch {
-                setMessage('Не удалось импортировать JSON')
+                showMsg(undefined, 'Не удалось импортировать JSON', 'error')
             }
         }
         reader.readAsText(file)
@@ -275,7 +334,7 @@ export const App: React.FC = () => {
     }
 
     const advertiserShortWithOpf = state.advertiserShortWithOpf || state.advertiserName || ''
-    const copyText = `Реклама. ${advertiserShortWithOpf}, ${state.advertiserInn || ''}, ${state.erid || ''}`
+    const copyText = `Реклама. ${advertiserShortWithOpf}, ИНН ${state.advertiserInn || ''}, ${state.erid || ''}`
 
     function applyInnFromHistory(kind: 'advertiser' | 'contractor', inn: string) {
         const hit = (state.partyHistory || []).find(h => h.inn === inn)
@@ -314,20 +373,24 @@ export const App: React.FC = () => {
 						...prev,
 						advertiserInn: '',
 						contractorInn: '',
+						advertiserRole: ['advertiser'],
+						contractorRole: ['publisher'],
 						advertiserName: null,
 						contractorName: null,
 						advertiserShortWithOpf: null,
 						contractorShortWithOpf: null,
 						advertiserInfo: null,
 						contractorInfo: null,
-						consent: false
+						consent: false,
+						erid: null
 					}
 				case 2:
 					return {
 						...prev,
 						contractExternalId: '',
 						paySum: null,
-						payDateEnd: null
+						payDateEnd: null,
+						erid: null
 					}
 				case 3:
 					const cleared: WizardState = {
@@ -338,7 +401,9 @@ export const App: React.FC = () => {
 						format: 'banner' as VkCreativeForm,
 						contentUrls: [],
 						targetAudience: null,
-						text: null
+						text: null,
+						name: null,
+						erid: null
 					}
 					return cleared
 				case 4:
@@ -348,22 +413,30 @@ export const App: React.FC = () => {
 			}
 		})
 		if (stepNumber === 3) setKktyHints([])
-		setMessage('')
+		showMsg()
+		setAlertHighlight(false)
 	}
 
     return (
         <div className="vk-container" style={{ textAlign: 'left' }}>
+            <VkApiKeyInput
+                vkApiKey={state.vkApiKey || null}
+                useSandbox={state.useSandbox}
+                onVkApiKeyChange={(key) => setState(prev => ({ ...prev, vkApiKey: key }))}
+                onUseSandboxChange={(useSandbox) => setState(prev => ({ ...prev, useSandbox }))}
+            />
+
             <h1>Маркировка рекламы (VK ОРД)</h1>
             <p>Шаги: Контрагенты → Договор → Креатив → ERID</p>
 
-            <div style={{ display: 'flex', gap: 12, marginTop: 12, marginBottom: 20 }}>
+            <div className="vk-mobile-row" style={{ marginTop: 12, marginBottom: 20 }}>
                 <button className="vk-btn vk-btn--secondary" onClick={exportJson}>Экспорт JSON</button>
                 <button className="vk-btn vk-btn--secondary" onClick={importJsonClick}>Импорт JSON</button>
                 <input ref={fileRef} type="file" accept="application/json" style={{ display: 'none' }} onChange={onImportFile} />
             </div>
 
             {message && (
-                <div className="vk-alert" style={{ marginBottom: 12 }}>
+                <div className={`vk-alert vk-alert--${messageStatus}${alertHighlight ? ' vk-alert--highlight' : ''}`} style={{ marginBottom: 12 }}>
                     {message}
                 </div>
             )}
@@ -373,52 +446,83 @@ export const App: React.FC = () => {
                 <summary>1) Контрагенты</summary>
                 <div className="vk-card" style={{ marginTop: 10 }}>
                     <div className="vk-label">ИНН рекламодателя</div>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                        <input
-                            className="vk-input"
-                            value={state.advertiserInn}
-                            list="innHistory"
-                            onChange={e => {
-                                const val = e.target.value.replace(/\D/g, '')
-                                setState({ ...state, advertiserInn: val })
-                                if ((state.partyHistory || []).some(h => h.inn === val)) applyInnFromHistory('advertiser', val)
-                            }}
-                            onBlur={() => recordInnToHistory(state.advertiserInn, state.advertiserShortWithOpf || state.advertiserName || null, (state.advertiserInfo || '').includes('(') ? (state.advertiserInfo || '').split('(').at(-1)?.replace(')', '') || null : null)}
-                            autoComplete="on"
-                            placeholder="10 или 12 цифр"
-                        />
-                        <button className="vk-btn vk-btn--primary" disabled={!isValidInn(state.advertiserInn) || loading['lookup-advertiser']} onClick={() => lookupInn('advertiser')}>
-                            {loading['lookup-advertiser'] ? 'Поиск…' : 'Проверить'}
-                        </button>
-                        <button className="vk-btn" disabled={!isValidInn(state.advertiserInn) || loading['create-advertiser']} onClick={() => createCounterparty('advertiser')}>
-                            {loading['create-advertiser'] ? 'Создание…' : 'Создать в VK ОРД'}
-                        </button>
+                    <div className="vk-mobile-stack">
+                        <div className="vk-inline-controls">
+                            <input
+                                className="vk-input vk-input-inn"
+                                value={state.advertiserInn}
+                                list="innHistory"
+                                onChange={e => {
+                                    const val = e.target.value.replace(/\D/g, '')
+                                    setState({ ...state, advertiserInn: val })
+                                    if ((state.partyHistory || []).some(h => h.inn === val)) applyInnFromHistory('advertiser', val)
+                                }}
+                                onBlur={() => recordInnToHistory(state.advertiserInn, state.advertiserShortWithOpf || state.advertiserName || null, (state.advertiserInfo || '').includes('(') ? (state.advertiserInfo || '').split('(').at(-1)?.replace(')', '') || null : null)}
+                                autoComplete="on"
+                                placeholder="10 или 12 цифр"
+                                maxLength={12}
+                            />
+                            <CustomSelect
+                                options={[
+                                    { value: 'advertiser', label: 'Рекламодатель' },
+                                    { value: 'agency', label: 'Рекламное агентство' },
+                                    { value: 'ors', label: 'ОРС' },
+                                    { value: 'publisher', label: 'Издатель' }
+                                ]}
+                                value={state.advertiserRole}
+                                onChange={value => setState({ ...state, advertiserRole: value as ('advertiser' | 'agency' | 'ors' | 'publisher')[] })}
+                                multiSelect={true}
+                            />
+                            
+                            <button className="vk-btn vk-btn--primary" disabled={!isValidInn(state.advertiserInn) || loading['lookup-advertiser']} onClick={() => lookupInn('advertiser')}>
+                                {loading['lookup-advertiser'] ? 'Поиск…' : 'Проверить'}
+                            </button>
+                            <button className="vk-btn" disabled={!isValidInn(state.advertiserInn) || loading['create-advertiser']} onClick={() => createCounterparty('advertiser')}>
+                                {loading['create-advertiser'] ? 'Создание…' : 'Создать в VK ОРД'}
+                            </button>
+                        </div>
+                        
                     </div>
                     {state.advertiserInfo && <div style={{ color: 'var(--vk-muted)', marginTop: 4 }}>{state.advertiserInfo}</div>}
 
                     <div style={{ height: 14 }} />
 
                     <div className="vk-label">ИНН исполнителя</div>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                        <input
-                            className="vk-input"
-                            value={state.contractorInn}
-                            list="innHistory"
-                            onChange={e => {
-                                const val = e.target.value.replace(/\D/g, '')
-                                setState({ ...state, contractorInn: val })
-                                if ((state.partyHistory || []).some(h => h.inn === val)) applyInnFromHistory('contractor', val)
-                            }}
-                            onBlur={() => recordInnToHistory(state.contractorInn, state.contractorShortWithOpf || state.contractorName || null, (state.contractorInfo || '').includes('(') ? (state.contractorInfo || '').split('(').at(-1)?.replace(')', '') || null : null)}
-                            autoComplete="on"
-                            placeholder="10 или 12 цифр"
-                        />
-                        <button className="vk-btn vk-btn--primary" disabled={!isValidInn(state.contractorInn) || loading['lookup-contractor']} onClick={() => lookupInn('contractor')}>
-                            {loading['lookup-contractor'] ? 'Поиск…' : 'Проверить'}
-                        </button>
-                        <button className="vk-btn" disabled={!isValidInn(state.contractorInn) || loading['create-contractor']} onClick={() => createCounterparty('contractor')}>
-                            {loading['create-contractor'] ? 'Создание…' : 'Создать в VK ОРД'}
-                        </button>
+                    <div className="vk-mobile-stack">
+                        <div className="vk-inline-controls">
+                            <input
+                                className="vk-input vk-input-inn"
+                                value={state.contractorInn}
+                                list="innHistory"
+                                onChange={e => {
+                                    const val = e.target.value.replace(/\D/g, '')
+                                    setState({ ...state, contractorInn: val })
+                                    if ((state.partyHistory || []).some(h => h.inn === val)) applyInnFromHistory('contractor', val)
+                                }}
+                                onBlur={() => recordInnToHistory(state.contractorInn, state.contractorShortWithOpf || state.contractorName || null, (state.contractorInfo || '').includes('(') ? (state.contractorInfo || '').split('(').at(-1)?.replace(')', '') || null : null)}
+                                autoComplete="on"
+                                placeholder="10 или 12 цифр"
+                                maxLength={12}
+                            />
+                            <CustomSelect
+                                options={[
+                                    { value: 'advertiser', label: 'Рекламодатель' },
+                                    { value: 'agency', label: 'Рекламное агентство' },
+                                    { value: 'ors', label: 'ОРС' },
+                                    { value: 'publisher', label: 'Издатель' }
+                                ]}
+                                value={state.contractorRole}
+                                onChange={value => setState({ ...state, contractorRole: value as ('advertiser' | 'agency' | 'ors' | 'publisher')[] })}
+                                multiSelect={true}
+                            />
+                            
+                            <button className="vk-btn vk-btn--primary" disabled={!isValidInn(state.contractorInn) || loading['lookup-contractor']} onClick={() => lookupInn('contractor')}>
+                                {loading['lookup-contractor'] ? 'Поиск…' : 'Проверить'}
+                            </button>
+                            <button className="vk-btn" disabled={!isValidInn(state.contractorInn) || loading['create-contractor']} onClick={() => createCounterparty('publisher')}>
+                                {loading['create-contractor'] ? 'Создание…' : 'Создать в VK ОРД'}
+                            </button>
+                        </div>
                     </div>
                     {state.contractorInfo && <div style={{ color: 'var(--vk-muted)', marginTop: 4 }}>{state.contractorInfo}</div>}
 
@@ -429,7 +533,7 @@ export const App: React.FC = () => {
                         </label>
                     </div>
 
-                    <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
+                    <div className="vk-mobile-button-row">
                         <button className="vk-btn" onClick={() => clearStep(1)}>Очистить поля</button>
                         <button className="vk-btn" onClick={() => saveToLocalStorage(LOCAL_KEY, state)}>Сохранить шаг</button>
                         <button className="vk-btn vk-btn--primary" disabled={!canNextFromStep1} onClick={() => setState({ ...state, step: 2 })}>Далее</button>
@@ -464,11 +568,11 @@ export const App: React.FC = () => {
 						</label>
                         <label>
                             ИНН заказчика (clientExternalId)
-                            <input className="vk-input" value={state.advertiserInn} readOnly />
+                            <input className="vk-input vk-input-inn" value={state.advertiserInn} readOnly />
                         </label>
                         <label>
                             ИНН исполнителя (contractorExternalId)
-                            <input className="vk-input" value={state.contractorInn} readOnly />
+                            <input className="vk-input vk-input-inn" value={state.contractorInn} readOnly />
                         </label>
                         <label>
                             Сумма оплаты (paySum)
@@ -479,7 +583,7 @@ export const App: React.FC = () => {
                             <input className="vk-input" type="date" value={state.payDateEnd || ''} onChange={e => setState({ ...state, payDateEnd: e.target.value || null })} />
                         </label>
                     </div>
-                    <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
+                    <div className="vk-mobile-button-row">
                         <button className="vk-btn" onClick={() => clearStep(2)}>Очистить поля</button>
                         <button className="vk-btn" onClick={() => setState({ ...state, step: 1 })}>Назад</button>
                         <button className="vk-btn vk-btn--primary" disabled={loading['contract']} onClick={saveContract}>{loading['contract'] ? 'Сохранение…' : 'Сохранить'}</button>
@@ -508,8 +612,8 @@ export const App: React.FC = () => {
                         {/* Move KKTY below text, so we remove it here and re-add later */}
                         <label>
                             Формат
-                            <select className="vk-select" value={state.format} onChange={e => setState({ ...state, format: e.target.value as VkCreativeForm })}>
-                                {[
+                            <CustomSelect
+                                options={[
                                     'banner',
                                     'text_block',
                                     'text_graphic_block',
@@ -524,10 +628,11 @@ export const App: React.FC = () => {
                                     'text_audio_video_block',
                                     'text_graphic_audio_video_block',
                                     'banner_html5'
-                                ].map(v => (
-                                    <option key={v} value={v}>{v}</option>
-                                ))}
-                            </select>
+                                ].map(v => ({ value: v, label: v }))}
+                                value={state.format}
+                                onChange={value => setState({ ...state, format: value as VkCreativeForm })}
+                                size="wide"
+                            />
                         </label>
                         <label>
                             Ссылки на контент (через запятую, если несколько)
@@ -536,6 +641,10 @@ export const App: React.FC = () => {
                         <label>
                             Целевая аудитория
                             <input className="vk-input" value={state.targetAudience || ''} onChange={e => setState({ ...state, targetAudience: e.target.value })} />
+                        </label>
+                        <label>
+                            Название креатива
+                            <input className="vk-input" value={state.name || ''} onChange={e => setState({ ...state, name: e.target.value })} placeholder="Введите название креатива..." />
                         </label>
                         <label>
                             Текст
@@ -560,7 +669,7 @@ export const App: React.FC = () => {
                                 </div>
                             </div>
                         )}
-                        <div style={{ display: 'flex', gap: 20, justifyContent: 'center' }}>
+                        <div className="vk-mobile-row" style={{ justifyContent: 'center', gap: 20 }}>
                <button className="vk-btn vk-btn-magic" style={{ marginTop: 8, marginBottom: 8 }} disabled={!state.text?.trim() || loading['ai-kkty']} onClick={guessKktyByText}>
                  {loading['ai-kkty'] ? '✨ Подбор…' : '✨ Узнать ККТУ по тексту'}
                </button>
@@ -578,7 +687,7 @@ export const App: React.FC = () => {
                             onChange={codes => setState({ ...state, kktyCodes: codes })}
                         />
                     </div>
-                    <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
+                    <div className="vk-mobile-button-row">
                         <button className="vk-btn" onClick={() => clearStep(3)}>Очистить поля</button>
                         <button className="vk-btn" onClick={() => setState({ ...state, step: 2 })}>Назад</button>
                         <button className="vk-btn vk-btn--primary" disabled={!canSubmitCreative || loading['creative']} onClick={createCreative}>{loading['creative'] ? 'Отправка…' : 'Получить ERID'}</button>
@@ -587,12 +696,12 @@ export const App: React.FC = () => {
             </details>
 
             {/* Final */}
-            {state.step === 4 && (
+            {state.step === 4 && state.erid && (
                 <>
                     <div className="vk-card" style={{ padding: 22 }}>
                         <h2>ERID</h2>
-                        <div style={{ fontSize: 24, fontWeight: 700 }}>{state.erid || 'ожидание…'}</div>
-                        <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
+                        <div style={{ fontSize: 24, fontWeight: 700 }}>{state.erid}</div>
+                        <div className="vk-mobile-button-row">
                             <button className="vk-btn" onClick={() => navigator.clipboard.writeText(state.erid || '')}>Скопировать ERID</button>
                             <button className="vk-btn" onClick={() => {
                                 const url = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(state.erid || '')}`
@@ -605,7 +714,7 @@ export const App: React.FC = () => {
                     <div className="vk-card" style={{ marginTop: 14, padding: 22 }}>
                         <h3>Текст для копирования</h3>
                         <pre className="vk-pre">{copyText}</pre>
-                        <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
+                        <div className="vk-mobile-button-row">
                             <button className="vk-btn vk-btn--primary" onClick={() => navigator.clipboard.writeText(copyText)}>Скопировать текст</button>
                         </div>
                     </div>

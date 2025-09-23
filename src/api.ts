@@ -1,4 +1,5 @@
 import type { ApiResponse, CreateContractRequest, CreateContractResponse, CreateCreativeRequest, CreateCreativeResponse, DaDataPartyShortResponse, AiKktyResponse } from './types'
+import { loadFromCookie } from './utils'
 
 const DEFAULT_TIMEOUT_MS = 15000
 
@@ -15,6 +16,21 @@ export class ApiClient {
         console.log('🚀 ApiClient initialized:', { baseUrl: this.baseUrl, retries: this.retries, hasToken: !!this.token })
     }
 
+    private getVkHeaders(): Record<string, string> {
+        const headers: Record<string, string> = {}
+
+        const vkApiKey = loadFromCookie('vkord-api-key')
+        if (vkApiKey) {
+            headers['x-api-vk-key'] = vkApiKey
+        }
+
+        const useSandbox = loadFromCookie('vkord-use-sandbox') === 'true'
+        headers['x-api-vk-route'] = useSandbox ? 'sandbox' : 'prod'
+
+        console.log('🔑 VK headers:', headers)
+        return headers
+    }
+
     private getAuthHeaders(): Record<string, string> {
         const headers: Record<string, string> = {
             'Content-Type': 'application/json'
@@ -22,6 +38,11 @@ export class ApiClient {
         if (this.token) {
             headers['Authorization'] = `Bearer ${this.token}`
         }
+
+        // Add VK headers
+        const vkHeaders = this.getVkHeaders()
+        Object.assign(headers, vkHeaders)
+
         console.log('🔑 Auth headers:', headers)
         return headers
     }
@@ -117,7 +138,30 @@ export class ApiClient {
                     throw new Error('Token expired')
                 }
 
-                if (!res.ok) throw new Error(`HTTP ${res.status}`)
+                if (!res.ok) {
+                    let errorMessage = `HTTP ${res.status}`
+                    let errorCode: string | undefined
+                    try {
+                        const errorData = await res.json()
+                        if (errorData?.message) {
+                            errorMessage = errorData.message
+                        } else if (errorData?.error) {
+                            errorMessage = errorData.error
+                        }
+                        errorCode = errorData?.code
+                    } catch {
+                        // Если не удалось распарсить JSON, используем статус
+                        errorMessage = `HTTP ${res.status} ${res.statusText || ''}`.trim()
+                    }
+
+                    // Вместо выбрасывания исключения, возвращаем ApiResponse с ошибкой
+                    console.log('❌ API Error Response:', { success: false, message: errorMessage, code: errorCode })
+                    return {
+                        success: false,
+                        message: errorMessage,
+                        code: errorCode
+                    } as T
+                }
                 const data = await res.json()
                 console.log('✅ API Success:', data)
                 return data as T
@@ -140,11 +184,11 @@ export class ApiClient {
         })
     }
 
-    async setCounterparty(inn: string): Promise<ApiResponse<unknown>> {
+    async setCounterparty(inn: string, types: string[]): Promise<ApiResponse<unknown>> {
         await this.ensureAuthenticated()
         return this.fetchWithRetry<ApiResponse<unknown>>('/api/Client/set-counterparty', {
             method: 'POST',
-            body: JSON.stringify({ inn })
+            body: JSON.stringify({ inn, types })
         })
     }
 

@@ -160,6 +160,11 @@ textarea {
   font-family: inherit;
   font-size: inherit;
 }
+
+.vk-textarea {
+  font-size: 14px;
+  min-height: 300px!important;
+}
 .vk-input,
 .vk-select,
 input[type="date"],
@@ -199,6 +204,42 @@ label > select { font-weight: 400; }
   border-left: 4px solid var(--vk-primary);
   border-radius: 12px;
   background: #fff;
+  transition: all 0.3s ease;
+}
+
+.vk-alert--success {
+  border-left-color: var(--vk-success);
+  background: rgba(75, 179, 75, 0.05);
+}
+
+.vk-alert--error {
+  border-left-color: var(--vk-danger);
+  background: rgba(230, 70, 70, 0.05);
+}
+
+.vk-alert--info {
+  border-left-color: var(--vk-primary);
+  background: rgba(39, 135, 245, 0.05);
+}
+
+.vk-alert--highlight {
+  animation: alertHighlight 0.6s ease-out;
+  box-shadow: 0 0 0 2px rgba(39, 135, 245, 0.3);
+}
+
+@keyframes alertHighlight {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(39, 135, 245, 0.7);
+  }
+  50% {
+    transform: scale(1.02);
+    box-shadow: 0 0 0 4px rgba(39, 135, 245, 0.3);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 2px rgba(39, 135, 245, 0.1);
+  }
 }
 
 pre.vk-pre {
@@ -207,4 +248,602 @@ pre.vk-pre {
   padding: 14px;
   border-radius: 10px;
   border: 1px solid var(--vk-border);
+}
+
+/* VK API Key Input Styles */
+.vk-api-key-container {
+  margin-bottom: 24px;
+}
+
+.vk-api-key-card {
+  border: 2px solid var(--vk-primary);
+  background: linear-gradient(135deg, rgba(39, 135, 245, 0.05) 0%, rgba(39, 135, 245, 0.02) 100%);
+  position: relative;
+}
+
+.vk-api-key-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--vk-primary) 0%, #5dade2 50%, var(--vk-primary) 100%);
+  border-radius: 12px 12px 0 0;
+}
+
+:root {
+  --vk-success-bg: rgba(75, 179, 75, 0.1);
+}
+
+/* Custom Select Styles */
+.vk-select-container {
+  position: relative;
+  display: inline-block;
+}
+
+.vk-select-custom {
+  position: relative;
+  background: #fff;
+  border: 1px solid var(--vk-border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.vk-select-custom:hover {
+  border-color: var(--vk-primary);
+  box-shadow: 0 2px 8px rgba(39, 135, 245, 0.1);
+}
+
+.vk-select-custom.open {
+  border-color: var(--vk-primary);
+  box-shadow: 0 0 0 3px rgba(39, 135, 245, 0.15);
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.vk-select-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0px 16px;
+  height: 40px;
+  box-sizing: border-box;
+  background: #fff;
+  border-radius: 10px;
+  position: relative;
+}
+
+.vk-select-display::after {
+  content: '▼';
+  color: var(--vk-muted);
+  font-size: 14px;
+  transition: transform 0.2s ease;
+  margin-left: 8px;
+}
+
+.vk-select-custom.open .vk-select-display::after {
+  transform: rotate(180deg);
+}
+
+.vk-select-options {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid var(--vk-primary);
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  max-height: 250px;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.vk-select-option {
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border-bottom: none;
+  margin-bottom: 2px;
+}
+
+.vk-select-option-content {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+
+
+.vk-select-option:last-child {
+  border-bottom: none;
+}
+
+.vk-select-option:hover .vk-select-option-content {
+  background: rgba(39, 135, 245, 0.05);
+}
+
+.vk-select-option:hover {
+  color: var(--vk-primary);
+}
+
+.vk-select-option.selected .vk-select-option-content {
+  background: rgba(39, 135, 245, 0.1);
+  border: 2px solid rgba(39, 135, 245, 0.3);
+}
+
+.vk-select-option.selected:hover .vk-select-option-content {
+  background: rgba(39, 135, 245, 0.15);
+  border-color: rgba(39, 135, 245, 0.5);
+}
+
+/* Compact INN input field */
+.vk-input-inn {
+  max-width: 170px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+/* Responsive layout for controls (desktop: one row; mobile: stacked) */
+.vk-inline-controls {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+
+.vk-inline-controls > * {
+  flex: 0 0 auto;
+}
+
+.vk-inline-controls .vk-input-inn {
+  width: 180px;
+}
+
+.vk-inline-controls .vk-select-container {
+  width: 260px !important;
+  min-width: 240px;
+}
+
+.vk-inline-controls .vk-select-container.wide {
+  width: 320px !important;
+  min-width: 300px;
+}
+
+@media (max-width: 960px) {
+  .vk-inline-controls {
+    flex-wrap: wrap;
+  }
+  .vk-inline-controls .vk-input-inn {
+    width: 160px;
+  }
+  .vk-inline-controls .vk-select-container {
+    width: 240px !important;
+    min-width: 220px;
+  }
+}
+
+@media (max-width: 640px) {
+  .vk-inline-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .vk-inline-controls .vk-input-inn,
+  .vk-inline-controls .vk-select-container,
+  .vk-inline-controls .vk-select-container.wide,
+  .vk-inline-controls > .vk-btn,
+  .vk-inline-controls > button {
+    width: 100% !important;
+    min-width: 0;
+  }
+}
+
+/* Ensure select content doesn't overflow */
+.vk-select-display {
+  overflow: hidden;
+}
+
+.vk-select-display span {
+  display: block;
+  word-wrap: break-word;
+  white-space: normal;
+  max-width: calc(100% - 14px); /* Reserve space for arrow */
+}
+
+.vk-select-option {
+  word-wrap: break-word;
+  white-space: normal;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Multi-select styles */
+.vk-select-multi-display {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: flex-start;
+  padding: 2px 0;
+  width: 100%;
+}
+
+.vk-select-tag {
+  display: inline-flex;
+  align-items: center;
+  background: var(--vk-primary);
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  white-space: nowrap;
+  margin: 1px 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.vk-select-tag-label,
+.vk-select-tag span {
+  margin-right: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1 1 auto;
+  min-width: 0;
+  display: block;
+}
+
+.vk-select-tag-remove {
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 2px;
+  margin-left: 4px;
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
+  min-width: 20px;
+  min-height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.vk-select-tag-remove:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.vk-select-placeholder {
+  color: var(--vk-muted);
+  font-size: 14px;
+}
+
+.vk-select-checkbox {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-right: 10px;
+  flex-shrink: 0;
+  border: 1px solid var(--vk-border);
+  border-radius: 3px;
+  background: #fff;
+}
+
+.vk-select-option.selected .vk-select-checkbox {
+  background: var(--vk-primary);
+  border-color: var(--vk-primary);
+}
+
+.vk-select-checkmark {
+  color: #fff;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.vk-select-option-text {
+  flex: 1;
+  word-wrap: break-word;
+  white-space: normal;
+}
+
+/* Multi-select specific styles */
+.vk-select-custom.multi .vk-select-display {
+  min-height: 40px;
+  height: auto;
+}
+
+/* Mobile responsiveness for iPhone 12 and smaller screens */
+@media (max-width: 480px) {
+  /* Container and app layout */
+  #app {
+    padding: 16px;
+  }
+
+  .vk-container {
+    max-width: 100%;
+    margin: 0;
+  }
+
+  /* Typography */
+  h1 {
+    font-size: 24px;
+    margin-bottom: 8px;
+  }
+
+  p {
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+
+  /* Cards */
+  .vk-card {
+    padding: 16px;
+    border-radius: 8px;
+  }
+
+  /* Buttons */
+  .vk-btn {
+    height: 44px;
+    padding: 0 12px;
+    font-size: 14px;
+    min-width: 44px; /* Minimum touch target */
+  }
+
+  /* Inputs */
+  .vk-input,
+  .vk-select,
+  .vk-textarea,
+  input[type="date"],
+  input[type="number"],
+  textarea {
+    height: 44px;
+    padding: 12px 14px;
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+
+  .vk-textarea {
+    min-height: 120px !important;
+  }
+
+  /* Labels */
+  label {
+    font-size: 14px;
+  }
+
+  .vk-label {
+    font-size: 14px;
+  }
+
+  /* Select containers */
+  .vk-select-container {
+    width: 100% !important;
+    min-width: unset;
+  }
+
+  .vk-select-container.wide {
+    width: 100% !important;
+    min-width: unset;
+  }
+
+  /* Better alignment for mobile selects */
+  .vk-select-display {
+    padding: 8px 14px;
+    min-height: 28px;
+  }
+
+  .vk-select-custom.multi .vk-select-display {
+    min-height: 44px;
+    padding: 4px 14px;
+    align-items: flex-start;
+  }
+
+  .vk-input-inn {
+    max-width: none;
+    width: 100%;
+  }
+
+  /* Flex layouts for mobile */
+  .vk-card > div > div {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  /* Button groups */
+  .vk-card > div > div > div,
+  .vk-card > div > div > button {
+    width: 100%;
+  }
+
+  /* Alerts */
+  .vk-alert {
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+
+  /* Details/summary */
+  details > summary {
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+
+  /* Magic button adjustments */
+  .vk-btn-magic {
+    height: 44px;
+  }
+
+  /* Preformatted text */
+  pre.vk-pre {
+    padding: 12px;
+    font-size: 14px;
+  }
+
+  /* API Key input */
+  .vk-api-key-container {
+    margin-bottom: 16px;
+  }
+
+  /* Tag selector */
+  .vk-select-multi-display {
+    min-height: 44px;
+    padding: 6px 4px;
+  }
+
+  /* Better mobile tags */
+  .vk-select-tag {
+    padding: 6px 10px;
+    font-size: 14px;
+    border-radius: 8px;
+    margin: 2px;
+    max-width: calc(100% - 8px);
+  }
+
+  .vk-select-tag span {
+    margin-right: 6px;
+  }
+
+  .vk-select-tag-remove {
+    min-width: 24px;
+    min-height: 24px;
+    font-size: 18px;
+    margin-left: 6px;
+  }
+
+  /* Final step cards */
+  .vk-card[style*="padding: 22px"] {
+    padding: 16px !important;
+  }
+
+  /* Grid layouts */
+  .vk-card > div > div[style*="grid"] {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+}
+
+/* Specific iPhone 12 and similar (390px width) */
+@media (max-width: 390px) {
+  #app {
+    padding: 12px;
+  }
+
+  .vk-card {
+    padding: 12px;
+  }
+
+  /* Stack buttons vertically on very small screens */
+  .vk-card > div > div[style*="flex"] {
+    flex-direction: column;
+  }
+
+  .vk-card > div > div[style*="gap"] {
+    gap: 8px;
+  }
+
+  /* Adjust button text for mobile */
+  .vk-btn {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Better select on very small screens */
+  .vk-select-tag {
+    font-size: 10px;
+    padding: 4px 8px;
+    max-width: 100%;
+  }
+
+  .vk-select-tag span {
+    max-width: none;
+    white-space: nowrap; /* keep text on a single line */
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .vk-select-tag-remove {
+    min-width: 10px;
+    min-height: 10px;
+    font-size: 8px;
+  }
+}
+
+/* Touch-friendly adjustments for all mobile devices */
+@media (hover: none) and (pointer: coarse) {
+  /* Larger touch targets */
+  .vk-btn,
+  .vk-input,
+  .vk-select,
+  .vk-textarea {
+    min-height: 44px;
+  }
+
+  /* Better spacing for touch */
+  .vk-card > div > div {
+    gap: 12px;
+  }
+
+  /* Select options */
+  .vk-select-option-content {
+    padding: 14px 16px;
+    min-height: 44px;
+  }
+
+  /* Tag removal buttons */
+  .vk-select-tag-remove {
+    font-size: 10px;
+    padding: 2px;
+    min-width: 14px;  
+    min-height: 14px;
+  }
+}
+
+/* Mobile-specific layout classes */
+.vk-mobile-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.vk-mobile-row {
+  display: flex;
+  gap: 8px;
+}
+
+@media (max-width: 480px) {
+  .vk-mobile-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .vk-mobile-row > * {
+    width: 100%;
+  }
+}
+
+.vk-mobile-button-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+@media (max-width: 480px) {
+  .vk-mobile-button-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .vk-mobile-button-row > * {
+    width: 100%;
+  }
 }
