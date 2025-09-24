@@ -57,7 +57,7 @@ export type VkCreativeForm =
 export type CreateCreativeRequest = {
     externalId: string
     contractExternalIds: string[]
-    kktyCodes: string
+    kktyCodes: string[]
     format: VkCreativeForm
     contentUrls?: string[]
     targetAudience?: string

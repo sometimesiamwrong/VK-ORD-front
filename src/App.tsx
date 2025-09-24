@@ -38,7 +38,7 @@ type WizardState = {
     // step 3
     creativeExternalId: string
     contractExternalIds: string[]
-    kktyCodes: string
+    kktyCodes: string[]
     format: VkCreativeForm
     contentUrls: string[]
     targetAudience?: string | null
@@ -79,7 +79,7 @@ const initialState: WizardState = {
     payDateEnd: null,
     creativeExternalId: nowTimestampString(),
     contractExternalIds: [],
-    kktyCodes: '',
+    kktyCodes: [],
     format: 'banner' as VkCreativeForm,
     contentUrls: [],
     targetAudience: null,
@@ -127,7 +127,7 @@ export const App: React.FC = () => {
 
     const canNextFromStep1 = useMemo(() => isValidInn(state.advertiserInn) && isValidInn(state.contractorInn) && state.consent && state.advertiserRole.length > 0 && state.contractorRole.length > 0, [state])
     const canNextFromStep2 = useMemo(() => !!state.contractExternalId && !!state.paySum && state.paySum! > 0, [state])
-    const canSubmitCreative = useMemo(() => !!state.creativeExternalId && state.contractExternalIds.length >= 1 && !!(state.kktyCodes && typeof state.kktyCodes === 'string' && state.kktyCodes.trim()) && !!state.name?.trim() && !!state.text?.trim(), [state])
+    const canSubmitCreative = useMemo(() => !!state.creativeExternalId && state.contractExternalIds.length >= 1 && !!(state.kktyCodes && Array.isArray(state.kktyCodes) && state.kktyCodes.length > 0) && !!state.name?.trim() && !!state.text?.trim(), [state])
 
     useEffect(() => {
         const id = setInterval(() => saveToLocalStorage(LOCAL_KEY, state), 2000)
@@ -153,6 +153,9 @@ export const App: React.FC = () => {
             // Перевод английских сообщений на русский
             if (message === 'Contract created successfully') {
                 message = 'Договор успешно создан'
+            }
+            if (message === 'Creative created successfully') {
+                message = 'Креатив успешно создан'
             }
             setMessage(message)
             setMessageStatus(status || (apiResp.success ? 'success' : 'error'))
@@ -307,11 +310,11 @@ export const App: React.FC = () => {
 			showMsg(resp)
 			const list = resp?.data?.kkty || []
 			setKktyHints(list)
-			if (list.length && !state.kktyCodes) {
+			if (list.length && (!state.kktyCodes || state.kktyCodes.length === 0)) {
 				// Устанавливаем первый найденный код, если kktyCodes еще не выбран
 				const firstCode = list[0].code
 				if (firstCode) {
-					setState(prev => ({ ...prev, kktyCodes: firstCode }))
+					setState(prev => ({ ...prev, kktyCodes: [firstCode] }))
 				}
 			}
 		} catch (e: any) {
@@ -407,7 +410,7 @@ export const App: React.FC = () => {
 			payDateEnd: null,
 			creativeExternalId: nowTimestampString(),
 			contractExternalIds: [],
-			kktyCodes: '',
+			kktyCodes: [],
 			format: 'banner' as VkCreativeForm,
 			contentUrls: [],
 			targetAudience: null,
@@ -453,7 +456,7 @@ export const App: React.FC = () => {
 						...prev,
 						creativeExternalId: '',
 						contractExternalIds: [],
-						kktyCodes: '',
+						kktyCodes: [],
 						format: 'banner' as VkCreativeForm,
 						contentUrls: [],
 						targetAudience: null,
@@ -741,9 +744,9 @@ export const App: React.FC = () => {
                </button>
                         </div>
                         <TagSelector
-                            selectedCodes={state.kktyCodes || ''}
-                            onChange={code => setState({ ...state, kktyCodes: code })}
-                            hasError={!(state.kktyCodes && typeof state.kktyCodes === 'string' && state.kktyCodes.trim())}
+                            selectedCodes={state.kktyCodes && state.kktyCodes.length > 0 ? state.kktyCodes[0] : ''}
+                            onChange={code => setState({ ...state, kktyCodes: code ? [code] : [] })}
+                            hasError={!(state.kktyCodes && Array.isArray(state.kktyCodes) && state.kktyCodes.length > 0)}
                         />
                     </div>
                     <div className="vk-mobile-button-row">
