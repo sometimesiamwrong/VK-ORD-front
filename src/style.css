@@ -94,6 +94,7 @@ details[open] .vk-card {
 }
 .vk-btn:hover { background: #f7f8fa; }
 .vk-btn:disabled { opacity: .6; cursor: default; }
+.vk-btn-hover-muted:hover { background: #0f3beb !important; transition: none; }
 
 .vk-btn--primary {
   background: var(--vk-primary);

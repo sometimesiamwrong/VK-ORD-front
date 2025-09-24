@@ -1,3 +1,11 @@
+// Disable console clearing functions
+if (typeof console !== 'undefined') {
+    console.clear = function() {};
+}
+if (typeof window !== 'undefined') {
+    (window as any).clear = function() {};
+}
+
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { api } from './api'
 import type { ApiResponse, CreateContractRequest, CreateCreativeRequest, VkCreativeForm, AiKktyItem } from './types'
@@ -141,6 +149,10 @@ export const App: React.FC = () => {
             let message = apiResp.message || ''
             if (apiResp.code === 'MISSING_HEADERS') {
                 message = 'API ключ не установлен или не подходит для выбранного сервиса'
+            }
+            // Перевод английских сообщений на русский
+            if (message === 'Contract created successfully') {
+                message = 'Договор успешно создан'
             }
             setMessage(message)
             setMessageStatus(status || (apiResp.success ? 'success' : 'error'))
@@ -371,6 +383,43 @@ export const App: React.FC = () => {
             return { ...prev, partyHistory: next.slice(0, 10) }
         })
     }
+
+	function clearAll() {
+		setState({
+			step: 1,
+			consent: false,
+			// Keep VK API settings
+			vkApiKey: state.vkApiKey,
+			useSandbox: state.useSandbox,
+			// Reset all other fields
+			advertiserInn: '',
+			contractorInn: '',
+			advertiserRole: ['advertiser'],
+			contractorRole: ['publisher'],
+			advertiserName: null,
+			contractorName: null,
+			advertiserShortWithOpf: null,
+			contractorShortWithOpf: null,
+			advertiserInfo: null,
+			contractorInfo: null,
+			contractExternalId: '',
+			paySum: null,
+			payDateEnd: null,
+			creativeExternalId: nowTimestampString(),
+			contractExternalIds: [],
+			kktyCodes: '',
+			format: 'banner' as VkCreativeForm,
+			contentUrls: [],
+			targetAudience: null,
+			text: null,
+			name: null,
+			erid: null,
+			partyHistory: state.partyHistory
+		})
+		setKktyHints([])
+		showMsg()
+		setAlertHighlight(false)
+	}
 
 	function clearStep(stepNumber: 1 | 2 | 3 | 4) {
 		setState(prev => {
@@ -679,7 +728,7 @@ export const App: React.FC = () => {
                             </div>
                         )}
                         <div className="vk-mobile-row" style={{ justifyContent: 'center', gap: 20 }}>
-               <button className="vk-btn vk-btn-magic" style={{ marginTop: 8, marginBottom: 8 }} disabled={!state.text?.trim() || loading['ai-kkty']} onClick={guessKktyByText}>
+               <button className="vk-btn vk-btn-magic vk-btn-hover-muted" style={{ marginTop: 8, marginBottom: 8 }} disabled={!state.text?.trim() || loading['ai-kkty']} onClick={guessKktyByText}>
                  {loading['ai-kkty'] ? '✨ Подбор…' : '✨ Узнать ККТУ по тексту'}
                </button>
                <button className="vk-btn" style={{ marginTop: 8, marginBottom: 8 }} onClick={async () => {
@@ -719,6 +768,7 @@ export const App: React.FC = () => {
                             }}>QR‑код</button>
                             <button className="vk-btn" onClick={() => window.print()}>Печать</button>
                             <button className="vk-btn vk-btn--secondary" onClick={exportJson}>Экспорт JSON</button>
+                            <button className="vk-btn vk-btn--danger vk-btn-hover-muted" onClick={clearAll}>Начать сначала</button>
                         </div>
                     </div>
                     <div className="vk-card" style={{ marginTop: 14, padding: 22 }}>
