@@ -119,7 +119,7 @@ export const App: React.FC = () => {
 
     const canNextFromStep1 = useMemo(() => isValidInn(state.advertiserInn) && isValidInn(state.contractorInn) && state.consent && state.advertiserRole.length > 0 && state.contractorRole.length > 0, [state])
     const canNextFromStep2 = useMemo(() => !!state.contractExternalId && !!state.paySum && state.paySum! > 0, [state])
-    const canSubmitCreative = useMemo(() => !!state.creativeExternalId && state.contractExternalIds.length >= 1 && !!state.kktyCodes.trim() && !!state.name?.trim() && !!state.text?.trim(), [state])
+    const canSubmitCreative = useMemo(() => !!state.creativeExternalId && state.contractExternalIds.length >= 1 && !!(state.kktyCodes && typeof state.kktyCodes === 'string' && state.kktyCodes.trim()) && !!state.name?.trim() && !!state.text?.trim(), [state])
 
     useEffect(() => {
         const id = setInterval(() => saveToLocalStorage(LOCAL_KEY, state), 2000)
@@ -473,7 +473,7 @@ export const App: React.FC = () => {
                                 options={[
                                     { value: 'advertiser', label: 'Рекламодатель' },
                                     { value: 'agency', label: 'Рекламное агентство' },
-                                    { value: 'ors', label: 'ОРС' },
+                                    //{ value: 'ors', label: 'ОРС' },
                                     { value: 'publisher', label: 'Издатель' }
                                 ]}
                                 value={state.advertiserRole}
@@ -516,7 +516,7 @@ export const App: React.FC = () => {
                                 options={[
                                     { value: 'advertiser', label: 'Рекламодатель' },
                                     { value: 'agency', label: 'Рекламное агентство' },
-                                    { value: 'ors', label: 'ОРС' },
+                                    // { value: 'ors', label: 'ОРС' },
                                     { value: 'publisher', label: 'Издатель' }
                                 ]}
                                 value={state.contractorRole}
@@ -692,9 +692,9 @@ export const App: React.FC = () => {
                </button>
                         </div>
                         <TagSelector
-                            selectedCodes={state.kktyCodes}
+                            selectedCodes={state.kktyCodes || ''}
                             onChange={code => setState({ ...state, kktyCodes: code })}
-                            hasError={!state.kktyCodes.trim()}
+                            hasError={!(state.kktyCodes && typeof state.kktyCodes === 'string' && state.kktyCodes.trim())}
                         />
                     </div>
                     <div className="vk-mobile-button-row">

@@ -2,12 +2,12 @@ import React, { useState, useMemo } from 'react'
 import { kktyData } from './kkty-data'
 
 interface TagSelectorProps {
-  selectedCodes: string
+  selectedCodes?: string
   onChange: (code: string) => void
   hasError?: boolean
 }
 
-export const TagSelector: React.FC<TagSelectorProps> = ({ selectedCodes, onChange, hasError = false }) => {
+export const TagSelector: React.FC<TagSelectorProps> = ({ selectedCodes = '', onChange, hasError = false }) => {
   const [search, setSearch] = useState('')
   const [showDropdown, setShowDropdown] = useState(false)
 
