@@ -1,0 +1,45 @@
+# 1. Выбираем официальный образ Node.js. Укажите версию, которую вы используете.
+image: node:20-alpine
+
+# 2. Определяем этапы пайплайна: сборка и развертывание
+stages:
+  - build
+  - deploy
+
+# 3. Этап сборки приложения
+build_frontend:
+  stage: build
+  script:
+    # Устанавливаем зависимости из package-lock.json для стабильности
+    - npm ci
+    # Собираем проект. В результате должна появиться папка 'dist'
+    - npm run build
+  # 4. Сохраняем собранную папку 'dist' для следующего этапа
+  artifacts:
+    paths:
+      - dist/
+
+# 5. Этап развертывания
+deploy_to_hosting:
+  stage: deploy
+  before_script:
+    # Устанавливаем OpenSSH-клиент для использования scp
+    - 'apk add --no-cache openssh-client'
+    # Запускаем ssh-agent
+    - 'eval $(ssh-agent -s)'
+    # Добавляем приватный SSH-ключ
+    - 'echo "$SSH_PRIVATE_KEY" | tr -d "\r" | ssh-add -'
+    # Автоматически добавляем ключ сервера в known_hosts
+    - 'mkdir -p ~/.ssh'
+    - 'chmod 700 ~/.ssh'
+    - 'ssh-keyscan $SSH_HOST >> ~/.ssh/known_hosts'
+    - 'chmod 644 ~/.ssh/known_hosts'
+  script:
+    - 'echo "Deploying application to /www/ad-lawyer.ru/..."'
+    # 6. Используем scp для рекурсивного (-r) копирования содержимого папки 'dist'
+    # в корневую директорию вашего сайта на хостинге.
+    - 'scp -r dist/* $SSH_USER@$SSH_HOST:/www/ad-lawyer.ru/'
+    - 'echo "Application successfully deployed!"'
+  only:
+    # Запускать пайплайн только для изменений в ветке 'main'
+    - main

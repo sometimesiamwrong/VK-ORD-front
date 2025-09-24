@@ -30,7 +30,7 @@ type WizardState = {
     // step 3
     creativeExternalId: string
     contractExternalIds: string[]
-    kktyCodes: string[]
+    kktyCodes: string
     format: VkCreativeForm
     contentUrls: string[]
     targetAudience?: string | null
@@ -71,7 +71,7 @@ const initialState: WizardState = {
     payDateEnd: null,
     creativeExternalId: nowTimestampString(),
     contractExternalIds: [],
-    kktyCodes: [],
+    kktyCodes: '',
     format: 'banner' as VkCreativeForm,
     contentUrls: [],
     targetAudience: null,
@@ -117,9 +117,9 @@ export const App: React.FC = () => {
     const [alertHighlight, setAlertHighlight] = useState<boolean>(false)
     const [kktyHints, setKktyHints] = useState<AiKktyItem[]>([])
 
-    const canNextFromStep1 = useMemo(() => isValidInn(state.advertiserInn) && isValidInn(state.contractorInn) && state.consent, [state])
+    const canNextFromStep1 = useMemo(() => isValidInn(state.advertiserInn) && isValidInn(state.contractorInn) && state.consent && state.advertiserRole.length > 0 && state.contractorRole.length > 0, [state])
     const canNextFromStep2 = useMemo(() => !!state.contractExternalId && !!state.paySum && state.paySum! > 0, [state])
-    const canSubmitCreative = useMemo(() => !!state.creativeExternalId && state.contractExternalIds.length >= 1 && state.kktyCodes.length >= 1, [state])
+    const canSubmitCreative = useMemo(() => !!state.creativeExternalId && state.contractExternalIds.length >= 1 && !!state.kktyCodes.trim() && !!state.name?.trim() && !!state.text?.trim(), [state])
 
     useEffect(() => {
         const id = setInterval(() => saveToLocalStorage(LOCAL_KEY, state), 2000)
@@ -212,6 +212,10 @@ export const App: React.FC = () => {
             showMsg(undefined, 'ИНН должен содержать 10 или 12 цифр', 'error')
             return
         }
+        if (role.length === 0) {
+            showMsg(undefined, 'Необходимо выбрать роль контрагента', 'error')
+            return
+        }
         setLoad(`create-${kind}`, true)
         try {
             const resp = await api.setCounterparty(inn, role)
@@ -291,9 +295,12 @@ export const App: React.FC = () => {
 			showMsg(resp)
 			const list = resp?.data?.kkty || []
 			setKktyHints(list)
-			if (list.length) {
-				const codes = list.map((i: AiKktyItem) => i.code).filter(Boolean)
-				setState(prev => ({ ...prev, kktyCodes: Array.from(new Set([...(prev.kktyCodes || []), ...codes])) }))
+			if (list.length && !state.kktyCodes) {
+				// Устанавливаем первый найденный код, если kktyCodes еще не выбран
+				const firstCode = list[0].code
+				if (firstCode) {
+					setState(prev => ({ ...prev, kktyCodes: firstCode }))
+				}
 			}
 		} catch (e: any) {
 			showMsg(undefined, `Ошибка подбора ККТУ: ${e?.message || e}`, 'error')
@@ -397,7 +404,7 @@ export const App: React.FC = () => {
 						...prev,
 						creativeExternalId: '',
 						contractExternalIds: [],
-						kktyCodes: [],
+						kktyCodes: '',
 						format: 'banner' as VkCreativeForm,
 						contentUrls: [],
 						targetAudience: null,
@@ -472,12 +479,13 @@ export const App: React.FC = () => {
                                 value={state.advertiserRole}
                                 onChange={value => setState({ ...state, advertiserRole: value as ('advertiser' | 'agency' | 'ors' | 'publisher')[] })}
                                 multiSelect={true}
+                                hasError={state.advertiserRole.length === 0}
                             />
                             
                             <button className="vk-btn vk-btn--primary" disabled={!isValidInn(state.advertiserInn) || loading['lookup-advertiser']} onClick={() => lookupInn('advertiser')}>
                                 {loading['lookup-advertiser'] ? 'Поиск…' : 'Проверить'}
                             </button>
-                            <button className="vk-btn" disabled={!isValidInn(state.advertiserInn) || loading['create-advertiser']} onClick={() => createCounterparty('advertiser')}>
+                            <button className="vk-btn" disabled={!isValidInn(state.advertiserInn) || state.advertiserRole.length === 0 || loading['create-advertiser']} onClick={() => createCounterparty('advertiser')}>
                                 {loading['create-advertiser'] ? 'Создание…' : 'Создать в VK ОРД'}
                             </button>
                         </div>
@@ -514,12 +522,13 @@ export const App: React.FC = () => {
                                 value={state.contractorRole}
                                 onChange={value => setState({ ...state, contractorRole: value as ('advertiser' | 'agency' | 'ors' | 'publisher')[] })}
                                 multiSelect={true}
+                                hasError={state.contractorRole.length === 0}
                             />
                             
                             <button className="vk-btn vk-btn--primary" disabled={!isValidInn(state.contractorInn) || loading['lookup-contractor']} onClick={() => lookupInn('contractor')}>
                                 {loading['lookup-contractor'] ? 'Поиск…' : 'Проверить'}
                             </button>
-                            <button className="vk-btn" disabled={!isValidInn(state.contractorInn) || loading['create-contractor']} onClick={() => createCounterparty('publisher')}>
+                            <button className="vk-btn" disabled={!isValidInn(state.contractorInn) || state.contractorRole.length === 0 || loading['create-contractor']} onClick={() => createCounterparty('publisher')}>
                                 {loading['create-contractor'] ? 'Создание…' : 'Создать в VK ОРД'}
                             </button>
                         </div>
@@ -644,12 +653,12 @@ export const App: React.FC = () => {
                         </label>
                         <label>
                             Название креатива
-                            <input className="vk-input" value={state.name || ''} onChange={e => setState({ ...state, name: e.target.value })} placeholder="Введите название креатива..." />
+                            <input className={`vk-input ${!state.name?.trim() ? 'error' : ''}`} value={state.name || ''} onChange={e => setState({ ...state, name: e.target.value })} placeholder="Введите название креатива..." />
                         </label>
                         <label>
                             Текст
                             <textarea
-                                className="vk-textarea"
+                                className={`vk-textarea ${!state.text?.trim() ? 'error' : ''}`}
                                 value={state.text || ''}
                                 onChange={e => setState({ ...state, text: e.target.value })}
                                 rows={4}
@@ -684,7 +693,8 @@ export const App: React.FC = () => {
                         </div>
                         <TagSelector
                             selectedCodes={state.kktyCodes}
-                            onChange={codes => setState({ ...state, kktyCodes: codes })}
+                            onChange={code => setState({ ...state, kktyCodes: code })}
+                            hasError={!state.kktyCodes.trim()}
                         />
                     </div>
                     <div className="vk-mobile-button-row">
