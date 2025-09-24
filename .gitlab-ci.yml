@@ -32,9 +32,9 @@ deploy_to_hosting:
     - 'chmod 644 ~/.ssh/known_hosts'
   script:
     - 'echo "Deploying application to /www/ad-lawyer.ru/..."'
-    - 'ping $SSH_HOST'
+    - 'ping $SSH_HOST -c 1'
     # Поскольку порт 22, опция -P не нужна
-    - 'ssh $SSH_USER@$SSH_HOST "echo hyu! && exit"'
+    - 'ssh -vvv $SSH_USER@$SSH_HOST "echo hyu! && exit"'
     - 'scp -r dist/* $SSH_USER@$SSH_HOST:/www/ad-lawyer.ru/'
     - 'echo "Application successfully deployed!"'
   only:
