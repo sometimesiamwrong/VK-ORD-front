@@ -34,21 +34,9 @@ deploy_to_hosting:
     script:
     - 'echo "--- STARTING CONNECTION TEST WITH LEGACY RSA ALGORITHM ---"'
     # Принудительно включаем поддержку старого алгоритма ssh-rsa (SHA-1)
-    - >
-      ssh
-      -o PubkeyAcceptedKeyTypes=+ssh-rsa
-      -o HostkeyAlgorithms=+ssh-rsa
-      -vvv
-      $SSH_USER@$SSH_HOST
-      "echo CONNECTION SUCCESSFUL!"
+    - 'ssh -o PubkeyAcceptedKeyTypes=+ssh-rsa -o HostkeyAlgorithms=+ssh-rsa -vvv $SSH_USER@$SSH_HOST "echo CONNECTION SUCCESSFUL!"'
     - 'echo "--- DEPLOYING APPLICATION ---"'
-    - >
-      scp
-      -o PubkeyAcceptedKeyTypes=+ssh-rsa
-      -o HostkeyAlgorithms=+ssh-rsa
-      -r
-      dist/*
-      $SSH_USER@$SSH_HOST:/www/ad-lawyer.ru/
-      - 'echo "Application successfully deployed!"'
+    - 'scp -o PubkeyAcceptedKeyTypes=+ssh-rsa -o HostkeyAlgorithms=+ssh-rsa -r dist/* $SSH_USER@$SSH_HOST:/www/ad-lawyer.ru/'
+    - 'echo "Application successfully deployed!"'
   only:
     - main
