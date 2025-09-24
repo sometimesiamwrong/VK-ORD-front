@@ -31,7 +31,6 @@ deploy_to_hosting:
     - 'ssh-keyscan $SSH_HOST >> ~/.ssh/known_hosts'
     - 'chmod 644 ~/.ssh/known_hosts'
   script:
-    script:
     - 'echo "--- STARTING CONNECTION TEST WITH LEGACY RSA ALGORITHM ---"'
     # Принудительно включаем поддержку старого алгоритма ssh-rsa (SHA-1)
     - 'ssh -o PubkeyAcceptedKeyTypes=+ssh-rsa -o HostkeyAlgorithms=+ssh-rsa -vvv $SSH_USER@$SSH_HOST "echo CONNECTION SUCCESSFUL!"'
