@@ -2,11 +2,12 @@ import React, { useState, useMemo } from 'react'
 import { kktyData } from './kkty-data'
 
 interface TagSelectorProps {
-  selectedCodes: string[]
-  onChange: (codes: string[]) => void
+  selectedCodes: string
+  onChange: (code: string) => void
+  hasError?: boolean
 }
 
-export const TagSelector: React.FC<TagSelectorProps> = ({ selectedCodes, onChange }) => {
+export const TagSelector: React.FC<TagSelectorProps> = ({ selectedCodes, onChange, hasError = false }) => {
   const [search, setSearch] = useState('')
   const [showDropdown, setShowDropdown] = useState(false)
 
@@ -48,15 +49,13 @@ export const TagSelector: React.FC<TagSelectorProps> = ({ selectedCodes, onChang
   }, [search, allItems])
 
   const addCode = (code: string) => {
-    if (!selectedCodes.includes(code)) {
-      onChange([...selectedCodes, code])
-    }
+    onChange(code)
     setSearch('')
     setShowDropdown(false)
   }
 
-  const removeCode = (code: string) => {
-    onChange(selectedCodes.filter(c => c !== code))
+  const removeCode = () => {
+    onChange('')
   }
 
   const getItemName = (code: string) => {
@@ -66,11 +65,10 @@ export const TagSelector: React.FC<TagSelectorProps> = ({ selectedCodes, onChang
   return (
     <div style={{ position: 'relative' }}>
       <label>ККТУ коды</label>
-      {/* Selected tags */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, minHeight: 40, padding: '8px 12px', border: '1px solid var(--vk-border)', borderRadius: 10, background: '#fff', marginTop: 8 }}>
-        {selectedCodes.map(code => (
+      {/* Selected tag */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, minHeight: 40, padding: '8px 12px', border: `1px solid ${hasError ? 'var(--vk-danger)' : 'var(--vk-border)'}`, borderRadius: 10, background: '#fff', marginTop: 8, boxShadow: hasError ? '0 0 0 3px rgba(230, 70, 70, 0.15)' : undefined }}>
+        {selectedCodes && (
           <span
-            key={code}
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -83,9 +81,9 @@ export const TagSelector: React.FC<TagSelectorProps> = ({ selectedCodes, onChang
               fontWeight: 500
             }}
           >
-            {code}: {getItemName(code)}
+            {selectedCodes}: {getItemName(selectedCodes)}
             <button
-              onClick={() => removeCode(code)}
+              onClick={removeCode}
               style={{
                 background: 'none',
                 border: 'none',
@@ -99,7 +97,7 @@ export const TagSelector: React.FC<TagSelectorProps> = ({ selectedCodes, onChang
               ×
             </button>
           </span>
-        ))}
+        )}
         <input
           type="text"
           value={search}

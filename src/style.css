@@ -183,6 +183,12 @@ input[type="date"]:focus,
 input[type="number"]:focus,
 textarea:focus { outline: none; border-color: var(--vk-primary); box-shadow: 0 0 0 3px rgba(39,135,245,0.15); }
 
+.vk-input.error,
+.vk-textarea.error {
+  border-color: var(--vk-danger);
+  box-shadow: 0 0 0 3px rgba(230, 70, 70, 0.15);
+}
+
 label {
   display: grid;
   gap: 8px;
@@ -301,6 +307,11 @@ pre.vk-pre {
   box-shadow: 0 0 0 3px rgba(39, 135, 245, 0.15);
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
+}
+
+.vk-select-custom.error {
+  border-color: var(--vk-danger);
+  box-shadow: 0 0 0 3px rgba(230, 70, 70, 0.15);
 }
 
 .vk-select-display {

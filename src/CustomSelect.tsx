@@ -12,6 +12,7 @@ interface CustomSelectProps {
   placeholder?: string;
   size?: 'normal' | 'wide';
   multiSelect?: boolean;
+  hasError?: boolean;
 }
 
 export const CustomSelect: React.FC<CustomSelectProps> = ({
@@ -20,7 +21,8 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
   onChange,
   placeholder = 'Выберите опцию',
   size = 'normal',
-  multiSelect = false
+  multiSelect = false,
+  hasError = false
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const selectRef = useRef<HTMLDivElement>(null);
@@ -69,7 +71,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
       ref={selectRef}
     >
       <div
-        className={`vk-select-custom ${isOpen ? 'open' : ''} ${multiSelect ? 'multi' : ''}`}
+        className={`vk-select-custom ${isOpen ? 'open' : ''} ${multiSelect ? 'multi' : ''} ${hasError ? 'error' : ''}`}
         onClick={() => setIsOpen(!isOpen)}
       >
         <div className="vk-select-display">
