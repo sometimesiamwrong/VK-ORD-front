@@ -1,41 +1,32 @@
-# 1. Выбираем официальный образ Node.js. Укажите версию, которую вы используете.
-image: node:20-alpine
+# Используем легковесный образ Alpine Linux
+image: alpine:latest
 
-# 2. Определяем этапы пайплайна: сборка и развертывание
 stages:
   - build
   - deploy
 
-# 3. Этап сборки приложения
+# Этап сборки остается БЕЗ ИЗМЕНЕНИЙ, но мы его переписываем для ясности
+# Он будет выполняться в образе Node.js
 build_frontend:
   stage: build
+  image: node:20-alpine # Используем Node.js только для сборки
   script:
-    # Устанавливаем зависимости из package-lock.json для стабильности
     - npm ci
-    # Собираем проект. В результате должна появиться папка 'dist'
     - npm run build
-  # 4. Сохраняем собранную папку 'dist' для следующего этапа
   artifacts:
     paths:
       - dist/
 
+# Этап развертывания теперь использует FTP
 deploy_to_hosting:
   stage: deploy
+  # На этом этапе нам не нужен Node.js, только утилита для FTP
   before_script:
-    - 'apk add --no-cache openssh-client'
-    - 'eval $(ssh-agent -s)'
-    - 'echo "$SSH_PRIVATE_KEY" | tr -d "\r" | ssh-add -'
-    - 'mkdir -p ~/.ssh'
-    - 'chmod 700 ~/.ssh'
-    # Используем $SSH_HOST, который теперь является IP-адресом
-    - 'ssh-keyscan $SSH_HOST >> ~/.ssh/known_hosts'
-    - 'chmod 644 ~/.ssh/known_hosts'
+    # Устанавливаем lftp - мощный клиент для FTP
+    - apk add --no-cache lftp
   script:
-    - 'echo "--- STARTING CONNECTION TEST WITH LEGACY RSA ALGORITHM ---"'
-    # Принудительно включаем поддержку старого алгоритма ssh-rsa (SHA-1)
-    - 'ssh -o PubkeyAcceptedKeyTypes=+ssh-rsa -o HostkeyAlgorithms=+ssh-rsa -vvv $SSH_USER@$SSH_HOST "echo CONNECTION SUCCESSFUL!"'
-    - 'echo "--- DEPLOYING APPLICATION ---"'
-    - 'scp -o PubkeyAcceptedKeyTypes=+ssh-rsa -o HostkeyAlgorithms=+ssh-rsa -r dist/* $SSH_USER@$SSH_HOST:/www/ad-lawyer.ru/'
-    - 'echo "Application successfully deployed!"'
+    - echo "Deploying application via FTP to /www/ad-lawyer.ru/..."
+    # Основная команда для деплоя
+    - lftp -e "set ftp:ssl-allow no; open -u $FTP_USER,$FTP_PASSWORD $FTP_HOST; mirror --delete --verbose --parallel=10 -R dist/ /www/ad-lawyer.ru/; quit"
   only:
     - main
