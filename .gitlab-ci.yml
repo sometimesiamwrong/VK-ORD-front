@@ -19,27 +19,21 @@ build_frontend:
     paths:
       - dist/
 
-# 5. Этап развертывания
 deploy_to_hosting:
   stage: deploy
   before_script:
-    # Устанавливаем OpenSSH-клиент для использования scp
     - 'apk add --no-cache openssh-client'
-    # Запускаем ssh-agent
     - 'eval $(ssh-agent -s)'
-    # Добавляем приватный SSH-ключ
     - 'echo "$SSH_PRIVATE_KEY" | tr -d "\r" | ssh-add -'
-    # Автоматически добавляем ключ сервера в known_hosts
     - 'mkdir -p ~/.ssh'
     - 'chmod 700 ~/.ssh'
+    # Используем $SSH_HOST, который теперь является IP-адресом
     - 'ssh-keyscan $SSH_HOST >> ~/.ssh/known_hosts'
     - 'chmod 644 ~/.ssh/known_hosts'
   script:
     - 'echo "Deploying application to /www/ad-lawyer.ru/..."'
-    # 6. Используем scp для рекурсивного (-r) копирования содержимого папки 'dist'
-    # в корневую директорию вашего сайта на хостинге.
+    # Поскольку порт 22, опция -P не нужна
     - 'scp -r dist/* $SSH_USER@$SSH_HOST:/www/ad-lawyer.ru/'
     - 'echo "Application successfully deployed!"'
   only:
-    # Запускать пайплайн только для изменений в ветке 'main'
     - main
