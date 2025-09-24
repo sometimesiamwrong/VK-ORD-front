@@ -273,7 +273,7 @@ export const App: React.FC = () => {
         const payload: CreateCreativeRequest = {
             externalId: state.creativeExternalId,
             contractExternalIds: state.contractExternalIds.length ? state.contractExternalIds : [state.contractExternalId],
-            kktyCodes: state.kktyCodes,
+            kktyCodes: state.kktyCodes ? (Array.isArray(state.kktyCodes) ? state.kktyCodes : [state.kktyCodes]) : [],
             format: state.format,
             contentUrls: state.contentUrls.length ? state.contentUrls : undefined,
             targetAudience: state.targetAudience || undefined,
