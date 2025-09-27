@@ -1,3 +1,4 @@
+// API types
 export type ApiResponse<T> = {
     success: boolean
     message?: string
@@ -39,20 +40,20 @@ export type CreateContractResponse = {
 }
 
 export type VkCreativeForm =
-    | 'banner'
-    | 'text_block'
-    | 'text_graphic_block'
-    | 'audio'
-    | 'video'
-    | 'live_audio'
-    | 'live_video'
-    | 'text_video_block'
-    | 'text_graphic_video_block'
-    | 'text_audio_block'
-    | 'text_graphic_audio_block'
-    | 'text_audio_video_block'
-    | 'text_graphic_audio_video_block'
-    | 'banner_html5'
+  | 'banner'
+  | 'text_block'
+  | 'text_graphic_block'
+  | 'audio'
+  | 'video'
+  | 'live_audio'
+  | 'live_video'
+  | 'text_video_block'
+  | 'text_graphic_video_block'
+  | 'text_audio_block'
+  | 'text_graphic_audio_block'
+  | 'text_audio_video_block'
+  | 'text_graphic_audio_video_block'
+  | 'banner_html5'
 
 export type CreateCreativeRequest = {
     externalId: string
@@ -76,7 +77,6 @@ export type EridResult = {
     erid: string
 }
 
-
 // AI KKTY by text response
 export type AiKktyItem = {
     code: string
@@ -96,5 +96,8 @@ export type AiKktyResponse = {
     kkty: AiKktyItem[]
     matchedCategories: AiMatchedCategory[]
 }
+
+// Re-export wizard types
+export * from './wizard'
 
 

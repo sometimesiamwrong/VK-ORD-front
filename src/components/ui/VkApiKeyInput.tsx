@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { saveToCookie } from './utils'
+import { saveToCookie } from '../../utils'
 
 interface VkApiKeyInputProps {
     vkApiKey: string | null

@@ -1,0 +1,120 @@
+import React from 'react'
+import { useApp } from '../../context/AppContext'
+import { useContractAndCreative } from '../../hooks/useContractAndCreative'
+import { generateContractExternalId } from '../../utils'
+
+export const Step2Contract: React.FC = () => {
+  const {
+    wizardState,
+    loadingState,
+    setContractData,
+    setStep,
+    canNextFromStep2
+  } = useApp()
+
+  const { saveContract } = useContractAndCreative()
+
+  const clearStep2 = () => {
+    setContractData({
+      externalId: '',
+      paySum: null,
+      payDateEnd: null
+    })
+  }
+
+  return (
+    <details open={wizardState.step === 2}>
+      <summary>2) Договор</summary>
+      <div className="vk-card" style={{ marginTop: 10 }}>
+        <div style={{ display: 'grid', gap: 8 }}>
+          <label>
+            Идентификатор договора
+            <input
+              className="vk-input"
+              value={wizardState.contractExternalId}
+              onChange={e => setContractData({
+                externalId: e.target.value,
+                paySum: wizardState.paySum,
+                payDateEnd: wizardState.payDateEnd
+              })}
+              onBlur={() => {
+                if (!wizardState.contractExternalId || !wizardState.contractExternalId.trim()) {
+                  setContractData({
+                    externalId: generateContractExternalId(new Date(), 1),
+                    paySum: wizardState.paySum,
+                    payDateEnd: wizardState.payDateEnd
+                  })
+                }
+              }}
+            />
+          </label>
+          <label>
+            ИНН заказчика (clientExternalId)
+            <input
+              className="vk-input vk-input-inn"
+              value={wizardState.advertiserInn}
+              readOnly
+            />
+          </label>
+          <label>
+            ИНН исполнителя (contractorExternalId)
+            <input
+              className="vk-input vk-input-inn"
+              value={wizardState.contractorInn}
+              readOnly
+            />
+          </label>
+          <label>
+            Сумма оплаты (paySum)
+            <input
+              className="vk-input"
+              type="number"
+              min={1}
+              value={wizardState.paySum || ''}
+              onChange={e => setContractData({
+                externalId: wizardState.contractExternalId,
+                paySum: Number(e.target.value) || null,
+                payDateEnd: wizardState.payDateEnd
+              })}
+            />
+          </label>
+          <label>
+            Дата окончания оплаты (payDateEnd)
+            <input
+              className="vk-input"
+              type="date"
+              value={wizardState.payDateEnd || ''}
+              onChange={e => setContractData({
+                externalId: wizardState.contractExternalId,
+                paySum: wizardState.paySum,
+                payDateEnd: e.target.value || null
+              })}
+            />
+          </label>
+        </div>
+        <div className="vk-mobile-button-row">
+          <button className="vk-btn" onClick={clearStep2}>
+            Очистить поля
+          </button>
+          <button className="vk-btn" onClick={() => setStep(1)}>
+            Назад
+          </button>
+          <button
+            className="vk-btn vk-btn--primary"
+            disabled={loadingState['contract']}
+            onClick={saveContract}
+          >
+            {loadingState['contract'] ? 'Сохранение…' : 'Сохранить'}
+          </button>
+          <button
+            className="vk-btn vk-btn--primary"
+            disabled={!canNextFromStep2}
+            onClick={() => setStep(3)}
+          >
+            Далее
+          </button>
+        </div>
+      </div>
+    </details>
+  )
+}

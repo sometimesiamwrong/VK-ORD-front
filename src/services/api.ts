@@ -1,5 +1,5 @@
-import type { ApiResponse, CreateContractRequest, CreateContractResponse, CreateCreativeRequest, CreateCreativeResponse, DaDataPartyShortResponse, AiKktyResponse } from './types'
-import { loadFromCookie } from './utils'
+import type { ApiResponse, CreateContractRequest, CreateContractResponse, CreateCreativeRequest, CreateCreativeResponse, DaDataPartyShortResponse, AiKktyResponse } from '../types'
+import { loadFromCookie } from '../utils'
 
 const DEFAULT_TIMEOUT_MS = 15000
 

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react'
-import { kktyData } from './kkty-data'
+import { kktyData } from '../../constants/kkty-data'
 
 interface TagSelectorProps {
   selectedCodes?: string

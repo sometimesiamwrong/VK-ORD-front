@@ -1,0 +1,49 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "C:\\PROGECTS\\My\\VkOrdFrontWrapper"],
+      "env": {
+        "NODE_ENV": "development"
+      }
+    },
+    "git": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-git", "--repository", "C:\\PROGECTS\\My\\VkOrdFrontWrapper"]
+    },
+    "everything": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-everything", "C:\\PROGECTS\\My\\VkOrdFrontWrapper"]
+    },
+    "filesystem-api": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "C:\\PROGECTS\\My\\VkOrdApiWrapper"],
+      "env": {
+        "NODE_ENV": "development"
+      }
+    },
+    "git-api": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-git", "--repository", "C:\\PROGECTS\\My\\VkOrdApiWrapper"]
+    },
+    "ripgrep-api": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-ripgrep", "C:\\PROGECTS\\My\\VkOrdApiWrapper"]
+    },
+    "everything-api": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-everything", "C:\\PROGECTS\\My\\VkOrdApiWrapper"]
+    },
+    "ripgrep": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-ripgrep", "C:\\PROGECTS\\My\\VkOrdFrontWrapper"]
+    },
+    "shell": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-shell"],
+      "env": {
+        "SHELL": "C:\\Program Files\\PowerShell\\7\\pwsh.exe"
+      }
+    }
+  }
+}
