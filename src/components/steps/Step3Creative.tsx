@@ -3,25 +3,26 @@ import { useApp } from '../../context/AppContext'
 import { useContractAndCreative } from '../../hooks/useContractAndCreative'
 import { CustomSelect } from '../ui/CustomSelect'
 import { TagSelector } from '../ui/TagSelector'
+import { FileUploader } from '../ui/FileUploader'
 import { nowTimestampString } from '../../utils'
 import type { VkCreativeForm, AiKktyItem } from '../../types'
 
 const FORMAT_OPTIONS = [
-  'banner',
-  'text_block',
-  'text_graphic_block',
-  'audio',
-  'video',
-  'live_audio',
-  'live_video',
-  'text_video_block',
-  'text_graphic_video_block',
-  'text_audio_block',
-  'text_graphic_audio_block',
-  'text_audio_video_block',
-  'text_graphic_audio_video_block',
-  'banner_html5'
-].map(v => ({ value: v, label: v }))
+  { value: 'audio', label: 'Аудио' },
+  { value: 'video', label: 'Видео' },
+  { value: 'banner', label: 'Баннер' },
+  { value: 'text_block', label: 'Текст' },
+  { value: 'live_audio', label: 'Аудио эфир' },
+  { value: 'live_video', label: 'Видео эфир' },
+  { value: 'text_graphic_block', label: 'Текстовый графический блок' },
+  { value: 'text_video_block', label: 'Текстовый блок с видео' },
+  { value: 'text_graphic_video_block', label: 'Текстовый блок с видео' },
+  { value: 'text_audio_block', label: 'Текстовый блок с аудио' },
+  { value: 'text_graphic_audio_block', label: 'Текстовый блок с аудио' },
+  { value: 'text_audio_video_block', label: 'Текстовый блок с аудио и видео' },
+  { value: 'text_graphic_audio_video_block', label: 'Текстовый блок с аудио и видео' },
+  { value: 'banner_html5', label: 'HTML5 баннер' }
+]
 
 const parseList = (input: string): string[] => {
   return input
@@ -51,7 +52,8 @@ export const Step3Creative: React.FC = () => {
       contentUrls: [],
       targetAudience: null,
       text: null,
-      name: null
+      name: null,
+      mediaExternalIds: []
     })
     setKktyHints([])
   }
@@ -152,16 +154,39 @@ export const Step3Creative: React.FC = () => {
             />
           </label>
 
-          {/* AI KKTY Suggestions */}
+          {/* AI KKTY Suggestions with relevance highlighting */}
           {kktyHints.length > 0 && (
             <div className="vk-card" style={{ marginTop: 6 }}>
               <div style={{ display: 'grid', gap: 6 }}>
-                {kktyHints.map((h, idx) => (
-                  <div key={idx}>
-                    <div style={{ fontWeight: 700 }}>{h.fullName}</div>
-                    <div style={{ color: 'var(--vk-muted)' }}>{h.reason}</div>
-                  </div>
-                ))}
+                {kktyHints
+                  .slice()
+                  .sort((a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0))
+                  .map((h, idx) => {
+                    const score = typeof h.relevanceScore === 'number' ? h.relevanceScore : 0
+                    const isHigh = score >= 0.9
+                    const isMedium = !isHigh && score >= 0.6
+                    const badgeClass = isHigh
+                      ? 'vk-badge vk-badge--score-high'
+                      : isMedium
+                        ? 'vk-badge vk-badge--score-medium'
+                        : ''
+                    const badgeLabel = isHigh ? 'Главная тема' : isMedium ? 'Важная деталь' : ''
+                    return (
+                      <div key={idx} style={{ display: 'grid', gap: 2 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                          <div style={{ fontWeight: 700 }}>
+                            {h.code}: {h.fullName}
+                          </div>
+                          {badgeClass && (
+                            <span className={badgeClass} title={`relevanceScore: ${score.toFixed(2)}`}>
+                              {badgeLabel}
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ color: 'var(--vk-muted)' }}>{h.reason}</div>
+                      </div>
+                    )
+                  })}
               </div>
             </div>
           )}
@@ -175,17 +200,6 @@ export const Step3Creative: React.FC = () => {
             >
               {loadingState['ai-kkty'] ? '✨ Подбор…' : '✨ Узнать ККТУ по тексту'}
             </button>
-            <button
-              className="vk-btn"
-              style={{ marginTop: 8, marginBottom: 8 }}
-              onClick={async () => {
-                console.log('Testing auth...')
-                // This would need authentication logic
-                alert('Тест аутентификации - функция не реализована в новом коде')
-              }}
-            >
-              🔐 Тест аутентификации
-            </button>
           </div>
 
           <TagSelector
@@ -195,6 +209,15 @@ export const Step3Creative: React.FC = () => {
               kktyCodes: code ? [code] : []
             })}
             hasError={!(wizardState.kktyCodes && Array.isArray(wizardState.kktyCodes) && wizardState.kktyCodes.length > 0)}
+          />
+
+          <FileUploader
+            mediaExternalIds={wizardState.mediaExternalIds}
+            onChange={(ids) => setCreativeData({
+              ...wizardState,
+              mediaExternalIds: ids
+            })}
+            maxFiles={10}
           />
         </div>
 

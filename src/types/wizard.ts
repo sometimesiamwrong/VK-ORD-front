@@ -42,6 +42,7 @@ export interface WizardState {
   targetAudience?: string | null
   text?: string | null
   name?: string | null
+  mediaExternalIds: string[]
   // result
   erid?: string | null
   // local history for suggestions

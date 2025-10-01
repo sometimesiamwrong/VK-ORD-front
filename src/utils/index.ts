@@ -96,4 +96,6 @@ export function loadFromCookie(key: string): string | null {
     }
 }
 
+// Экспорт новых утилит для работы с куками
+export * from './cookies'
 

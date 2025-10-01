@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { api } from '../services/api'
+import http from '../api/http'
 import { useApp } from '../context/AppContext'
 import { generateContractExternalId } from '../utils'
 import type { ApiResponse, CreateContractRequest, CreateCreativeRequest, CreateCreativeResponse, AiKktyResponse } from '../types'
@@ -33,7 +33,9 @@ export const useContractAndCreative = () => {
 
     setLoading('contract', true)
     try {
-      const resp: ApiResponse<any> = await api.createContract(payload)
+      const response = await http.post<ApiResponse<any>>('/api/Client/create_contract', payload)
+      const resp = response.data
+      
       if (resp.success) {
         setMessage('Договор успешно создан', 'success')
       } else {
@@ -63,12 +65,15 @@ export const useContractAndCreative = () => {
       contentUrls: wizardState.contentUrls.length ? wizardState.contentUrls : undefined,
       targetAudience: wizardState.targetAudience || undefined,
       text: wizardState.text || undefined,
-      name: wizardState.name || undefined
+      name: wizardState.name || undefined,
+      mediaExternalIds: wizardState.mediaExternalIds?.length ? wizardState.mediaExternalIds : undefined
     }
 
     setLoading('creative', true)
     try {
-      const resp: ApiResponse<CreateCreativeResponse> = await api.createCreative(payload)
+      const response = await http.post<ApiResponse<CreateCreativeResponse>>('/api/Client/create_creative', payload)
+      const resp = response.data
+      
       if (resp.success) {
         setMessage('Креатив успешно создан', 'success')
       } else {
@@ -76,7 +81,9 @@ export const useContractAndCreative = () => {
       }
       let erid = resp?.data?.erid || null
       if (!erid) {
-        const getResp: ApiResponse<CreateCreativeResponse> = await api.getCreative(wizardState.creativeExternalId)
+        const getResponse = await http.get<ApiResponse<CreateCreativeResponse>>(`/api/Creatives/${encodeURIComponent(wizardState.creativeExternalId)}`)
+        const getResp = getResponse.data
+        
         if (getResp.success) {
           setMessage('ERID получен', 'success')
         } else {
@@ -104,7 +111,9 @@ export const useContractAndCreative = () => {
 
     setLoading('ai-kkty', true)
     try {
-      const resp: ApiResponse<AiKktyResponse> = await api.getKktyByText(text)
+      const response = await http.post<ApiResponse<AiKktyResponse>>('/api/ai/get-kkty_by-text', { text })
+      const resp = response.data
+      
       if (resp.success) {
         setMessage('ККТУ подобраны', 'success')
       } else {

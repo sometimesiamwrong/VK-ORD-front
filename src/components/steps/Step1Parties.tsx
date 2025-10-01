@@ -1,9 +1,10 @@
 import React from 'react'
 import { useApp } from '../../context/AppContext'
-import { usePartyLookup } from '../../hooks/usePartyLookup'
+import { usePartyLookup, useCounterpartiesList } from '../../hooks/usePartyLookup'
 import { isValidInn, saveToLocalStorage } from '../../utils'
 import { CustomSelect } from '../ui/CustomSelect'
-import type { PartyRole } from '../../types'
+import { PartyModal } from '../ui/PartyModal'
+import type { PartyRole, CounterpartyItem } from '../../types'
 
 const LOCAL_KEY = 'vkord-wizard-state'
 
@@ -21,12 +22,17 @@ export const Step1Parties: React.FC = () => {
     setContractorInn,
     setAdvertiserRole,
     setContractorRole,
+    setAdvertiserInfo,
+    setContractorInfo,
     setConsent,
     setStep,
     canNextFromStep1
   } = useApp()
 
   const { lookupInn, createCounterparty } = usePartyLookup()
+  const { data: counterpartiesList = [], isLoading: isLoadingCounterparties, refetch: refetchCounterparties } = useCounterpartiesList()
+
+  const [modalField, setModalField] = React.useState<'advertiser' | 'contractor' | null>(null)
 
   const clearStep1 = () => {
     setAdvertiserInn('')
@@ -36,14 +42,36 @@ export const Step1Parties: React.FC = () => {
     setConsent(false)
   }
 
-  const applyInnFromHistory = (kind: 'advertiser' | 'contractor', inn: string) => {
-    const hit = (wizardState.partyHistory || []).find(h => h.inn === inn)
+  const applyCounterpartyFromList = (kind: 'advertiser' | 'contractor', inn: string) => {
+    const hit = counterpartiesList.find((c: CounterpartyItem) => c.juridicalDetails.inn === inn)
     if (!hit) return
+
+    const displayName = hit.name
+    const type = hit.juridicalDetails.type
+    const info = `${displayName} (${type === 'ip' ? 'ИП' : type === 'juridical' ? 'ЮР лицо' : type === 'physical' ? 'Физ. лицо' : type})`
 
     if (kind === 'advertiser') {
       setAdvertiserInn(inn)
+      setAdvertiserInfo({
+        name: displayName,
+        shortWithOpf: null,
+        info
+      })
+      // Устанавливаем роли
+      if (hit.roles && Array.isArray(hit.roles) && hit.roles.length > 0) {
+        setAdvertiserRole(hit.roles as PartyRole)
+      }
     } else {
       setContractorInn(inn)
+      setContractorInfo({
+        name: displayName,
+        shortWithOpf: null,
+        info
+      })
+      // Устанавливаем роли
+      if (hit.roles && Array.isArray(hit.roles) && hit.roles.length > 0) {
+        setContractorRole(hit.roles as PartyRole)
+      }
     }
   }
 
@@ -52,11 +80,27 @@ export const Step1Parties: React.FC = () => {
     // This would be handled by the context automatically
   }
 
+  const isAdvertiserInCounterparties = React.useMemo(() => {
+    return counterpartiesList.some((c: CounterpartyItem) => c.juridicalDetails.inn === wizardState.advertiserInn)
+  }, [counterpartiesList, wizardState.advertiserInn])
+
+  const isContractorInCounterparties = React.useMemo(() => {
+    return counterpartiesList.some((c: CounterpartyItem) => c.juridicalDetails.inn === wizardState.contractorInn)
+  }, [counterpartiesList, wizardState.contractorInn])
+
+  // Обновляем список контрагентов после создания
+  const handleCreateCounterparty = async (kind: 'advertiser' | 'publisher') => {
+    await createCounterparty(kind)
+    // Перезагружаем список контрагентов
+    refetchCounterparties()
+  }
+
   return (
     <>
       <details open={wizardState.step === 1}>
       <summary>1) Контрагенты</summary>
       <div className="vk-card" style={{ marginTop: 10 }}>
+        
         <div className="vk-label">ИНН рекламодателя</div>
         <div className="vk-mobile-stack">
           <div className="vk-inline-controls">
@@ -67,11 +111,12 @@ export const Step1Parties: React.FC = () => {
               onChange={e => {
                 const val = e.target.value.replace(/\D/g, '')
                 setAdvertiserInn(val)
-                if ((wizardState.partyHistory || []).some(h => h.inn === val)) {
-                  applyInnFromHistory('advertiser', val)
+                if (counterpartiesList.some((c: CounterpartyItem) => c.juridicalDetails.inn === val)) {
+                  applyCounterpartyFromList('advertiser', val)
                 }
               }}
-              onBlur={() => recordInnToHistory(wizardState.advertiserInn)}
+              onFocus={() => setModalField('advertiser')}
+              onBlur={() => { recordInnToHistory(wizardState.advertiserInn) }}
               autoComplete="on"
               placeholder="10 или 12 цифр"
               maxLength={12}
@@ -94,12 +139,12 @@ export const Step1Parties: React.FC = () => {
             <button
               className="vk-btn"
               disabled={!isValidInn(wizardState.advertiserInn) || wizardState.advertiserRole.length === 0 || loadingState['create-advertiser']}
-              onClick={() => createCounterparty('advertiser')}
+              onClick={() => handleCreateCounterparty('advertiser')}
             >
-              {loadingState['create-advertiser'] ? 'Создание…' : 'Создать в VK ОРД'}
+              {loadingState['create-advertiser'] ? (isAdvertiserInCounterparties ? 'Обновление…' : 'Создание…') : (isAdvertiserInCounterparties ? 'Обновить в VK ОРД' : 'Создать в VK ОРД')}
             </button>
           </div>
-
+          
         </div>
         {wizardState.advertiserInfo && (
           <div style={{ color: 'var(--vk-muted)', marginTop: 4 }}>
@@ -119,11 +164,12 @@ export const Step1Parties: React.FC = () => {
               onChange={e => {
                 const val = e.target.value.replace(/\D/g, '')
                 setContractorInn(val)
-                if ((wizardState.partyHistory || []).some(h => h.inn === val)) {
-                  applyInnFromHistory('contractor', val)
+                if (counterpartiesList.some((c: CounterpartyItem) => c.juridicalDetails.inn === val)) {
+                  applyCounterpartyFromList('contractor', val)
                 }
               }}
-              onBlur={() => recordInnToHistory(wizardState.contractorInn)}
+              onFocus={() => setModalField('contractor')}
+              onBlur={() => { recordInnToHistory(wizardState.contractorInn) }}
               autoComplete="on"
               placeholder="10 или 12 цифр"
               maxLength={12}
@@ -146,11 +192,12 @@ export const Step1Parties: React.FC = () => {
             <button
               className="vk-btn"
               disabled={!isValidInn(wizardState.contractorInn) || wizardState.contractorRole.length === 0 || loadingState['create-contractor']}
-              onClick={() => createCounterparty('publisher')}
+              onClick={() => handleCreateCounterparty('publisher')}
             >
-              {loadingState['create-contractor'] ? 'Создание…' : 'Создать в VK ОРД'}
+              {loadingState['create-contractor'] ? (isContractorInCounterparties ? 'Обновление…' : 'Создание…') : (isContractorInCounterparties ? 'Обновить в VK ОРД' : 'Создать в VK ОРД')}
             </button>
           </div>
+          
         </div>
         {wizardState.contractorInfo && (
           <div style={{ color: 'var(--vk-muted)', marginTop: 4 }}>
@@ -193,6 +240,25 @@ export const Step1Parties: React.FC = () => {
         <option key={h.inn} value={h.inn} label={`${h.shortWithOpf || h.fullName || ''}${h.type ? ` (${h.type})` : ''}`} />
       ))}
     </datalist>
+
+    <PartyModal
+      open={modalField === 'advertiser'}
+      title="Выбор рекламодателя"
+      counterparties={counterpartiesList}
+      loading={isLoadingCounterparties}
+      onSelect={(inn) => { applyCounterpartyFromList('advertiser', inn); setModalField(null) }}
+      onClose={() => setModalField(null)}
+      onEnterManually={() => setModalField(null)}
+    />
+    <PartyModal
+      open={modalField === 'contractor'}
+      title="Выбор исполнителя"
+      counterparties={counterpartiesList}
+      loading={isLoadingCounterparties}
+      onSelect={(inn) => { applyCounterpartyFromList('contractor', inn); setModalField(null) }}
+      onClose={() => setModalField(null)}
+      onEnterManually={() => setModalField(null)}
+    />
     </>
   )
 }
