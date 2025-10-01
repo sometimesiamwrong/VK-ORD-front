@@ -16,11 +16,11 @@ const FORMAT_OPTIONS = [
   { value: 'live_video', label: 'Видео эфир' },
   { value: 'text_graphic_block', label: 'Текстовый графический блок' },
   { value: 'text_video_block', label: 'Текстовый блок с видео' },
-  { value: 'text_graphic_video_block', label: 'Текстовый блок с видео' },
+  { value: 'text_graphic_video_block', label: 'Текстово-графический блок с видео' },
   { value: 'text_audio_block', label: 'Текстовый блок с аудио' },
-  { value: 'text_graphic_audio_block', label: 'Текстовый блок с аудио' },
-  { value: 'text_audio_video_block', label: 'Текстовый блок с аудио и видео' },
-  { value: 'text_graphic_audio_video_block', label: 'Текстовый блок с аудио и видео' },
+  { value: 'text_graphic_audio_block', label: 'Текстово-графический блок с аудио' },
+  { value: 'text_audio_video_block', label: 'Текстово блок с аудио и видео' },
+  { value: 'text_graphic_audio_video_block', label: 'Текстово-графический блок с аудио и видео' },
   { value: 'banner_html5', label: 'HTML5 баннер' }
 ]
 
@@ -42,6 +42,7 @@ export const Step3Creative: React.FC = () => {
 
   const { createCreative, guessKktyByText } = useContractAndCreative()
   const [kktyHints, setKktyHints] = useState<AiKktyItem[]>([])
+  const [contentUrlDraft, setContentUrlDraft] = useState('')
 
   const clearStep3 = () => {
     setCreativeData({
@@ -65,6 +66,46 @@ export const Step3Creative: React.FC = () => {
     }
   }
 
+  const isLikelyUrl = (value: string) => {
+    const v = value.trim()
+    if (!v) return false
+    try {
+      const u = new URL(v)
+      return u.protocol === 'http:' || u.protocol === 'https:'
+    } catch {
+      return false
+    }
+  }
+
+  const addUrls = (values: string[]) => {
+    const normalized = values
+      .map(v => v.trim())
+      .filter(Boolean)
+      .filter(isLikelyUrl)
+    if (normalized.length === 0) return
+    const existing = wizardState.contentUrls || []
+    const merged = Array.from(new Set([...existing, ...normalized]))
+    setCreativeData({
+      ...wizardState,
+      contentUrls: merged
+    })
+  }
+
+  const addFromDraft = () => {
+    if (!contentUrlDraft.trim()) return
+    const parts = parseList(contentUrlDraft)
+    addUrls(parts)
+    setContentUrlDraft('')
+  }
+
+  const removeUrlAt = (index: number) => {
+    const next = (wizardState.contentUrls || []).filter((_, i) => i !== index)
+    setCreativeData({
+      ...wizardState,
+      contentUrls: next
+    })
+  }
+
   return (
     <details open={wizardState.step === 3}>
       <summary>3) Креатив</summary>
@@ -82,7 +123,7 @@ export const Step3Creative: React.FC = () => {
             />
           </label>
           <label>
-            Идентификаторы договоров (через запятую, если несколько)
+            Идентификатор договора
             <input
               className="vk-input"
               value={wizardState.contractExternalIds.join(',')}
@@ -106,16 +147,66 @@ export const Step3Creative: React.FC = () => {
             />
           </label>
           <label>
-            Ссылки на контент (через запятую, если несколько)
+            Ссылки на контент
             <input
               className="vk-input"
-              value={wizardState.contentUrls.join(',')}
-              onChange={e => setCreativeData({
-                ...wizardState,
-                contentUrls: parseList(e.target.value)
-              })}
-              placeholder="https://..."
+              value={contentUrlDraft}
+              onChange={e => setContentUrlDraft(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' || e.key === ',' || e.key === ';') {
+                  e.preventDefault()
+                  addFromDraft()
+                }
+              }}
+              onBlur={addFromDraft}
+              onPaste={e => {
+                const text = e.clipboardData?.getData('text') || ''
+                const list = parseList(text)
+                if (list.length > 1) {
+                  e.preventDefault()
+                  addUrls(list)
+                }
+              }}
+              placeholder="Вставьте ссылку и нажмите Enter"
             />
+            {(wizardState.contentUrls && wizardState.contentUrls.length > 0) && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
+                {wizardState.contentUrls.map((url, idx) => (
+                  <span
+                    key={url + idx}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '4px 8px',
+                      background: 'var(--vk-primary)',
+                      color: '#fff',
+                      borderRadius: 6,
+                      fontSize: 12,
+                      fontWeight: 500
+                    }}
+                    title={url}
+                  >
+                    {url}
+                    <button
+                      onClick={() => removeUrlAt(idx)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#fff',
+                        cursor: 'pointer',
+                        fontSize: 14,
+                        lineHeight: 1,
+                        padding: 0
+                      }}
+                      aria-label="Удалить ссылку"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
           </label>
           <label>
             Целевая аудитория
