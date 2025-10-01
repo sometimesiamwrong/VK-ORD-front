@@ -51,6 +51,8 @@ p {
   background: var(--vk-card-bg);
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  box-sizing: border-box;
+  max-width: 100%;
 }
 
 details {
@@ -91,6 +93,8 @@ details[open] .vk-card {
   font-weight: 600;
   cursor: pointer;
   transition: background .15s ease, border-color .15s ease, color .15s ease;
+  box-sizing: border-box;
+  max-width: 100%;
 }
 .vk-btn:hover { background: #f7f8fa; }
 .vk-btn:disabled { opacity: .6; cursor: default; }
@@ -743,6 +747,84 @@ pre.vk-pre {
   }
 }
 
+/* Modal */
+.vk-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.vk-modal {
+  width: min(820px, 92vw);
+  max-height: 86vh;
+  background: #fff;
+  border: 1px solid var(--vk-border);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.vk-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--vk-border);
+}
+
+.vk-modal__title { font-weight: 700; }
+
+.vk-modal__tools {
+  display: flex;
+  gap: 8px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--vk-border);
+}
+
+.vk-modal__content {
+  overflow: auto;
+  padding: 8px 12px 12px 12px;
+}
+
+.vk-modal__empty {
+  color: var(--vk-muted);
+  padding: 20px;
+  text-align: center;
+}
+
+.vk-modal__list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+@media (max-width: 640px) {
+  .vk-modal__list { grid-template-columns: 1fr; }
+}
+
+.vk-modal__item {
+  text-align: left;
+  border: 1px solid var(--vk-border);
+  border-radius: 10px;
+  background: #fff;
+  padding: 10px 12px;
+  cursor: pointer;
+}
+
+.vk-modal__item:hover {
+  border-color: var(--vk-primary);
+  box-shadow: 0 0 0 3px rgba(39, 135, 245, 0.1);
+}
+
+.vk-modal__item-name { font-weight: 600; }
+.vk-modal__item-meta { color: var(--vk-muted); font-size: 13px; display: flex; gap: 6px; }
+
 /* Specific iPhone 12 and similar (390px width) */
 @media (max-width: 390px) {
   #app {
@@ -820,6 +902,33 @@ pre.vk-pre {
   }
 }
 
+/* Badges (used for KKTY relevance highlighting) */
+.vk-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--vk-text);
+  background: #f7f8fa;
+  border: 1px solid var(--vk-border);
+  box-sizing: border-box;
+}
+
+.vk-badge--score-high {
+  background: var(--vk-primary);
+  color: #fff;
+  border-color: var(--vk-primary);
+  box-shadow: 0 0 0 3px rgba(39, 135, 245, 0.15);
+}
+
+.vk-badge--score-medium {
+  background: rgba(39, 135, 245, 0.08);
+  color: var(--vk-primary);
+  border-color: rgba(39, 135, 245, 0.3);
+}
 /* Mobile-specific layout classes */
 .vk-mobile-stack {
   display: flex;
@@ -847,6 +956,7 @@ pre.vk-pre {
   display: flex;
   gap: 10px;
   margin-top: 14px;
+  flex-wrap: wrap;
 }
 
 @media (max-width: 480px) {

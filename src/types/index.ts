@@ -64,6 +64,7 @@ export type CreateCreativeRequest = {
     targetAudience?: string
     text?: string
     name?: string
+    mediaExternalIds?: string[]
 }
 
 export type CreateCreativeResponse = {
@@ -82,6 +83,7 @@ export type AiKktyItem = {
     code: string
     fullName: string
     reason: string
+    relevanceScore: number
 }
 
 export type AiMatchedCategory = {
@@ -97,7 +99,10 @@ export type AiKktyResponse = {
     matchedCategories: AiMatchedCategory[]
 }
 
-// Re-export wizard types
+// Re-export all types
+export * from './auth'
+export * from './credentials'
+export * from './business'
 export * from './wizard'
 
 

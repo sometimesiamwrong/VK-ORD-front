@@ -17,7 +17,7 @@ type WizardAction =
   | { type: 'SET_ADVERTISER_INFO'; payload: { name?: string | null; shortWithOpf?: string | null; info?: string | null } }
   | { type: 'SET_CONTRACTOR_INFO'; payload: { name?: string | null; shortWithOpf?: string | null; info?: string | null } }
   | { type: 'SET_CONTRACT_DATA'; payload: { externalId: string; paySum?: number | null; payDateEnd?: string | null } }
-  | { type: 'SET_CREATIVE_DATA'; payload: Partial<Pick<WizardState, 'creativeExternalId' | 'contractExternalIds' | 'kktyCodes' | 'format' | 'contentUrls' | 'targetAudience' | 'text' | 'name'>> }
+  | { type: 'SET_CREATIVE_DATA'; payload: Partial<Pick<WizardState, 'creativeExternalId' | 'contractExternalIds' | 'kktyCodes' | 'format' | 'contentUrls' | 'targetAudience' | 'text' | 'name' | 'mediaExternalIds'>> }
   | { type: 'SET_ERID'; payload: string | null }
   | { type: 'ADD_TO_PARTY_HISTORY'; payload: PartyHistoryItem }
   | { type: 'CLEAR_STEP'; payload: 1 | 2 | 3 | 4 }
@@ -59,6 +59,7 @@ const initialWizardState: WizardState = {
   targetAudience: null,
   text: null,
   name: null,
+  mediaExternalIds: [],
   erid: null,
   partyHistory: []
 }
@@ -154,6 +155,7 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
             targetAudience: null,
             text: null,
             name: null,
+            mediaExternalIds: [],
             erid: null
           }
         case 4:
@@ -212,7 +214,7 @@ interface AppContextType {
   setAdvertiserInfo: (info: { name?: string | null; shortWithOpf?: string | null; info?: string | null }) => void
   setContractorInfo: (info: { name?: string | null; shortWithOpf?: string | null; info?: string | null }) => void
   setContractData: (data: { externalId: string; paySum?: number | null; payDateEnd?: string | null }) => void
-  setCreativeData: (data: Partial<Pick<WizardState, 'creativeExternalId' | 'contractExternalIds' | 'kktyCodes' | 'format' | 'contentUrls' | 'targetAudience' | 'text' | 'name'>>) => void
+  setCreativeData: (data: Partial<Pick<WizardState, 'creativeExternalId' | 'contractExternalIds' | 'kktyCodes' | 'format' | 'contentUrls' | 'targetAudience' | 'text' | 'name' | 'mediaExternalIds'>>) => void
   setErid: (erid: string | null) => void
   addToPartyHistory: (item: PartyHistoryItem) => void
   clearStep: (step: 1 | 2 | 3 | 4) => void

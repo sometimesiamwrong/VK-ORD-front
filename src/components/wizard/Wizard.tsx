@@ -1,7 +1,7 @@
 import React from 'react'
 import { useApp } from '../../context/AppContext'
 import { useFileOperations } from '../../hooks/useFileOperations'
-import { VkApiKeyInput } from '../ui/VkApiKeyInput'
+import { CredentialSelector } from '../ui/CredentialSelector'
 import { Step1Parties } from '../steps/Step1Parties'
 import { Step2Contract } from '../steps/Step2Contract'
 import { Step3Creative } from '../steps/Step3Creative'
@@ -19,7 +19,7 @@ export const Wizard: React.FC = () => {
 
   return (
     <div className="vk-container" style={{ textAlign: 'left' }}>
-      <VkApiKeyInput
+      <CredentialSelector
         vkApiKey={wizardState.vkApiKey || null}
         useSandbox={wizardState.useSandbox}
         onVkApiKeyChange={setVkApiKey}

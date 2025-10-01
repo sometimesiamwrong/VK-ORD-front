@@ -1,0 +1,78 @@
+// Business types
+export interface ContractDetails {
+  externalId: string
+  clientExternalId: string
+  contractorExternalId: string
+  paySum: number
+  payDateEnd?: string
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface CreativeDetails {
+  externalId: string
+  contractExternalIds: string[]
+  kktyCodes: string[]
+  format: string
+  contentUrls?: string[]
+  targetAudience?: string
+  text?: string
+  name?: string
+  erid?: string
+  status?: string
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface CreativeStatus {
+  externalId: string
+  status: string
+  erid?: string
+  message?: string
+}
+
+export interface MediaUploadResponse {
+  externalId: string
+  url: string
+  erid?: string
+}
+
+export interface MediaDetails {
+  externalId: string
+  url: string
+  fileName?: string
+  fileSize?: number
+  mimeType?: string
+  uploadedAt?: string
+}
+
+export interface PartyLookupRequest {
+  inn: string
+}
+
+export interface PartyLookupResponse {
+  inn: string
+  name?: string
+  type?: string
+  shortWithOpf?: string
+  fullName?: string
+}
+
+export interface SetCounterpartyRequest {
+  inn: string
+  types: string[]
+}
+
+export interface CounterpartyJuridicalDetails {
+  type: 'juridical' | 'ip' | 'physical'
+  modelScheme: string
+  inn: string
+  kpp?: string
+}
+
+export interface CounterpartyItem {
+  name: string
+  roles: string[]
+  juridicalDetails: CounterpartyJuridicalDetails
+}
+

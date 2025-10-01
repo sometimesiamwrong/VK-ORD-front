@@ -11,7 +11,7 @@ export const Step4Result: React.FC = () => {
   }
 
   const advertiserShortWithOpf = wizardState.advertiserShortWithOpf || wizardState.advertiserName || ''
-  const copyText = `Реклама. ${advertiserShortWithOpf}, ИНН ${wizardState.advertiserInn || ''}, ${wizardState.erid || ''}`
+  const copyText = `Реклама. ${advertiserShortWithOpf}, ИНН ${wizardState.advertiserInn || ''}, erid ${wizardState.erid || ''}`
 
   return (
     <>

@@ -1,11 +1,13 @@
 import { useCallback } from 'react'
-import { api } from '../services/api'
+import { useQuery } from '@tanstack/react-query'
+import http from '../api/http'
 import { useApp } from '../context/AppContext'
 import { isValidInn, getPartyDisplayName, getPartyShortWithOpf } from '../utils'
 import type { ApiResponse, DaDataPartyShortResponse } from '../types'
 
 export const usePartyLookup = () => {
   const {
+    wizardState,
     setAdvertiserInfo,
     setContractorInfo,
     addToPartyHistory,
@@ -14,7 +16,6 @@ export const usePartyLookup = () => {
   } = useApp()
 
   const lookupInn = useCallback(async (kind: 'advertiser' | 'contractor') => {
-    const { wizardState } = useApp()
     const inn = kind === 'advertiser' ? wizardState.advertiserInn : wizardState.contractorInn
 
     if (!isValidInn(inn)) {
@@ -24,7 +25,9 @@ export const usePartyLookup = () => {
 
     setLoading(`lookup-${kind}`, true)
     try {
-      const resp: ApiResponse<DaDataPartyShortResponse> = await api.partyLookup(inn)
+      const response = await http.post<ApiResponse<DaDataPartyShortResponse>>('/api/Client/party', { inn })
+      const resp = response.data
+      
       if (resp.success) {
         setMessage('Поиск выполнен успешно', 'success')
       } else {
@@ -59,10 +62,9 @@ export const usePartyLookup = () => {
     } finally {
       setLoading(`lookup-${kind}`, false)
     }
-  }, [setAdvertiserInfo, setContractorInfo, addToPartyHistory, setLoading, setMessage])
+  }, [wizardState, setAdvertiserInfo, setContractorInfo, addToPartyHistory, setLoading, setMessage])
 
   const createCounterparty = useCallback(async (kind: 'advertiser' | 'publisher') => {
-    const { wizardState } = useApp()
     const inn = kind === 'advertiser' ? wizardState.advertiserInn : wizardState.contractorInn
     const role = kind === 'advertiser' ? wizardState.advertiserRole : wizardState.contractorRole
 
@@ -78,7 +80,9 @@ export const usePartyLookup = () => {
 
     setLoading(`create-${kind}`, true)
     try {
-      const resp = await api.setCounterparty(inn, role)
+      const response = await http.post<ApiResponse<unknown>>('/api/Client/set-counterparty', { inn, types: role })
+      const resp = response.data
+      
       if (resp.success) {
         setMessage('Контрагент успешно создан', 'success')
       } else {
@@ -89,7 +93,28 @@ export const usePartyLookup = () => {
     } finally {
       setLoading(`create-${kind}`, false)
     }
-  }, [setLoading, setMessage])
+  }, [wizardState, setLoading, setMessage])
 
   return { lookupInn, createCounterparty }
+}
+
+// Hook для получения списка сохраненных контрагентов
+export const useCounterpartiesList = () => {
+  return useQuery({
+    queryKey: ['counterparties'],
+    queryFn: async () => {
+      try {
+        const response = await http.get('/api/Client/counterparties')
+        if (response.data.success && response.data.data?.counterparties) {
+          return response.data.data.counterparties
+        }
+        return []
+      } catch (error: any) {
+        console.error('Error fetching counterparties:', error)
+        return []
+      }
+    },
+    staleTime: 30000, // 30 seconds
+    retry: 1
+  })
 }
