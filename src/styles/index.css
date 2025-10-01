@@ -96,7 +96,7 @@ details[open] .vk-card {
   box-sizing: border-box;
   max-width: 100%;
 }
-.vk-btn:hover { background: #f7f8fa; }
+.vk-btn:hover:not(.vk-btn-magic) { background: #f7f8fa; }
 .vk-btn:disabled { opacity: .6; cursor: default; }
 .vk-btn-hover-muted:hover { background: #0f3beb !important; transition: none; }
 
@@ -118,10 +118,10 @@ details[open] .vk-card {
 .vk-btn-magic {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
-  border: none;
-  color: white;
-  animation: magicGlow 3s ease-in-out infinite alternate;
+  background: linear-gradient(135deg, rgba(39, 135, 245, 1) 0%, rgba(29, 111, 211, 1) 100%);
+  border: 1px solid var(--vk-primary);
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(39, 135, 245, 0.25);
 }
 
 .vk-btn-magic::before {
@@ -131,8 +131,8 @@ details[open] .vk-card {
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-  animation: shimmer 2s infinite;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+  animation: shimmer 1.8s infinite;
 }
 
 @keyframes shimmer {
@@ -140,13 +140,20 @@ details[open] .vk-card {
   100% { left: 100%; }
 }
 
-@keyframes magicGlow {
-  0% {
-    box-shadow: 0 0 5px rgba(102, 126, 234, 0.5), 0 0 10px rgba(102, 126, 234, 0.5), 0 0 15px rgba(102, 126, 234, 0.5);
-  }
-  100% {
-    box-shadow: 0 0 10px rgba(118, 75, 162, 0.8), 0 0 20px rgba(118, 75, 162, 0.8), 0 0 30px rgba(118, 75, 162, 0.8);
-  }
+/* Subtle hover/focus states to keep consistency */
+.vk-btn-magic:hover {
+  filter: brightness(1.03);
+  box-shadow: 0 4px 14px rgba(39, 135, 245, 0.3);
+}
+
+.vk-btn-magic:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 6px rgba(39, 135, 245, 0.25);
+}
+
+.vk-btn-magic:disabled {
+  filter: grayscale(10%) brightness(0.96);
+  box-shadow: none;
 }
 
 .vk-input,

@@ -284,7 +284,7 @@ export const Step3Creative: React.FC = () => {
 
           <div className="vk-mobile-row" style={{ justifyContent: 'center', gap: 20 }}>
             <button
-              className="vk-btn vk-btn-magic vk-btn-hover-muted"
+              className="vk-btn vk-btn-magic"
               style={{ marginTop: 8, marginBottom: 8 }}
               disabled={!wizardState.text?.trim() || loadingState['ai-kkty']}
               onClick={handleGuessKkty}
