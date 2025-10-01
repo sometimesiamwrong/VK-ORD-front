@@ -10,7 +10,7 @@ export default defineConfig(({ command, mode }) => {
             port: 5173,
             proxy: command === 'serve' ? {
                 '/api': {
-                    target: CLOUD_API,
+                    target: 'http://localhost:5000',
                     changeOrigin: true,
                     secure: false
                 }

@@ -24,9 +24,10 @@ const processQueue = (error: any, token: string | null = null) => {
 }
 
 // Configure base URL: in production use env or default cloud domain; in dev use relative URL for proxy
-const baseURL = import.meta.env.PROD
-  ? (import.meta.env.VITE_API_BASE_URL || 'https://criminally-astute-kangaroo.cloudpub.ru')
+const rawBaseUrl = import.meta.env.PROD
+  ? (import.meta.env.VITE_API_BASE_URL || 'https://criminally-astute-kangaroo.cloudpub.ru/')
   : '/'
+const baseURL = rawBaseUrl.endsWith('/') ? rawBaseUrl : `${rawBaseUrl}/`
 
 const http: AxiosInstance = axios.create({
   baseURL,
