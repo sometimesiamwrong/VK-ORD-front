@@ -23,8 +23,13 @@ const processQueue = (error: any, token: string | null = null) => {
   refreshPromise = null
 }
 
+// Configure base URL: in production use env or default cloud domain; in dev use relative URL for proxy
+const baseURL = import.meta.env.PROD
+  ? (import.meta.env.VITE_API_BASE_URL || 'https://criminally-astute-kangaroo.cloudpub.ru')
+  : '/'
+
 const http: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
+  baseURL,
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
@@ -106,7 +111,7 @@ http.interceptors.response.use(
 
           // Try to refresh token - НЕ отправляем refreshToken в body, только в cookies
           const refreshResponse = await axios.post<ApiResponse<any>>(
-            `${import.meta.env.VITE_API_BASE_URL}/api/auth/refresh`,
+            `${baseURL}api/auth/refresh`,
             {}, // Пустой body - refresh token в cookies
             { withCredentials: true }
           )
