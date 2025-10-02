@@ -8,7 +8,7 @@ interface PartyModalProps {
   loading?: boolean
   onSelect: (inn: string) => void
   onClose: () => void
-  onEnterManually?: () => void
+  onEnterManually?: (value: string) => void
 }
 
 const formatPartyType = (type: string | null | undefined): string => {
@@ -69,7 +69,12 @@ export const PartyModal: React.FC<PartyModalProps> = ({
             onChange={(e) => setQuery(e.target.value.replace(/[^0-9a-zA-ZА-Яа-яёЁ\s\-"']/g, ''))}
           />
           {onEnterManually && (
-            <button className="vk-btn" onClick={onEnterManually}>Ввести ИНН вручную</button>
+            <button
+              className="vk-btn"
+              onClick={() => onEnterManually?.(query.replace(/\D/g, ''))}
+            >
+              Ввести ИНН вручную
+            </button>
           )}
         </div>
         <div className="vk-modal__content">

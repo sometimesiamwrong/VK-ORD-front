@@ -104,23 +104,32 @@ export const Step1Parties: React.FC = () => {
         <div className="vk-label">ИНН рекламодателя</div>
         <div className="vk-mobile-stack">
           <div className="vk-inline-controls">
-            <input
-              className="vk-input vk-input-inn"
-              value={wizardState.advertiserInn}
-              list="innHistory"
-              onChange={e => {
-                const val = e.target.value.replace(/\D/g, '')
-                setAdvertiserInn(val)
-                if (counterpartiesList.some((c: CounterpartyItem) => c.juridicalDetails.inn === val)) {
-                  applyCounterpartyFromList('advertiser', val)
-                }
-              }}
-              onFocus={() => setModalField('advertiser')}
-              onBlur={() => { recordInnToHistory(wizardState.advertiserInn) }}
-              autoComplete="on"
-              placeholder="10 или 12 цифр"
-              maxLength={12}
-            />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <input
+                className="vk-input vk-input-inn"
+                value={wizardState.advertiserInn}
+                list="innHistory"
+                onChange={e => {
+                  const val = e.target.value.replace(/\D/g, '')
+                  setAdvertiserInn(val)
+                  if (counterpartiesList.some((c: CounterpartyItem) => c.juridicalDetails.inn === val)) {
+                    applyCounterpartyFromList('advertiser', val)
+                  }
+                }}
+                onBlur={() => { recordInnToHistory(wizardState.advertiserInn) }}
+                autoComplete="on"
+                placeholder="10 или 12 цифр"
+                maxLength={12}
+              />
+              <button
+                type="button"
+                className="vk-btn"
+                onClick={() => setModalField('advertiser')}
+                aria-label="Выбрать рекламодателя из списка"
+              >
+                Выбрать
+              </button>
+            </div>
             <CustomSelect
               options={ROLE_OPTIONS}
               value={wizardState.advertiserRole}
@@ -157,23 +166,32 @@ export const Step1Parties: React.FC = () => {
         <div className="vk-label">ИНН исполнителя</div>
         <div className="vk-mobile-stack">
           <div className="vk-inline-controls">
-            <input
-              className="vk-input vk-input-inn"
-              value={wizardState.contractorInn}
-              list="innHistory"
-              onChange={e => {
-                const val = e.target.value.replace(/\D/g, '')
-                setContractorInn(val)
-                if (counterpartiesList.some((c: CounterpartyItem) => c.juridicalDetails.inn === val)) {
-                  applyCounterpartyFromList('contractor', val)
-                }
-              }}
-              onFocus={() => setModalField('contractor')}
-              onBlur={() => { recordInnToHistory(wizardState.contractorInn) }}
-              autoComplete="on"
-              placeholder="10 или 12 цифр"
-              maxLength={12}
-            />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <input
+                className="vk-input vk-input-inn"
+                value={wizardState.contractorInn}
+                list="innHistory"
+                onChange={e => {
+                  const val = e.target.value.replace(/\D/g, '')
+                  setContractorInn(val)
+                  if (counterpartiesList.some((c: CounterpartyItem) => c.juridicalDetails.inn === val)) {
+                    applyCounterpartyFromList('contractor', val)
+                  }
+                }}
+                onBlur={() => { recordInnToHistory(wizardState.contractorInn) }}
+                autoComplete="on"
+                placeholder="10 или 12 цифр"
+                maxLength={12}
+              />
+              <button
+                type="button"
+                className="vk-btn"
+                onClick={() => setModalField('contractor')}
+                aria-label="Выбрать исполнителя из списка"
+              >
+                Выбрать
+              </button>
+            </div>
             <CustomSelect
               options={ROLE_OPTIONS}
               value={wizardState.contractorRole}
@@ -248,7 +266,13 @@ export const Step1Parties: React.FC = () => {
       loading={isLoadingCounterparties}
       onSelect={(inn) => { applyCounterpartyFromList('advertiser', inn); setModalField(null) }}
       onClose={() => setModalField(null)}
-      onEnterManually={() => setModalField(null)}
+        onEnterManually={(value) => {
+          const inn = (value || '').replace(/\D/g, '')
+          if (inn) {
+            setAdvertiserInn(inn)
+          }
+          setModalField(null)
+        }}
     />
     <PartyModal
       open={modalField === 'contractor'}
@@ -257,7 +281,13 @@ export const Step1Parties: React.FC = () => {
       loading={isLoadingCounterparties}
       onSelect={(inn) => { applyCounterpartyFromList('contractor', inn); setModalField(null) }}
       onClose={() => setModalField(null)}
-      onEnterManually={() => setModalField(null)}
+        onEnterManually={(value) => {
+          const inn = (value || '').replace(/\D/g, '')
+          if (inn) {
+            setContractorInn(inn)
+          }
+          setModalField(null)
+        }}
     />
     </>
   )
