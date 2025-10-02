@@ -6,6 +6,8 @@ import { Step1Parties } from '../steps/Step1Parties'
 import { Step2Contract } from '../steps/Step2Contract'
 import { Step3Creative } from '../steps/Step3Creative'
 import { Step4Result } from '../steps/Step4Result'
+import { isMobileDevice } from '../../utils'
+import { toast } from 'react-toastify'
 
 export const Wizard: React.FC = () => {
   const {
@@ -16,6 +18,14 @@ export const Wizard: React.FC = () => {
   } = useApp()
 
   const { exportJson, importJsonClick, onImportFile, fileRef } = useFileOperations()
+
+  React.useEffect(() => {
+    if (!messageState.text) return
+    if (isMobileDevice()) {
+      const fn = messageState.status === 'success' ? toast.success : messageState.status === 'error' ? toast.error : toast.info
+      fn(messageState.text)
+    }
+  }, [messageState])
 
   return (
     <div className="vk-container" style={{ textAlign: 'left' }}>
@@ -45,7 +55,7 @@ export const Wizard: React.FC = () => {
         />
       </div>
 
-      {messageState.text && (
+      {messageState.text && !isMobileDevice() && (
         <div
           className={`vk-alert vk-alert--${messageState.status}${messageState.highlight ? ' vk-alert--highlight' : ''}`}
           style={{ marginBottom: 12 }}

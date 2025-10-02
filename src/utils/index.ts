@@ -99,3 +99,15 @@ export function loadFromCookie(key: string): string | null {
 // Экспорт новых утилит для работы с куками
 export * from './cookies'
 
+
+export function isMobileDevice(): boolean {
+    try {
+        const ua = (navigator && (navigator.userAgent || (navigator as any).vendor)) || ''
+        const isTouch = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(hover: none) and (pointer: coarse)').matches
+        const smallScreen = typeof window !== 'undefined' && window.innerWidth <= 640
+        const byUa = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua)
+        return Boolean(isTouch || smallScreen || byUa)
+    } catch {
+        return false
+    }
+}
