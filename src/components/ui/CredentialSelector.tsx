@@ -87,6 +87,7 @@ export const CredentialSelector: React.FC<CredentialSelectorProps> = ({
       saveToCookie('vkord-use-sandbox', useSandbox.toString())
       onVkApiKeyChange(manualKey.trim())
       setUseManualInput(false)
+      toast.success('Токен сохранён и будет использован в запросах')
     }
   }
 

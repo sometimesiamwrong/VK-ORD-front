@@ -1,6 +1,7 @@
 import axios from 'axios'
 import type { AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
 import { useTokenStore, useEnvironmentStore } from '../auth/tokenStore'
+import { getCookie } from '../utils/cookies'
 import type { ApiResponse } from '../types'
 
 let isRefreshing = false
@@ -50,6 +51,22 @@ http.interceptors.request.use(
     const { environment } = useEnvironmentStore.getState()
     if (environment !== 'prod' && config.headers) {
       config.headers['x-api-vk-env'] = environment
+    }
+
+    // Attach VK ORD API key (manual or from selected credential) from cookies for backend
+    // to consume regardless of proxy/cookie limitations
+    const vkOrdApiKey = getCookie('vkord-api-key')
+    const vkOrdCredentialId = getCookie('vkord-credential-id')
+    if (config.headers) {
+      if (vkOrdApiKey) {
+        // Common header names to maximize compatibility with backend
+        config.headers['x-vkord-api-key'] = vkOrdApiKey
+        config.headers['x-api-key'] = vkOrdApiKey
+        config.headers['x-api-vk-key'] = vkOrdApiKey
+      }
+      if (vkOrdCredentialId) {
+        config.headers['x-vkord-credential-id'] = vkOrdCredentialId
+      }
     }
 
     return config
