@@ -30,9 +30,16 @@ export const Step1Parties: React.FC = () => {
   } = useApp()
 
   const { lookupInn, createCounterparty } = usePartyLookup()
-  const { data: counterpartiesList = [], isLoading: isLoadingCounterparties, refetch: refetchCounterparties } = useCounterpartiesList()
+  const { data: counterpartiesList = [], isLoading: isLoadingCounterparties, isFetching: isFetchingCounterparties, refetch: refetchCounterparties } = useCounterpartiesList()
 
   const [modalField, setModalField] = React.useState<'advertiser' | 'contractor' | null>(null)
+
+  // Обновляем список при каждом открытии модального окна
+  React.useEffect(() => {
+    if (modalField) {
+      refetchCounterparties()
+    }
+  }, [modalField, refetchCounterparties])
 
   const clearStep1 = () => {
     setAdvertiserInn('')
@@ -263,7 +270,7 @@ export const Step1Parties: React.FC = () => {
       open={modalField === 'advertiser'}
       title="Выбор рекламодателя"
       counterparties={counterpartiesList}
-      loading={isLoadingCounterparties}
+      loading={isLoadingCounterparties || isFetchingCounterparties}
       onSelect={(inn) => { applyCounterpartyFromList('advertiser', inn); setModalField(null) }}
       onClose={() => setModalField(null)}
         onEnterManually={(value) => {
@@ -278,7 +285,7 @@ export const Step1Parties: React.FC = () => {
       open={modalField === 'contractor'}
       title="Выбор исполнителя"
       counterparties={counterpartiesList}
-      loading={isLoadingCounterparties}
+      loading={isLoadingCounterparties || isFetchingCounterparties}
       onSelect={(inn) => { applyCounterpartyFromList('contractor', inn); setModalField(null) }}
       onClose={() => setModalField(null)}
         onEnterManually={(value) => {

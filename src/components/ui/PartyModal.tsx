@@ -30,9 +30,16 @@ export const PartyModal: React.FC<PartyModalProps> = ({
   onEnterManually
 }) => {
   const [query, setQuery] = React.useState('')
+  const [page, setPage] = React.useState(1)
+  const ITEMS_PER_PAGE = 10
 
   React.useEffect(() => {
-    if (!open) setQuery('')
+    if (!open) {
+      setQuery('')
+      setPage(1)
+    } else {
+      setPage(1)
+    }
   }, [open])
 
   React.useEffect(() => {
@@ -45,14 +52,30 @@ export const PartyModal: React.FC<PartyModalProps> = ({
     return () => window.removeEventListener('keydown', onKey)
   }, [open, onClose])
 
-  if (!open) return null
-
   const filtered = (counterparties || []).filter((c) => {
     if (!query.trim()) return true
     const inn = c.juridicalDetails?.inn || ''
     const name = c.name || ''
     return inn.includes(query.trim()) || name.toLowerCase().includes(query.trim().toLowerCase())
   })
+
+  React.useEffect(() => {
+    // Reset to first page on search query change
+    setPage(1)
+  }, [query])
+
+  const total = filtered.length
+  const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE))
+  React.useEffect(() => {
+    // Clamp page when filtered results shrink/expand
+    setPage((p) => Math.min(Math.max(1, p), totalPages))
+  }, [totalPages])
+
+  const start = (page - 1) * ITEMS_PER_PAGE
+  const end = start + ITEMS_PER_PAGE
+  const pageItems = filtered.slice(start, end)
+
+  if (!open) return null
 
   return (
     <div className="vk-modal-backdrop" onClick={onClose}>
@@ -84,7 +107,7 @@ export const PartyModal: React.FC<PartyModalProps> = ({
             <div className="vk-modal__empty">Ничего не найдено</div>
           ) : (
             <div className="vk-modal__list">
-              {filtered.map((party) => (
+              {pageItems.map((party) => (
                 <button
                   key={`${party.juridicalDetails.inn}-${party.name}`}
                   className="vk-modal__item"
@@ -102,6 +125,20 @@ export const PartyModal: React.FC<PartyModalProps> = ({
             </div>
           )}
         </div>
+        {!loading && filtered.length > 0 && (
+          <div className="vk-modal__footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+            <div style={{ fontSize: 12, color: 'var(--vk-muted)' }}>
+              Показано {total > 0 ? `${start + 1}–${Math.min(end, total)}` : '0'} из {total}
+            </div>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <button className="vk-btn" onClick={() => setPage(1)} disabled={page <= 1}>«</button>
+              <button className="vk-btn" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1}>Назад</button>
+              <span style={{ fontSize: 12, color: 'var(--vk-muted)' }}>Стр. {page}/{totalPages}</span>
+              <button className="vk-btn" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages}>Вперед</button>
+              <button className="vk-btn" onClick={() => setPage(totalPages)} disabled={page >= totalPages}>»</button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

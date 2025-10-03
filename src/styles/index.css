@@ -794,9 +794,19 @@ pre.vk-pre {
   border-bottom: 1px solid var(--vk-border);
 }
 
+/* Smaller placeholder text specifically for modal search input */
+.vk-modal__tools .vk-input::placeholder {
+  font-size: 13px;
+}
+
 .vk-modal__content {
   overflow: auto;
   padding: 8px 12px 12px 12px;
+}
+
+.vk-modal__footer {
+  padding: 12px 14px;
+  border-top: 1px solid var(--vk-border);
 }
 
 .vk-modal__empty {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import {
   Typography,
   Paper,
@@ -36,6 +36,7 @@ import type {
   ApiResponse,
   VkCreativeForm
 } from '../../types'
+import { useCreativesList, useCreativeByErid } from './hooks'
 
 export const CreativesPage: React.FC = () => {
   const [formData, setFormData] = useState<CreateCreativeRequest>({
@@ -59,6 +60,14 @@ export const CreativesPage: React.FC = () => {
 
   const [creativeDetails, setCreativeDetails] = useState<CreativeDetails | null>(null)
   const [creativeStatus, setCreativeStatus] = useState<CreativeStatus | null>(null)
+
+  // Listing and ERID lookup state
+  const [listOffset, setListOffset] = useState(0)
+  const listLimit = 10
+  const [eridQuery, setEridQuery] = useState('')
+
+  const creativesQuery = useCreativesList(listOffset, listLimit)
+  const creativeByErid = useCreativeByErid()
 
   // Create creative mutation
   const createCreativeMutation = useMutation({
@@ -136,6 +145,29 @@ export const CreativesPage: React.FC = () => {
     if (deleteFormData.externalId && window.confirm('Вы уверены, что хотите удалить этот креатив?')) {
       deleteCreativeMutation.mutate(deleteFormData.externalId)
     }
+  }
+
+  const totalItemsCount = creativesQuery.data?.data?.totalItemsCount || 0
+  const creatives = creativesQuery.data?.data?.creatives || []
+  const totalPages = Math.max(1, Math.ceil(totalItemsCount / listLimit))
+  const currentPage = Math.floor(listOffset / listLimit) + 1
+
+  const handlePrev = () => setListOffset((o) => Math.max(0, o - listLimit))
+  const handleNext = () => setListOffset((o) => Math.min(Math.max(0, (totalPages - 1) * listLimit), o + listLimit))
+
+  const handleFindByErid = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!eridQuery.trim()) return
+    creativeByErid.mutate(eridQuery.trim(), {
+      onSuccess: (resp) => {
+        if (resp.success && resp.data) {
+          setCreativeDetails(resp.data)
+          toast.success('Креатив найден по ERID')
+        } else {
+          toast.error(resp.message || 'Креатив не найден')
+        }
+      }
+    })
   }
 
   const addContractId = () => {
@@ -382,6 +414,45 @@ export const CreativesPage: React.FC = () => {
         {/* Actions Panel */}
         <Box sx={{ flex: 1 }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {/* List creatives */}
+            <Box>
+              <Paper sx={{ p: 3 }}>
+                <Typography variant="h6" gutterBottom>
+                  Список креативов
+                </Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Показано {totalItemsCount > 0 ? `${listOffset + 1}–${Math.min(listOffset + listLimit, totalItemsCount)}` : 0} из {totalItemsCount}
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Button variant="outlined" onClick={() => setListOffset(0)} disabled={currentPage <= 1}>«</Button>
+                    <Button variant="outlined" onClick={handlePrev} disabled={currentPage <= 1}>Назад</Button>
+                    <Typography variant="body2" color="text.secondary" sx={{ px: 1 }}>Стр. {currentPage}/{totalPages}</Typography>
+                    <Button variant="outlined" onClick={handleNext} disabled={currentPage >= totalPages}>Вперед</Button>
+                    <Button variant="outlined" onClick={() => setListOffset((totalPages - 1) * listLimit)} disabled={currentPage >= totalPages}>»</Button>
+                  </Box>
+                </Box>
+                <List dense>
+                  {creativesQuery.isLoading && (
+                    <ListItem><ListItemText primary="Загрузка..." /></ListItem>
+                  )}
+                  {!creativesQuery.isLoading && creatives.length === 0 && (
+                    <ListItem><ListItemText primary="Нет креативов" /></ListItem>
+                  )}
+                  {creatives.map((c) => (
+                    <ListItem key={c.externalId} secondaryAction={
+                      <Button size="small" variant="text" onClick={() => viewCreativeMutation.mutate(c.externalId)}>Открыть</Button>
+                    }>
+                      <ListItemText
+                        primary={c.name || c.externalId}
+                        secondary={`External ID: ${c.externalId}${c.erid ? ` • ERID: ${c.erid}` : ''}`}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              </Paper>
+            </Box>
+
             {/* View Creative */}
             <Box>
               <Paper sx={{ p: 3 }}>
@@ -429,6 +500,32 @@ export const CreativesPage: React.FC = () => {
                     disabled={getStatusMutation.isPending}
                   >
                     Статус
+                  </Button>
+                </Box>
+              </Paper>
+            </Box>
+
+            {/* Find by ERID */}
+            <Box>
+              <Paper sx={{ p: 3 }}>
+                <Typography variant="h6" gutterBottom>
+                  Найти по ERID
+                </Typography>
+                <Box component="form" onSubmit={handleFindByErid} sx={{ display: 'flex', gap: 1 }}>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    label="ERID"
+                    value={eridQuery}
+                    onChange={(e) => setEridQuery(e.target.value)}
+                  />
+                  <Button
+                    type="submit"
+                    variant="outlined"
+                    startIcon={<SearchIcon />}
+                    disabled={creativeByErid.isPending}
+                  >
+                    Найти
                   </Button>
                 </Box>
               </Paper>
