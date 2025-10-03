@@ -17,8 +17,7 @@ export const useCreativesList = (offset: number, limit: number) => {
         params: { offset, limit }
       })
       return response.data
-    },
-    keepPreviousData: true
+    }
   })
 }
 

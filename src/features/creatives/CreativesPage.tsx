@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useState } from 'react'
 import {
   Typography,
   Paper,
@@ -147,8 +147,8 @@ export const CreativesPage: React.FC = () => {
     }
   }
 
-  const totalItemsCount = creativesQuery.data?.data?.totalItemsCount || 0
-  const creatives = creativesQuery.data?.data?.creatives || []
+  const totalItemsCount = creativesQuery.data?.data?.totalItemsCount ?? 0
+  const creatives = creativesQuery.data?.data?.creatives ?? []
   const totalPages = Math.max(1, Math.ceil(totalItemsCount / listLimit))
   const currentPage = Math.floor(listOffset / listLimit) + 1
 
@@ -439,7 +439,7 @@ export const CreativesPage: React.FC = () => {
                   {!creativesQuery.isLoading && creatives.length === 0 && (
                     <ListItem><ListItemText primary="Нет креативов" /></ListItem>
                   )}
-                  {creatives.map((c) => (
+                  {creatives.map((c: CreativeDetails) => (
                     <ListItem key={c.externalId} secondaryAction={
                       <Button size="small" variant="text" onClick={() => viewCreativeMutation.mutate(c.externalId)}>Открыть</Button>
                     }>
