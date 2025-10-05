@@ -1,36 +1,38 @@
 // Auth types
 export interface AuthResponse {
-  token: string // Access token
-  refreshToken?: string // Refresh token (опционально, если сервер отправляет в теле)
-  tokenType: 'Bearer'
-  expiresIn: number
-  issuedAt: string
-  expiresAt: string
+  token?: string | null // Access token
+  tokenType?: string | null
+  expiresIn?: number
+  issuedAt?: string | null
+  expiresAt?: string | null
+  refreshToken?: string | null // Refresh token
 }
 
 export interface LoginRequest {
-  userName: string
-  password: string
-  deviceId?: string
+  userName?: string | null
+  password?: string | null
 }
 
 export interface RegisterRequest {
-  userName: string
-  password: string
-  name?: string
+  userName?: string | null
+  password?: string | null
+  name?: string | null
 }
 
-export interface UserProfile {
-  id: string
-  userName: string
-  name?: string
-  isActive: boolean
-  createdAt: string
-  updatedAt: string
+export interface UserProfileResponse {
+  publicId?: string | null
+  userName?: string | null
+  name?: string | null
+  isActive?: boolean
+  createdAt?: string | null
+  updatedAt?: string | null
 }
+
+// Legacy alias for backward compatibility
+export type UserProfile = UserProfileResponse
 
 export interface UpdateUserRequest {
-  name?: string
+  name?: string | null
 }
 
 

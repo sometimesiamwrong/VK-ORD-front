@@ -18,7 +18,7 @@ import {
 import { useMutation } from '@tanstack/react-query'
 import { toast } from 'react-toastify'
 import http from '../../api/http'
-import type { MediaUploadResponse, MediaDetails, ApiResponse } from '../../types'
+import type { MediaUploadResponse, MediaDetails } from '../../types'
 
 export const MediaPage: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -32,7 +32,7 @@ export const MediaPage: React.FC = () => {
       const formData = new FormData()
       formData.append('file', file)
 
-      const response = await http.post<ApiResponse<MediaUploadResponse>>('/api/media/upload', formData, {
+      const response = await http.post<MediaUploadResponse>('/api/media/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -40,11 +40,11 @@ export const MediaPage: React.FC = () => {
       return response.data
     },
     onSuccess: (data) => {
-      if (data.success && data.data) {
+      if (data) {
         toast.success('Файл успешно загружен')
         setMediaDetails({
-          externalId: data.data.externalId,
-          url: data.data.url,
+          externalId: data.externalId,
+          url: data.url,
           uploadedAt: new Date().toISOString(),
         })
         setSelectedFile(null)
@@ -58,12 +58,12 @@ export const MediaPage: React.FC = () => {
   // View media mutation
   const viewMutation = useMutation({
     mutationFn: async (externalId: string) => {
-      const response = await http.get<ApiResponse<MediaDetails>>(`/api/media/${externalId}`)
+      const response = await http.get<MediaDetails>(`/api/media/${externalId}`)
       return response.data
     },
     onSuccess: (data) => {
-      if (data.success && data.data) {
-        setMediaDetails(data.data)
+      if (data) {
+        setMediaDetails(data)
       }
     },
   })
@@ -71,7 +71,7 @@ export const MediaPage: React.FC = () => {
   // Delete media mutation
   const deleteMutation = useMutation({
     mutationFn: async (externalId: string) => {
-      const response = await http.delete<ApiResponse<null>>(`/api/media/${externalId}`)
+      const response = await http.delete<null>(`/api/media/${externalId}`)
       return response.data
     },
     onSuccess: () => {

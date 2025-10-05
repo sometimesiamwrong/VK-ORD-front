@@ -12,7 +12,7 @@ export interface ContractDetails {
 export interface CreativeDetails {
   externalId: string
   contractExternalIds: string[]
-  kktyCodes: string[]
+  kktus: string[] // renamed from kktyCodes
   format: string
   contentUrls?: string[]
   targetAudience?: string
@@ -47,11 +47,11 @@ export interface MediaDetails {
 }
 
 export interface PartyLookupRequest {
-  inn: string
+  inn?: string | null
 }
 
 export interface PartyLookupResponse {
-  inn: string
+  inn?: string
   name?: string
   type?: string
   shortWithOpf?: string
@@ -60,19 +60,22 @@ export interface PartyLookupResponse {
 
 export interface SetCounterpartyRequest {
   inn: string
-  types: string[]
+  types?: string[]
 }
 
 export interface CounterpartyJuridicalDetails {
-  type: 'juridical' | 'ip' | 'physical'
-  modelScheme: string
-  inn: string
+  type?: string | number
+  modelScheme?: string
+  inn?: string
   kpp?: string
 }
 
 export interface CounterpartyItem {
-  name: string
-  roles: string[]
-  juridicalDetails: CounterpartyJuridicalDetails
+  name?: string
+  roles?: string[]
+  juridicalDetails?: CounterpartyJuridicalDetails
 }
+
+// Legacy aliases for backward compatibility
+export type CounterpartyDetails = CounterpartyJuridicalDetails
 

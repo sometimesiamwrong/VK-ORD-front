@@ -1,20 +1,13 @@
 import { useQuery, useMutation } from '@tanstack/react-query'
 import http from '../../api/http'
-import type { ApiResponse } from '../../types'
-import type { CreativeDetails } from '../../types'
-
-export interface GetCreativesResponse {
-  creatives: CreativeDetails[]
-  totalItemsCount?: number
-  limit?: number
-}
+import type { GetCreativesResponse, VkOrdCreativeV3Response } from '../../types'
 
 export const useCreativesList = (offset: number, limit: number) => {
   return useQuery({
     queryKey: ['creatives', { offset, limit }],
     queryFn: async () => {
-      const response = await http.get<ApiResponse<GetCreativesResponse>>('/api/creatives', {
-        params: { offset, limit }
+      const response = await http.get<GetCreativesResponse>('/api/Creatives', {
+        params: { Offset: offset, Limit: limit }
       })
       return response.data
     }
@@ -24,7 +17,7 @@ export const useCreativesList = (offset: number, limit: number) => {
 export const useCreativeByErid = () => {
   return useMutation({
     mutationFn: async (erid: string) => {
-      const response = await http.get<ApiResponse<CreativeDetails>>(`/api/creatives/by-erid/${erid}`)
+      const response = await http.get<VkOrdCreativeV3Response>(`/api/Creatives/by-erid/${erid}`)
       return response.data
     }
   })

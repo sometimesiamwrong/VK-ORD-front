@@ -2,7 +2,7 @@ import axios from 'axios'
 import type { AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
 import { useTokenStore, useEnvironmentStore } from '../auth/tokenStore'
 import { getCookie } from '../utils/cookies'
-import type { ApiResponse } from '../types'
+import type { BrokenRule } from '../types'
 
 let isRefreshing = false
 let refreshPromise: Promise<string> | null = null
@@ -22,6 +22,45 @@ const processQueue = (error: any, token: string | null = null) => {
 
   failedQueue = []
   refreshPromise = null
+}
+
+// Broken Rules Error Mapping
+const BROKEN_RULE_MESSAGES: Record<number, string> = {
+  1: 'Не найдены данные по VK ОРД API ключу. Проверьте выбранные учетные данные.',
+  2: 'Не найден заголовок ключа VK ОРД API. Выберите учетные данные в настройках.',
+  3: 'Пользователь с таким именем уже существует.',
+  4: 'Неверные учетные данные. Проверьте логин и пароль.',
+  5: 'Пользователь не авторизован. Войдите в систему.',
+  6: 'Ошибка VK ОРД API. Проверьте корректность данных или попробуйте позже.',
+  7: 'Контрагент не найден. Проверьте ИНН и повторите поиск.',
+  // Add more mappings as needed
+}
+
+// Function to check if response is a broken rules error
+const isBrokenRulesResponse = (response: any): boolean => {
+  return (
+    response?.status === 400 &&
+    response?.headers?.['content-type']?.includes('application/json') &&
+    Array.isArray(response?.data)
+  )
+}
+
+// Function to handle broken rules error
+const handleBrokenRulesError = (brokenRules: BrokenRule[]): Error => {
+  // Map each broken rule to user-friendly message
+  const userMessages = brokenRules.map(rule => {
+    return BROKEN_RULE_MESSAGES[rule.code] || rule.message
+  })
+
+  // Create a combined error message
+  const errorMessage = userMessages.join('\n')
+
+  // Create a custom error object
+  const error = new Error(errorMessage) as any
+  error.brokenRules = brokenRules
+  error.isBrokenRules = true
+
+  return error
 }
 
 // Configure base URL: in production use env or default cloud domain; in dev use relative URL for proxy
@@ -53,20 +92,10 @@ http.interceptors.request.use(
       config.headers['x-api-vk-env'] = environment
     }
 
-    // Attach VK ORD API key (manual or from selected credential) from cookies for backend
-    // to consume regardless of proxy/cookie limitations
-    const vkOrdApiKey = getCookie('vkord-api-key')
+    // Attach VK ORD Credential ID from cookies for backend
     const vkOrdCredentialId = getCookie('vkord-credential-id')
-    if (config.headers) {
-      if (vkOrdApiKey) {
-        // Common header names to maximize compatibility with backend
-        config.headers['x-vkord-api-key'] = vkOrdApiKey
-        config.headers['x-api-key'] = vkOrdApiKey
-        config.headers['x-api-vk-key'] = vkOrdApiKey
-      }
-      if (vkOrdCredentialId) {
-        config.headers['x-vkord-credential-id'] = vkOrdCredentialId
-      }
+    if (config.headers && vkOrdCredentialId) {
+      config.headers['x-vkord-credential-id'] = vkOrdCredentialId
     }
 
     return config
@@ -85,7 +114,7 @@ http.interceptors.response.use(
     const originalRequest = error.config
 
     // Don't retry auth endpoints to avoid infinite loop
-    const authEndpoints = ['/api/auth/refresh', '/api/auth/login', '/api/auth/register']
+    const authEndpoints = ['/api/Auth/refresh', '/api/Auth/login', '/api/Auth/register']
     if (authEndpoints.some(endpoint => originalRequest.url?.includes(endpoint))) {
       return Promise.reject(error)
     }
@@ -128,8 +157,8 @@ http.interceptors.response.use(
           console.log('🔄 Refreshing token...')
 
           // Try to refresh token - НЕ отправляем refreshToken в body, только в cookies
-          const refreshResponse = await axios.post<ApiResponse<any>>(
-            `${baseURL}api/auth/refresh`,
+          const refreshResponse = await axios.post<any>(
+            `${baseURL}api/Auth/refresh`,
             {}, // Пустой body - refresh token в cookies
             { withCredentials: true }
           )
@@ -178,6 +207,22 @@ http.interceptors.response.use(
         .catch((err) => {
           return Promise.reject(err)
         })
+    }
+
+    // Check for broken rules errors (400 status with JSON array)
+    if (error.response && isBrokenRulesResponse(error.response)) {
+      try {
+        const brokenRules: BrokenRule[] = error.response.data
+        const brokenRulesError = handleBrokenRulesError(brokenRules)
+
+        // Log the original broken rules for debugging
+        console.error('🚨 Broken Rules Error:', brokenRules)
+
+        return Promise.reject(brokenRulesError)
+      } catch (parseError) {
+        // If parsing fails, treat as regular error
+        console.error('❌ Failed to parse broken rules:', parseError)
+      }
     }
 
     return Promise.reject(error)

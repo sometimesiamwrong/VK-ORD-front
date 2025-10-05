@@ -5,23 +5,24 @@ import { CustomSelect } from '../ui/CustomSelect'
 import { TagSelector } from '../ui/TagSelector'
 import { FileUploader } from '../ui/FileUploader'
 import { nowTimestampString } from '../../utils'
-import type { VkCreativeForm, AiKktyItem } from '../../types'
+import { VkOrdCreativeForm } from '../../types'
+import type { AiKktyItem } from '../../types'
 
 const FORMAT_OPTIONS = [
-  { value: 'audio', label: 'Аудио' },
-  { value: 'video', label: 'Видео' },
-  { value: 'banner', label: 'Баннер' },
-  { value: 'text_block', label: 'Текст' },
-  { value: 'live_audio', label: 'Аудио эфир' },
-  { value: 'live_video', label: 'Видео эфир' },
-  { value: 'text_graphic_block', label: 'Текстовый графический блок' },
-  { value: 'text_video_block', label: 'Текстовый блок с видео' },
-  { value: 'text_graphic_video_block', label: 'Текстово-графический блок с видео' },
-  { value: 'text_audio_block', label: 'Текстовый блок с аудио' },
-  { value: 'text_graphic_audio_block', label: 'Текстово-графический блок с аудио' },
-  { value: 'text_audio_video_block', label: 'Текстово блок с аудио и видео' },
-  { value: 'text_graphic_audio_video_block', label: 'Текстово-графический блок с аудио и видео' },
-  { value: 'banner_html5', label: 'HTML5 баннер' }
+  { value: VkOrdCreativeForm.Banner.toString(), label: 'Баннер' },
+  { value: VkOrdCreativeForm.TextBlock.toString(), label: 'Текст' },
+  { value: VkOrdCreativeForm.TextGraphicBlock.toString(), label: 'Текстовый графический блок' },
+  { value: VkOrdCreativeForm.Audio.toString(), label: 'Аудио' },
+  { value: VkOrdCreativeForm.Video.toString(), label: 'Видео' },
+  { value: VkOrdCreativeForm.LiveAudio.toString(), label: 'Аудио эфир' },
+  { value: VkOrdCreativeForm.LiveVideo.toString(), label: 'Видео эфир' },
+  { value: VkOrdCreativeForm.TextVideoBlock.toString(), label: 'Текстовый блок с видео' },
+  { value: VkOrdCreativeForm.TextGraphicVideoBlock.toString(), label: 'Текстово-графический блок с видео' },
+  { value: VkOrdCreativeForm.TextAudioBlock.toString(), label: 'Текстовый блок с аудио' },
+  { value: VkOrdCreativeForm.TextGraphicAudioBlock.toString(), label: 'Текстово-графический блок с аудио' },
+  { value: VkOrdCreativeForm.TextAudioVideoBlock.toString(), label: 'Текстово блок с аудио и видео' },
+  { value: VkOrdCreativeForm.TextGraphicAudioVideoBlock.toString(), label: 'Текстово-графический блок с аудио и видео' },
+  { value: VkOrdCreativeForm.BannerHtml5.toString(), label: 'HTML5 баннер' }
 ]
 
 const parseList = (input: string): string[] => {
@@ -48,8 +49,8 @@ export const Step3Creative: React.FC = () => {
     setCreativeData({
       creativeExternalId: nowTimestampString(),
       contractExternalIds: [],
-      kktyCodes: [],
-      format: 'banner' as VkCreativeForm,
+      kktus: [],
+      format: VkOrdCreativeForm.Banner,
       contentUrls: [],
       targetAudience: null,
       text: null,
@@ -138,10 +139,10 @@ export const Step3Creative: React.FC = () => {
             Формат
             <CustomSelect
               options={FORMAT_OPTIONS}
-              value={wizardState.format}
+              value={wizardState.format?.toString() || VkOrdCreativeForm.Banner.toString()}
               onChange={value => setCreativeData({
                 ...wizardState,
-                format: value as VkCreativeForm
+                format: parseInt(value as string) as VkOrdCreativeForm
               })}
               size="wide"
             />
@@ -294,12 +295,12 @@ export const Step3Creative: React.FC = () => {
           </div>
 
           <TagSelector
-            selectedCodes={wizardState.kktyCodes && wizardState.kktyCodes.length > 0 ? wizardState.kktyCodes[0] : ''}
+            selectedCodes={wizardState.kktus && wizardState.kktus.length > 0 ? wizardState.kktus[0] : ''}
             onChange={code => setCreativeData({
               ...wizardState,
-              kktyCodes: code ? [code] : []
+              kktus: code ? [code] : []
             })}
-            hasError={!(wizardState.kktyCodes && Array.isArray(wizardState.kktyCodes) && wizardState.kktyCodes.length > 0)}
+            hasError={!(wizardState.kktus && Array.isArray(wizardState.kktus) && wizardState.kktus.length > 0)}
           />
 
           <FileUploader

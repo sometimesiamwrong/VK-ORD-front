@@ -64,7 +64,7 @@ export const CredentialsPage: React.FC = () => {
   const handleOpenEditDialog = (credential: Credential) => {
     setEditingCredential(credential)
     setFormData({
-      environment: credential.environment,
+      environment: (credential.environment === 'Production' ? 'Production' : 'Sandbox') as 'Sandbox' | 'Production',
       tokenPlain: '',
       displayName: credential.displayName || '',
     })
@@ -86,7 +86,7 @@ export const CredentialsPage: React.FC = () => {
       }
 
       // Only update if something changed
-      if (Object.values(updateData).some(v => v !== undefined)) {
+      if (Object.values(updateData).some(v => v !== undefined) && editingCredential.id) {
         updateMutation.mutate({ id: editingCredential.id, data: updateData }, {
           onSuccess: () => handleCloseDialog(),
         })
@@ -190,8 +190,8 @@ export const CredentialsPage: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {credentials.map((credential) => (
-                <TableRow key={credential.id}>
+              {credentials.map((credential, index) => (
+                <TableRow key={credential.id || `credential-${index}`}>
                   <TableCell>
                     {credential.displayName || 'Без названия'}
                   </TableCell>
@@ -210,10 +210,10 @@ export const CredentialsPage: React.FC = () => {
                     </Tooltip>
                   </TableCell>
                   <TableCell>
-                    {new Date(credential.createdAt).toLocaleDateString('ru-RU')}
+                    {credential.createdAt ? new Date(credential.createdAt).toLocaleDateString('ru-RU') : 'Неизвестно'}
                   </TableCell>
                   <TableCell>
-                    {new Date(credential.updatedAt).toLocaleDateString('ru-RU')}
+                    {credential.updatedAt ? new Date(credential.updatedAt).toLocaleDateString('ru-RU') : 'Неизвестно'}
                   </TableCell>
                   <TableCell align="right">
                     <IconButton
@@ -225,8 +225,9 @@ export const CredentialsPage: React.FC = () => {
                     </IconButton>
                     <IconButton
                       size="small"
-                      onClick={() => handleDelete(credential.id)}
+                      onClick={() => credential.id && handleDelete(credential.id)}
                       color="error"
+                      disabled={!credential.id}
                     >
                       <DeleteIcon />
                     </IconButton>

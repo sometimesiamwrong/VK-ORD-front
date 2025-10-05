@@ -13,7 +13,7 @@ import {
 import { useMutation } from '@tanstack/react-query'
 import { toast } from 'react-toastify'
 import http from '../../api/http'
-import type { CreateContractRequest, ApiResponse, ContractDetails } from '../../types'
+import type { CreateContractRequest, ContractDetails } from '../../types'
 
 export const ContractsPage: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -33,11 +33,11 @@ export const ContractsPage: React.FC = () => {
   // Create/Update contract mutation
   const createContractMutation = useMutation({
     mutationFn: async (data: CreateContractRequest) => {
-      const response = await http.put<ApiResponse<ContractDetails>>(`/api/contracts/${data.externalId}`, data)
+      const response = await http.put<ContractDetails>(`/api/contracts/${data.externalId}`, data)
       return response.data
     },
     onSuccess: (data) => {
-      if (data.success) {
+      if (data) {
         toast.success('Контракт успешно создан/обновлен')
         // Clear form
         setFormData({
@@ -54,12 +54,12 @@ export const ContractsPage: React.FC = () => {
   // View contract mutation
   const viewContractMutation = useMutation({
     mutationFn: async (externalId: string) => {
-      const response = await http.get<ApiResponse<ContractDetails>>(`/api/contracts/${externalId}`)
+      const response = await http.get<ContractDetails>(`/api/contracts/${externalId}`)
       return response.data
     },
     onSuccess: (data) => {
-      if (data.success && data.data) {
-        setContractDetails(data.data)
+      if (data) {
+        setContractDetails(data)
       }
     },
   })

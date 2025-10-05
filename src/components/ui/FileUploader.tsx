@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
 import http from '../../api/http'
-import type { ApiResponse } from '../../types'
 
 interface FileUploaderProps {
   mediaExternalIds: string[]
@@ -48,23 +47,23 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
       const formData = new FormData()
       formData.append('file', file)
 
-      const response = await http.post<ApiResponse<{ externalId: string; url: string }>>('/api/media/upload', formData, {
+      const response = await http.post<{ externalId: string; url: string }>('/api/media/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       })
 
-      if (response.data.success && response.data.data) {
+      if (response.data) {
         const newFile: UploadedFile = {
-          externalId: response.data.data.externalId,
+          externalId: response.data.externalId,
           fileName: file.name,
-          url: response.data.data.url
+          url: response.data.url
         }
 
         setUploadedFiles(prev => [...prev, newFile])
-        onChange([...mediaExternalIds, response.data.data.externalId])
+        onChange([...mediaExternalIds, response.data.externalId])
       } else {
-        setError(response.data.message || 'Ошибка загрузки файла')
+        setError('Ошибка загрузки файла')
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ошибка загрузки файла')

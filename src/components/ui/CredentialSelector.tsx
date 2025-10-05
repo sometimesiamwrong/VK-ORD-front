@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
-import { useCredentials, useGetCredentialToken } from '../../features/credentials/hooks'
-import { useEnvironmentStore } from '../../auth/tokenStore'
+import { useCredentials } from '../../features/credentials/hooks'
+import { useEnvironmentStore, useTokenStore } from '../../auth/tokenStore'
+import { useUserProfile } from '../../auth/hooks'
 import { saveToCookie } from '../../utils'
 import { toast } from 'react-toastify'
 
@@ -17,9 +18,35 @@ export const CredentialSelector: React.FC<CredentialSelectorProps> = ({
   onVkApiKeyChange,
   onUseSandboxChange,
 }) => {
+  const { data: userProfile } = useUserProfile()
   const { data: credentials, isLoading, error } = useCredentials()
-  const getTokenMutation = useGetCredentialToken()
   const { environment, setEnvironment } = useEnvironmentStore()
+  const { accessToken } = useTokenStore()
+
+  // Debug credentials data
+  console.log('🔍 Raw credentials:', credentials)
+  if (credentials) {
+    credentials.forEach((c, i) => {
+      console.log(`🔍 Credential ${i}:`, {
+        id: c.id,
+        environment: c.environment,
+        displayName: c.displayName
+      })
+    })
+  }
+
+  // Filter credentials by current environment and ensure they have valid publicId
+  const filteredCredentials = credentials?.filter(
+    c => c.environment === (useSandbox ? 'Sandbox' : 'Production') && c.publicId
+  ) || []
+
+  console.log('🔑 Access token:', accessToken ? 'Present' : 'Missing')
+  console.log('👤 User profile:', userProfile)
+  console.log('🔐 Credentials data:', credentials)
+  console.log('🔄 Credentials loading:', isLoading)
+  console.log('❌ Credentials error:', error)
+  console.log('🌍 Current environment:', useSandbox ? 'Sandbox' : 'Production')
+  console.log('📋 Filtered credentials:', filteredCredentials)
   const [selectedCredentialId, setSelectedCredentialId] = useState<string>('')
   const [useManualInput, setUseManualInput] = useState(false)
   const [manualKey, setManualKey] = useState('')
@@ -47,34 +74,30 @@ export const CredentialSelector: React.FC<CredentialSelectorProps> = ({
     }
   }, [vkApiKey, selectedCredentialId])
 
-  // Filter credentials by current environment
-  const filteredCredentials = credentials?.filter(
-    c => c.environment === (useSandbox ? 'Sandbox' : 'Production')
-  ) || []
-
   const handleCredentialSelect = (credentialId: string) => {
+    console.log('🎯 handleCredentialSelect вызван с ID:', credentialId)
+    console.log('🔑 Выбор токена:', credentialId)
+    console.log('📋 Доступные credentials:', filteredCredentials)
+
     setSelectedCredentialId(credentialId)
-    
+
     if (credentialId) {
-      // Fetch the actual token from the API
-      getTokenMutation.mutate(credentialId, {
-        onSuccess: (token) => {
-          // Save the token to cookie for the old API client
-          saveToCookie('vkord-api-key', token)
-          saveToCookie('vkord-credential-id', credentialId)
-          saveToCookie('vkord-use-sandbox', useSandbox.toString())
-          
-          // Update the wizard state
-          onVkApiKeyChange(token)
-          toast.success('Токен успешно выбран')
-        },
-        onError: (error: any) => {
-          toast.error(`Ошибка получения токена: ${error?.message || 'Неизвестная ошибка'}`)
-          setSelectedCredentialId('')
-          onVkApiKeyChange(null)
-        },
-      })
+      console.log('✅ Выбран credential ID:', credentialId)
+
+      // Save credential ID to cookie - token will be fetched when needed
+      saveToCookie('vkord-credential-id', credentialId)
+      saveToCookie('vkord-use-sandbox', useSandbox.toString())
+
+      // Clear any manual token since we're using saved credential
+      saveToCookie('vkord-api-key', '')
+
+      // Update the wizard state with credential ID instead of token
+      console.log('📤 Вызываю onVkApiKeyChange с:', credentialId)
+      onVkApiKeyChange(credentialId)
+      console.log('✅ onVkApiKeyChange вызван')
+      toast.success('Учетные данные успешно выбраны')
     } else {
+      console.log('❌ Сброс выбора токена')
       onVkApiKeyChange(null)
       saveToCookie('vkord-api-key', '')
       saveToCookie('vkord-credential-id', '')
@@ -92,9 +115,12 @@ export const CredentialSelector: React.FC<CredentialSelectorProps> = ({
   }
 
   const handleEnvironmentToggle = (sandbox: boolean) => {
+    console.log('🔄 Переключение окружения на:', sandbox ? 'Sandbox' : 'Production')
+    console.log('📤 Вызываю onUseSandboxChange с:', sandbox)
     onUseSandboxChange(sandbox)
     setEnvironment(sandbox ? 'sandbox' : 'prod')
     setSelectedCredentialId('') // Reset selection when environment changes
+    console.log('✅ Окружение переключено')
   }
 
   return (
@@ -151,27 +177,15 @@ export const CredentialSelector: React.FC<CredentialSelectorProps> = ({
                   value={selectedCredentialId}
                   onChange={(e) => handleCredentialSelect(e.target.value)}
                   style={{ marginBottom: 8 }}
-                  disabled={getTokenMutation.isPending}
                 >
                   <option value="">-- Выберите токен --</option>
                   {filteredCredentials.map(cred => (
-                    <option key={cred.id} value={cred.id}>
-                      {cred.displayName || `Токен от ${new Date(cred.createdAt).toLocaleDateString('ru-RU')}`}
+                    <option key={cred.publicId!} value={cred.publicId!}>
+                      {cred.displayName || `Токен от ${cred.createdAt ? new Date(cred.createdAt).toLocaleDateString('ru-RU') : 'неизвестной даты'}`}
                     </option>
                   ))}
                 </select>
 
-                {getTokenMutation.isPending && (
-                  <div style={{
-                    padding: '8px 16px',
-                    backgroundColor: 'var(--vk-info-bg)',
-                    color: 'var(--vk-info)',
-                    borderRadius: 6,
-                    marginBottom: 8
-                  }}>
-                    ⏳ Загрузка токена...
-                  </div>
-                )}
 
                 {selectedCredentialId && (
                   <div style={{

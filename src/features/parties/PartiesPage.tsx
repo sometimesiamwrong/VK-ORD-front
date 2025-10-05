@@ -46,11 +46,11 @@ export const PartiesPage: React.FC = () => {
     if (lookupInn.length === 10 || lookupInn.length === 12) {
       lookupMutation.mutate(lookupInn, {
         onSuccess: (data) => {
-          if (data.success && data.data) {
-            setPartyInfo(data.data)
+          if (data) {
+            setPartyInfo(data)
             toast.success('Контрагент найден')
           } else {
-            toast.error(data.message || 'Контрагент не найден')
+            toast.error('Контрагент не найден')
             setPartyInfo(null)
           }
         },
@@ -75,13 +75,9 @@ export const PartiesPage: React.FC = () => {
       return
     }
     createMutation.mutate({ inn: createFormData.inn, types: createFormData.roles }, {
-      onSuccess: (data) => {
-        if (data.success) {
-          toast.success('Контрагент успешно создан')
-          setCreateFormData({ inn: '', roles: [] })
-        } else {
-          toast.error(data.message || 'Ошибка создания контрагента')
-        }
+      onSuccess: () => {
+        toast.success('Контрагент успешно создан')
+        setCreateFormData({ inn: '', roles: [] })
       },
       onError: (error: any) => {
         toast.error(error?.message || 'Ошибка создания контрагента')

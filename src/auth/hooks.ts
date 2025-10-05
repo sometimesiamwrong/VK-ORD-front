@@ -7,9 +7,8 @@ import type {
   LoginRequest,
   RegisterRequest,
   AuthResponse,
-  UserProfile,
-  UpdateUserRequest,
-  ApiResponse
+  UserProfileResponse,
+  UpdateUserRequest
 } from '../types'
 
 // Generate device ID if not exists
@@ -31,23 +30,23 @@ export const useLogin = () => {
   return useMutation({
     mutationFn: async (data: LoginRequest) => {
       const deviceId = getDeviceId()
-      const response = await http.post<ApiResponse<AuthResponse>>('/api/auth/login', {
+      const response = await http.post<AuthResponse>('/api/Auth/login', {
         ...data,
         deviceId
       })
       return response.data
     },
     onSuccess: (data) => {
-      if (data.success && data.data) {
-        setAccessToken(data.data.token)
+      if (data) {
+        setAccessToken(data.token || '')
         // Сохраняем refresh token в куках, если он есть в ответе
-        if (data.data.refreshToken) {
-          setRefreshToken(data.data.refreshToken)
+        if (data.refreshToken) {
+          setRefreshToken(data.refreshToken)
         }
         toast.success('Вход выполнен успешно')
         navigate('/dashboard')
       } else {
-        toast.error(data.message || 'Ошибка входа')
+        toast.error('Ошибка входа')
       }
     },
   })
@@ -59,20 +58,20 @@ export const useRegister = () => {
 
   return useMutation({
     mutationFn: async (data: RegisterRequest) => {
-      const response = await http.post<ApiResponse<AuthResponse>>('/api/auth/register', data)
+      const response = await http.post<AuthResponse>('/api/Auth/register', data)
       return response.data
     },
     onSuccess: (data) => {
-      if (data.success && data.data) {
-        setAccessToken(data.data.token)
+      if (data) {
+        setAccessToken(data.token || '')
         // Сохраняем refresh token в куках, если он есть в ответе
-        if (data.data.refreshToken) {
-          setRefreshToken(data.data.refreshToken)
+        if (data.refreshToken) {
+          setRefreshToken(data.refreshToken)
         }
         toast.success('Регистрация выполнена успешно')
         navigate('/dashboard')
       } else {
-        toast.error(data.message || 'Ошибка регистрации')
+        toast.error('Ошибка регистрации')
       }
     },
   })
@@ -84,7 +83,7 @@ export const useLogout = () => {
 
   return useMutation({
     mutationFn: async () => {
-      const response = await http.post<ApiResponse<null>>('/api/auth/logout')
+      const response = await http.post<null>('/api/Auth/logout')
       return response.data
     },
     onSuccess: () => {
@@ -113,15 +112,15 @@ export const useAutoRefresh = () => {
         throw new Error('No refresh token available')
       }
       
-      const response = await http.post<ApiResponse<AuthResponse>>('/api/auth/refresh', {})
+      const response = await http.post<AuthResponse>('/api/Auth/refresh', {})
       return response.data
     },
     onSuccess: (data) => {
-      if (data.success && data.data) {
-        setAccessToken(data.data.token)
+      if (data) {
+        setAccessToken(data.token || '')
         // Обновляем refresh token, если сервер вернул новый
-        if (data.data.refreshToken) {
-          setRefreshToken(data.data.refreshToken)
+        if (data.refreshToken) {
+          setRefreshToken(data.refreshToken)
         }
       } else {
         navigate('/login')
@@ -138,11 +137,8 @@ export const useUserProfile = () => {
   return useQuery({
     queryKey: ['userProfile'],
     queryFn: async () => {
-      const response = await http.get<ApiResponse<UserProfile>>('/api/users/me')
-      if (response.data.success) {
-        return response.data.data
-      }
-      throw new Error(response.data.message || 'Failed to fetch user profile')
+      const response = await http.get<UserProfileResponse>('/api/Users/me')
+      return response.data
     },
   })
 }
@@ -150,11 +146,11 @@ export const useUserProfile = () => {
 export const useUpdateUserProfile = () => {
   return useMutation({
     mutationFn: async (data: UpdateUserRequest) => {
-      const response = await http.patch<ApiResponse<UserProfile>>('/api/users/me', data)
+      const response = await http.patch<UserProfileResponse>('/api/Users/me', data)
       return response.data
     },
     onSuccess: (data) => {
-      if (data.success) {
+      if (data) {
         toast.success('Профиль обновлен успешно')
       }
     },

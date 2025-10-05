@@ -1,8 +1,8 @@
 import { useCallback } from 'react'
 import http from '../api/http'
 import { useApp } from '../context/AppContext'
-import { generateContractExternalId } from '../utils'
-import type { ApiResponse, CreateContractRequest, CreateCreativeRequest, CreateCreativeResponse, AiKktyResponse } from '../types'
+import { generateContractExternalId, getCookie } from '../utils'
+import type { CreateContractRequest, CreateCreativeRequest, VkOrdCreativeV3RequestResponse, GetKktyByTextResponse } from '../types'
 
 export const useContractAndCreative = () => {
   const {
@@ -23,7 +23,15 @@ export const useContractAndCreative = () => {
       setContractData({ externalId: contractExternalId, paySum: wizardState.paySum, payDateEnd: wizardState.payDateEnd })
     }
 
+    // Get credential ID from cookie
+    const apiCredentialPublicId = getCookie('vkord-credential-id')
+    if (!apiCredentialPublicId) {
+      setMessage('Не выбран токен VK API', 'error')
+      return
+    }
+
     const payload: CreateContractRequest = {
+      apiCredentialPublicId,
       externalId: contractExternalId,
       clientExternalId: wizardState.advertiserInn,
       contractorExternalId: wizardState.contractorInn,
@@ -33,22 +41,15 @@ export const useContractAndCreative = () => {
 
     setLoading('contract', true)
     try {
-      const response = await http.post<ApiResponse<any>>('/api/Client/create_contract', payload)
-      const resp = response.data
-      
-      if (resp.success) {
-        setMessage('Договор успешно создан', 'success')
-      } else {
-        setMessage(resp.message || 'Ошибка создания договора', 'error')
-      }
-      if (resp.success && resp.data?.externalId) {
-        setContractData({
-          externalId: resp.data.externalId,
-          paySum: wizardState.paySum,
-          payDateEnd: wizardState.payDateEnd
-        })
-        setCreativeData({ contractExternalIds: [resp.data.externalId] })
-      }
+      await http.post('/api/ClientApi/create_contract', payload)
+      // Contract creation doesn't return data in new API
+      setMessage('Договор успешно создан', 'success')
+      setContractData({
+        externalId: contractExternalId,
+        paySum: wizardState.paySum,
+        payDateEnd: wizardState.payDateEnd
+      })
+      setCreativeData({ contractExternalIds: [contractExternalId] })
     } catch (e: any) {
       setMessage(`Ошибка создания договора: ${e?.message || e}`, 'error')
     } finally {
@@ -57,43 +58,39 @@ export const useContractAndCreative = () => {
   }, [wizardState, setContractData, setCreativeData, setLoading, setMessage])
 
   const createCreative = useCallback(async () => {
+    // Get credential ID from cookie
+    const apiCredentialPublicId = getCookie('vkord-credential-id')
+    if (!apiCredentialPublicId) {
+      setMessage('Не выбран токен VK API', 'error')
+      return
+    }
+
     const payload: CreateCreativeRequest = {
+      apiCredentialPublicId,
       externalId: wizardState.creativeExternalId,
       contractExternalIds: wizardState.contractExternalIds.length ? wizardState.contractExternalIds : [wizardState.contractExternalId],
-      kktyCodes: wizardState.kktyCodes ? (Array.isArray(wizardState.kktyCodes) ? wizardState.kktyCodes : [wizardState.kktyCodes]) : [],
-      format: wizardState.format,
-      contentUrls: wizardState.contentUrls.length ? wizardState.contentUrls : undefined,
+      kktus: wizardState.kktus ? (Array.isArray(wizardState.kktus) ? wizardState.kktus : [wizardState.kktus]) : [],
+      type: wizardState.format,
+      targetUrls: wizardState.contentUrls.length ? wizardState.contentUrls : undefined,
       targetAudience: wizardState.targetAudience || undefined,
-      text: wizardState.text || undefined,
+      texts: wizardState.text ? [wizardState.text] : undefined,
       name: wizardState.name || undefined,
-      mediaExternalIds: wizardState.mediaExternalIds?.length ? wizardState.mediaExternalIds : undefined
+      mediaExternalIds: wizardState.mediaExternalIds?.length ? wizardState.mediaExternalIds : undefined,
+      payType: 0 // Default to CPM
     }
 
     setLoading('creative', true)
     try {
-      const response = await http.post<ApiResponse<CreateCreativeResponse>>('/api/Client/create_creative', payload)
-      const resp = response.data
-      
-      if (resp.success) {
+      const response = await http.post<VkOrdCreativeV3RequestResponse>('/api/ClientApi/create_creative', payload)
+      const creativeData = response.data
+
+      // Предполагаем успех, если данные получены
+      if (creativeData?.erid) {
         setMessage('Креатив успешно создан', 'success')
-      } else {
-        setMessage(resp.message || 'Ошибка создания креатива', 'error')
-      }
-      let erid = resp?.data?.erid || null
-      if (!erid) {
-        const getResponse = await http.get<ApiResponse<CreateCreativeResponse>>(`/api/Creatives/${encodeURIComponent(wizardState.creativeExternalId)}`)
-        const getResp = getResponse.data
-        
-        if (getResp.success) {
-          setMessage('ERID получен', 'success')
-        } else {
-          setMessage(getResp.message || 'Ошибка получения ERID', 'error')
-        }
-        erid = getResp?.data?.erid || null
-      }
-      if (erid) {
-        setErid(erid)
+        setErid(creativeData.erid)
         setStep(4)
+      } else {
+        setMessage('Ошибка создания креатива', 'error')
       }
     } catch (e: any) {
       setMessage(`Ошибка создания креатива: ${e?.message || e}`, 'error')
@@ -111,21 +108,24 @@ export const useContractAndCreative = () => {
 
     setLoading('ai-kkty', true)
     try {
-      const response = await http.post<ApiResponse<AiKktyResponse>>('/api/ai/get-kkty_by-text', { text })
-      const resp = response.data
-      
-      if (resp.success) {
+      const response = await http.post<GetKktyByTextResponse>('/api/Ai/get-kkty_by-text', { text })
+      const aiData = response.data
+
+      // Предполагаем успех, если данные получены
+      if (aiData) {
         setMessage('ККТУ подобраны', 'success')
       } else {
-        setMessage(resp.message || 'Ошибка подбора ККТУ', 'error')
+        setMessage('Ошибка подбора ККТУ', 'error')
+        return []
       }
-      const list = resp?.data?.kkty || []
 
-      if (list.length && (!wizardState.kktyCodes || wizardState.kktyCodes.length === 0)) {
-        // Set first found code if kktyCodes is not selected yet
+      const list = aiData?.kkty || []
+
+      if (list.length && (!wizardState.kktus || wizardState.kktus.length === 0)) {
+        // Set first found code if kktus is not selected yet
         const firstCode = list[0].code
         if (firstCode) {
-          setCreativeData({ kktyCodes: [firstCode] })
+          setCreativeData({ kktus: [firstCode] })
         }
       }
 
@@ -136,7 +136,7 @@ export const useContractAndCreative = () => {
     } finally {
       setLoading('ai-kkty', false)
     }
-  }, [wizardState.text, wizardState.kktyCodes, setCreativeData, setLoading, setMessage])
+  }, [wizardState.text, wizardState.kktus, setCreativeData, setLoading, setMessage])
 
   return { saveContract, createCreative, guessKktyByText }
 }

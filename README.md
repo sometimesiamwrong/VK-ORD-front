@@ -186,7 +186,7 @@ VITE_API_BASE_URL=https://your-api-domain.com
 export const useMyApiCall = () => {
   return useMutation({
     mutationFn: async (data: MyRequestType) => {
-      const response = await http.post<ApiResponse<MyResponseType>>('/api/my-endpoint', data)
+      const response = await http.post<MyResponseType>('/api/my-endpoint', data)
       return response.data
     },
   })

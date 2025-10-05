@@ -19,7 +19,22 @@ export default defineConfig(({ command, mode }) => {
         define: {
             __API_BASE__: JSON.stringify(apiBaseUrl)
         },
-        base: './' // Относительные пути для static assets
+        base: './', // Относительные пути для static assets
+        build: {
+            logLevel: 'warn', // Показывать только предупреждения и ошибки, убрать info логи
+            reportCompressedSize: false, // Убрать отчет о размерах файлов
+            chunkSizeWarningLimit: 1000, // Увеличить лимит до 1000kb чтобы убрать предупреждение о больших chunk'ах
+            rollupOptions: {
+                onwarn(warning, warn) {
+                    // Игнорировать предупреждения о "use client" директивах
+                    if (warning.message.includes('Module level directives cause errors when bundled')) {
+                        return
+                    }
+                    // Для остальных предупреждений использовать стандартный warn
+                    warn(warning)
+                }
+            }
+        }
     }
 })
 

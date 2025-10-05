@@ -17,7 +17,7 @@ type WizardAction =
   | { type: 'SET_ADVERTISER_INFO'; payload: { name?: string | null; shortWithOpf?: string | null; info?: string | null } }
   | { type: 'SET_CONTRACTOR_INFO'; payload: { name?: string | null; shortWithOpf?: string | null; info?: string | null } }
   | { type: 'SET_CONTRACT_DATA'; payload: { externalId: string; paySum?: number | null; payDateEnd?: string | null } }
-  | { type: 'SET_CREATIVE_DATA'; payload: Partial<Pick<WizardState, 'creativeExternalId' | 'contractExternalIds' | 'kktyCodes' | 'format' | 'contentUrls' | 'targetAudience' | 'text' | 'name' | 'mediaExternalIds'>> }
+  | { type: 'SET_CREATIVE_DATA'; payload: Partial<Pick<WizardState, 'creativeExternalId' | 'contractExternalIds' | 'kktus' | 'format' | 'contentUrls' | 'targetAudience' | 'text' | 'name' | 'mediaExternalIds'>> }
   | { type: 'SET_ERID'; payload: string | null }
   | { type: 'ADD_TO_PARTY_HISTORY'; payload: PartyHistoryItem }
   | { type: 'CLEAR_STEP'; payload: 1 | 2 | 3 | 4 }
@@ -53,7 +53,7 @@ const initialWizardState: WizardState = {
   payDateEnd: null,
   creativeExternalId: nowTimestampString(),
   contractExternalIds: [],
-  kktyCodes: [],
+  kktus: [],
   format: 'banner' as const,
   contentUrls: [],
   targetAudience: null,
@@ -149,8 +149,8 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
             ...state,
             creativeExternalId: '',
             contractExternalIds: [],
-            kktyCodes: [],
-            format: 'banner' as const,
+            kktus: [],
+            format: 0, // VkOrdCreativeForm.Banner
             contentUrls: [],
             targetAudience: null,
             text: null,
@@ -214,7 +214,7 @@ interface AppContextType {
   setAdvertiserInfo: (info: { name?: string | null; shortWithOpf?: string | null; info?: string | null }) => void
   setContractorInfo: (info: { name?: string | null; shortWithOpf?: string | null; info?: string | null }) => void
   setContractData: (data: { externalId: string; paySum?: number | null; payDateEnd?: string | null }) => void
-  setCreativeData: (data: Partial<Pick<WizardState, 'creativeExternalId' | 'contractExternalIds' | 'kktyCodes' | 'format' | 'contentUrls' | 'targetAudience' | 'text' | 'name' | 'mediaExternalIds'>>) => void
+  setCreativeData: (data: Partial<Pick<WizardState, 'creativeExternalId' | 'contractExternalIds' | 'kktus' | 'format' | 'contentUrls' | 'targetAudience' | 'text' | 'name' | 'mediaExternalIds'>>) => void
   setErid: (erid: string | null) => void
   addToPartyHistory: (item: PartyHistoryItem) => void
   clearStep: (step: 1 | 2 | 3 | 4) => void
@@ -318,7 +318,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const canSubmitCreative = React.useMemo(() =>
     !!wizardState.creativeExternalId &&
     wizardState.contractExternalIds.length >= 1 &&
-    !!(wizardState.kktyCodes && Array.isArray(wizardState.kktyCodes) && wizardState.kktyCodes.length > 0) &&
+    !!(wizardState.kktus && Array.isArray(wizardState.kktus) && wizardState.kktus.length > 0) &&
     !!wizardState.name?.trim() &&
     !!wizardState.text?.trim(),
     [wizardState]
@@ -336,7 +336,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const setAdvertiserInfo = (info: { name?: string | null; shortWithOpf?: string | null; info?: string | null }) => dispatchWizard({ type: 'SET_ADVERTISER_INFO', payload: info })
   const setContractorInfo = (info: { name?: string | null; shortWithOpf?: string | null; info?: string | null }) => dispatchWizard({ type: 'SET_CONTRACTOR_INFO', payload: info })
   const setContractData = (data: { externalId: string; paySum?: number | null; payDateEnd?: string | null }) => dispatchWizard({ type: 'SET_CONTRACT_DATA', payload: data })
-  const setCreativeData = (data: Partial<Pick<WizardState, 'creativeExternalId' | 'contractExternalIds' | 'kktyCodes' | 'format' | 'contentUrls' | 'targetAudience' | 'text' | 'name'>>) => dispatchWizard({ type: 'SET_CREATIVE_DATA', payload: data })
+  const setCreativeData = (data: Partial<Pick<WizardState, 'creativeExternalId' | 'contractExternalIds' | 'kktus' | 'format' | 'contentUrls' | 'targetAudience' | 'text' | 'name'>>) => dispatchWizard({ type: 'SET_CREATIVE_DATA', payload: data })
   const setErid = (erid: string | null) => dispatchWizard({ type: 'SET_ERID', payload: erid })
   const addToPartyHistory = (item: PartyHistoryItem) => dispatchWizard({ type: 'ADD_TO_PARTY_HISTORY', payload: item })
   const clearStep = (step: 1 | 2 | 3 | 4) => dispatchWizard({ type: 'CLEAR_STEP', payload: step })

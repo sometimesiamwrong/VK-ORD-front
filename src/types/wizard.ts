@@ -1,4 +1,4 @@
-import type { VkCreativeForm } from './index'
+import type { VkOrdCreativeForm } from './index'
 
 export type WizardStep = 1 | 2 | 3 | 4
 
@@ -36,8 +36,8 @@ export interface WizardState {
   // step 3
   creativeExternalId: string
   contractExternalIds: string[]
-  kktyCodes: string[]
-  format: VkCreativeForm
+  kktus: string[] // renamed from kktyCodes
+  format: VkOrdCreativeForm // updated enum type
   contentUrls: string[]
   targetAudience?: string | null
   text?: string | null

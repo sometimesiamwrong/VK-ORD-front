@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import http from '../api/http'
 import { useApp } from '../context/AppContext'
 import { isValidInn, getPartyDisplayName, getPartyShortWithOpf } from '../utils'
-import type { ApiResponse, DaDataPartyShortResponse } from '../types'
+import type { DaDataPartyShortResponse } from '../types'
 
 export const usePartyLookup = () => {
   const {
@@ -25,19 +25,21 @@ export const usePartyLookup = () => {
 
     setLoading(`lookup-${kind}`, true)
     try {
-      const response = await http.post<ApiResponse<DaDataPartyShortResponse>>('/api/Client/party', { inn })
-      const resp = response.data
-      
-      if (resp.success) {
+      const response = await http.post<DaDataPartyShortResponse>('/api/ClientApi/party', { inn })
+      const partyData = response.data
+
+      // Предполагаем успех, если данные получены
+      if (partyData) {
         setMessage('Поиск выполнен успешно', 'success')
       } else {
-        setMessage(resp.message || 'Ошибка поиска', 'error')
+        setMessage('Ошибка поиска', 'error')
+        return
       }
 
-      if (resp.success && resp.data) {
-        const display = getPartyDisplayName(resp.data.name)
-        const shortWithOpf = getPartyShortWithOpf(resp.data.name)
-        const t = resp.data.type || ''
+      if (partyData) {
+        const display = getPartyDisplayName(partyData.name)
+        const shortWithOpf = getPartyShortWithOpf(partyData.name)
+        const t = partyData.type || ''
         const info = display ? `${display}${t ? ` (${t})` : ''}` : null
 
         const infoData = { name: display || null, shortWithOpf: shortWithOpf || null, info }
@@ -80,14 +82,9 @@ export const usePartyLookup = () => {
 
     setLoading(`create-${kind}`, true)
     try {
-      const response = await http.post<ApiResponse<unknown>>('/api/Client/set-counterparty', { inn, types: role })
-      const resp = response.data
-      
-      if (resp.success) {
-        setMessage('Контрагент успешно создан', 'success')
-      } else {
-        setMessage(resp.message || 'Ошибка создания контрагента', 'error')
-      }
+      await http.post<unknown>('/api/ClientApi/set-counterparty', { inn, types: role })
+      // Предполагаем успех, если нет ошибки
+      setMessage('Контрагент успешно создан', 'success')
     } catch (e: any) {
       setMessage(`Ошибка создания контрагента: ${e?.message || e}`, 'error')
     } finally {
@@ -104,9 +101,9 @@ export const useCounterpartiesList = () => {
     queryKey: ['counterparties'],
     queryFn: async () => {
       try {
-        const response = await http.get('/api/Client/counterparties')
-        if (response.data.success && response.data.data?.counterparties) {
-          return response.data.data.counterparties
+        const response = await http.get('/api/ClientApi/counterparties')
+        if (response.data?.data) {
+          return response.data.data
         }
         return []
       } catch (error: any) {

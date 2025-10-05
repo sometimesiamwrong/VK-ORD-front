@@ -181,7 +181,7 @@ export interface ApiRequest {
   // поля запроса
 }
 
-export interface ApiResponse<T> {
+export interface T {
   success: boolean
   data?: T
   message?: string

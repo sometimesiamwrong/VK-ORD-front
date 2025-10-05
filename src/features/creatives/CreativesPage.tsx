@@ -33,8 +33,7 @@ import type {
   CreateCreativeRequest,
   CreativeDetails,
   CreativeStatus,
-  ApiResponse,
-  VkCreativeForm
+  VkOrdCreativeForm,
 } from '../../types'
 import { useCreativesList, useCreativeByErid } from './hooks'
 
@@ -42,11 +41,12 @@ export const CreativesPage: React.FC = () => {
   const [formData, setFormData] = useState<CreateCreativeRequest>({
     externalId: '',
     contractExternalIds: [],
-    kktyCodes: [],
-    format: 'banner' as VkCreativeForm,
-    contentUrls: [],
+    kktus: [],
+    type: VkOrdCreativeForm.Banner,
+    payType: 0, // VkOrdPayType.Cpm
+    targetUrls: [],
     targetAudience: '',
-    text: '',
+    texts: [],
     name: '',
   })
 
@@ -72,13 +72,13 @@ export const CreativesPage: React.FC = () => {
   // Create creative mutation
   const createCreativeMutation = useMutation({
     mutationFn: async (data: CreateCreativeRequest) => {
-      const response = await http.post<ApiResponse<CreativeDetails>>('/api/creatives', data)
+      const response = await http.post<CreativeDetails>('/api/creatives', data)
       return response.data
     },
     onSuccess: (data) => {
-      if (data.success && data.data) {
+      if (data) {
         toast.success('Креатив успешно создан')
-        setCreativeDetails(data.data)
+        setCreativeDetails(data)
       }
     },
   })
@@ -86,12 +86,12 @@ export const CreativesPage: React.FC = () => {
   // View creative mutation
   const viewCreativeMutation = useMutation({
     mutationFn: async (externalId: string) => {
-      const response = await http.get<ApiResponse<CreativeDetails>>(`/api/creatives/${externalId}`)
+      const response = await http.get<CreativeDetails>(`/api/creatives/${externalId}`)
       return response.data
     },
     onSuccess: (data) => {
-      if (data.success && data.data) {
-        setCreativeDetails(data.data)
+      if (data) {
+        setCreativeDetails(data)
       }
     },
   })
@@ -99,12 +99,12 @@ export const CreativesPage: React.FC = () => {
   // Get creative status mutation
   const getStatusMutation = useMutation({
     mutationFn: async (externalId: string) => {
-      const response = await http.get<ApiResponse<CreativeStatus>>(`/api/creatives/${externalId}/status`)
+      const response = await http.get<CreativeStatus>(`/api/creatives/${externalId}/status`)
       return response.data
     },
     onSuccess: (data) => {
-      if (data.success && data.data) {
-        setCreativeStatus(data.data)
+      if (data) {
+        setCreativeStatus(data)
       }
     },
   })
@@ -112,7 +112,7 @@ export const CreativesPage: React.FC = () => {
   // Delete creative mutation
   const deleteCreativeMutation = useMutation({
     mutationFn: async (externalId: string) => {
-      const response = await http.delete<ApiResponse<null>>(`/api/creatives/${externalId}`)
+      const response = await http.delete<null>(`/api/creatives/${externalId}`)
       return response.data
     },
     onSuccess: () => {
@@ -147,8 +147,8 @@ export const CreativesPage: React.FC = () => {
     }
   }
 
-  const totalItemsCount = creativesQuery.data?.data?.totalItemsCount ?? 0
-  const creatives = creativesQuery.data?.data?.creatives ?? []
+  const totalItemsCount = creativesQuery.data?.totalItemsCount ?? 0
+  const creatives = creativesQuery.data?.creatives ?? []
   const totalPages = Math.max(1, Math.ceil(totalItemsCount / listLimit))
   const currentPage = Math.floor(listOffset / listLimit) + 1
 
@@ -160,11 +160,11 @@ export const CreativesPage: React.FC = () => {
     if (!eridQuery.trim()) return
     creativeByErid.mutate(eridQuery.trim(), {
       onSuccess: (resp) => {
-        if (resp.success && resp.data) {
-          setCreativeDetails(resp.data)
+        if (resp) {
+          setCreativeDetails(resp)
           toast.success('Креатив найден по ERID')
         } else {
-          toast.error(resp.message || 'Креатив не найден')
+          toast.error('Креатив не найден')
         }
       }
     })
@@ -188,10 +188,10 @@ export const CreativesPage: React.FC = () => {
   }
 
   const addKktyCode = () => {
-    if (newKktyCode && !formData.kktyCodes.includes(newKktyCode)) {
+    if (newKktyCode && !formData.kktus.includes(newKktyCode)) {
       setFormData(prev => ({
         ...prev,
-        kktyCodes: [...prev.kktyCodes, newKktyCode]
+        kktus: [...prev.kktus, newKktyCode]
       }))
       setNewKktyCode('')
     }
@@ -200,15 +200,15 @@ export const CreativesPage: React.FC = () => {
   const removeKktyCode = (code: string) => {
     setFormData(prev => ({
       ...prev,
-      kktyCodes: prev.kktyCodes.filter(c => c !== code)
+      kktus: prev.kktus.filter(c => c !== code)
     }))
   }
 
   const addContentUrl = () => {
-    if (newContentUrl && !formData.contentUrls?.includes(newContentUrl)) {
+    if (newContentUrl && !formData.targetUrls?.includes(newContentUrl)) {
       setFormData(prev => ({
         ...prev,
-        contentUrls: [...(prev.contentUrls || []), newContentUrl]
+        targetUrls: [...(prev.targetUrls || []), newContentUrl]
       }))
       setNewContentUrl('')
     }
@@ -217,15 +217,23 @@ export const CreativesPage: React.FC = () => {
   const removeContentUrl = (url: string) => {
     setFormData(prev => ({
       ...prev,
-      contentUrls: prev.contentUrls?.filter(u => u !== url) || []
+      targetUrls: prev.targetUrls?.filter(u => u !== url) || []
     }))
   }
 
   const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: e.target.value
-    }))
+    if (field === 'text') {
+      // Handle text field specially - split by newlines
+      setFormData(prev => ({
+        ...prev,
+        texts: e.target.value.split('\n').filter(t => t.trim())
+      }))
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [field]: e.target.value
+      }))
+    }
   }
 
   const handleSelectChange = (field: string) => (e: any) => {
@@ -262,9 +270,9 @@ export const CreativesPage: React.FC = () => {
               <FormControl fullWidth>
                 <InputLabel>Формат</InputLabel>
                 <Select
-                  value={formData.format}
+                  value={formData.type}
                   label="Формат"
-                  onChange={handleSelectChange('format')}
+                  onChange={handleSelectChange('type')}
                 >
                   <MenuItem value="banner">Banner</MenuItem>
                   <MenuItem value="text_block">Text Block</MenuItem>
@@ -320,7 +328,7 @@ export const CreativesPage: React.FC = () => {
                     </IconButton>
                   </Box>
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                    {formData.kktyCodes.map((code) => (
+                    {formData.kktus.map((code) => (
                       <Chip
                         key={code}
                         label={code}
@@ -349,7 +357,7 @@ export const CreativesPage: React.FC = () => {
                     </IconButton>
                   </Box>
                   <List dense>
-                    {formData.contentUrls?.map((url, index) => (
+                    {formData.targetUrls?.map((url, index) => (
                       <ListItem key={index}>
                         <ListItemText primary={url} />
                         <ListItemSecondaryAction>
@@ -376,7 +384,7 @@ export const CreativesPage: React.FC = () => {
                   <TextField
                     fullWidth
                     label="Text"
-                    value={formData.text}
+                    value={formData.texts?.join('\n') || ''}
                     onChange={handleChange('text')}
                     multiline
                     rows={3}

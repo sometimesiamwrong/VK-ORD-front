@@ -11,13 +11,13 @@ interface PartyModalProps {
   onEnterManually?: (value: string) => void
 }
 
-const formatPartyType = (type: string | null | undefined): string => {
+const formatPartyType = (type: string | number | null | undefined): string => {
   if (!type) return ''
-  const lower = type.toLowerCase()
-  if (lower === 'ip') return 'ИП'
-  if (lower === 'juridical') return 'ЮР лицо'
-  if (lower === 'physical') return 'Физ. лицо'
-  return type
+  const typeStr = String(type).toLowerCase()
+  if (typeStr === 'ip') return 'ИП'
+  if (typeStr === 'juridical') return 'ЮР лицо'
+  if (typeStr === 'physical') return 'Физ. лицо'
+  return String(type)
 }
 
 export const PartyModal: React.FC<PartyModalProps> = ({
