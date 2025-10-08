@@ -16,7 +16,7 @@ import {
   Delete as DeleteIcon,
 } from '@mui/icons-material'
 import { useMutation } from '@tanstack/react-query'
-import { toast } from 'react-toastify'
+import { toast } from '../../utils/toast'
 import http from '../../api/http'
 import type { MediaUploadResponse, MediaDetails } from '../../types'
 

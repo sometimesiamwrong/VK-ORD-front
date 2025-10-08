@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect, type ReactNode } from 'react'
-import type { WizardState, LoadingState, MessageState, PartyHistoryItem } from '../types'
+import { type WizardState, type LoadingState, type MessageState, type PartyHistoryItem, VkOrdCreativeForm } from '../types'
 import { generateContractExternalId, nowTimestampString, loadFromLocalStorage, saveToLocalStorage, loadFromCookie, isFirstTimeUser } from '../utils'
 
 const LOCAL_KEY = 'vkord-wizard-state'
@@ -16,8 +16,8 @@ type WizardAction =
   | { type: 'SET_CONTRACTOR_ROLE'; payload: WizardState['contractorRole'] }
   | { type: 'SET_ADVERTISER_INFO'; payload: { name?: string | null; shortWithOpf?: string | null; info?: string | null } }
   | { type: 'SET_CONTRACTOR_INFO'; payload: { name?: string | null; shortWithOpf?: string | null; info?: string | null } }
-  | { type: 'SET_CONTRACT_DATA'; payload: { externalId: string; paySum?: number | null; payDateEnd?: string | null } }
-  | { type: 'SET_CREATIVE_DATA'; payload: Partial<Pick<WizardState, 'creativeExternalId' | 'contractExternalIds' | 'kktus' | 'format' | 'contentUrls' | 'targetAudience' | 'text' | 'name' | 'mediaExternalIds'>> }
+  | { type: 'SET_CONTRACT_DATA'; payload: { externalId: string; serial?: string | null; paySum?: number | null; date?: string | null; dateEnd?: string | null } }
+  | { type: 'SET_CREATIVE_DATA'; payload: Partial<Pick<WizardState, 'creativeExternalId' | 'contractExternalIds' | 'kktus' | 'format' | 'contentUrls' | 'targetAudience' | 'text' | 'name' | 'mediaFiles'>> }
   | { type: 'SET_ERID'; payload: string | null }
   | { type: 'ADD_TO_PARTY_HISTORY'; payload: PartyHistoryItem }
   | { type: 'CLEAR_STEP'; payload: 1 | 2 | 3 | 4 }
@@ -49,17 +49,19 @@ const initialWizardState: WizardState = {
   advertiserInfo: null,
   contractorInfo: null,
   contractExternalId: generateContractExternalId(new Date(), 1),
+  serial: null,
   paySum: null,
-  payDateEnd: null,
+  date: null,
+  dateEnd: null,
   creativeExternalId: nowTimestampString(),
   contractExternalIds: [],
   kktus: [],
-  format: 'banner' as const,
+  format: VkOrdCreativeForm.TextGraphicBlock,
   contentUrls: [],
   targetAudience: null,
   text: null,
   name: null,
-  mediaExternalIds: [],
+  mediaFiles: [],
   erid: null,
   partyHistory: []
 }
@@ -104,8 +106,10 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
       return {
         ...state,
         contractExternalId: action.payload.externalId,
+        serial: action.payload.serial,
         paySum: action.payload.paySum,
-        payDateEnd: action.payload.payDateEnd
+        date: action.payload.date,
+        dateEnd: action.payload.dateEnd
       }
     case 'SET_CREATIVE_DATA':
       return { ...state, ...action.payload }
@@ -140,8 +144,10 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
           return {
             ...state,
             contractExternalId: '',
+            serial: null,
             paySum: null,
-            payDateEnd: null,
+            date: null,
+            dateEnd: null,
             erid: null
           }
         case 3:
@@ -155,7 +161,7 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
             targetAudience: null,
             text: null,
             name: null,
-            mediaExternalIds: [],
+            mediaFiles: [],
             erid: null
           }
         case 4:
@@ -193,7 +199,7 @@ function messageReducer(state: MessageState, action: MessageAction): MessageStat
     case 'CLEAR_MESSAGE':
       return { text: '', status: 'info', highlight: false }
     case 'HIGHLIGHT_MESSAGE':
-      return { ...state, highlight: true }
+      return { ...state, highlight: false }
     default:
       return state
   }
@@ -213,8 +219,8 @@ interface AppContextType {
   setContractorRole: (role: WizardState['contractorRole']) => void
   setAdvertiserInfo: (info: { name?: string | null; shortWithOpf?: string | null; info?: string | null }) => void
   setContractorInfo: (info: { name?: string | null; shortWithOpf?: string | null; info?: string | null }) => void
-  setContractData: (data: { externalId: string; paySum?: number | null; payDateEnd?: string | null }) => void
-  setCreativeData: (data: Partial<Pick<WizardState, 'creativeExternalId' | 'contractExternalIds' | 'kktus' | 'format' | 'contentUrls' | 'targetAudience' | 'text' | 'name' | 'mediaExternalIds'>>) => void
+  setContractData: (data: { externalId: string; serial?: string | null; paySum?: number | null; date?: string | null; dateEnd?: string | null }) => void
+  setCreativeData: (data: Partial<Pick<WizardState, 'creativeExternalId' | 'contractExternalIds' | 'kktus' | 'format' | 'contentUrls' | 'targetAudience' | 'text' | 'name' | 'mediaFiles'>>) => void
   setErid: (erid: string | null) => void
   addToPartyHistory: (item: PartyHistoryItem) => void
   clearStep: (step: 1 | 2 | 3 | 4) => void
@@ -261,11 +267,15 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
 
     // Load VK API settings from cookies
     const vkApiKey = loadFromCookie('vkord-api-key')
+    const credentialId = loadFromCookie('vkord-credential-id')
     const useSandbox = loadFromCookie('vkord-use-sandbox') === 'true'
+
+    // If we have a credential ID but no manual API key, use the credential ID as vkApiKey
+    const finalVkApiKey = vkApiKey || credentialId
 
     const finalState = {
       ...localState,
-      vkApiKey,
+      vkApiKey: finalVkApiKey,
       useSandbox
     }
 
@@ -290,15 +300,20 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     return () => window.removeEventListener('blur', onBlur, true)
   }, [wizardState])
 
-  // Clear message highlight after animation
+  // Clear message highlight after animation with different timeouts for different message types
   useEffect(() => {
     if (messageState.highlight) {
+      // Different timeouts for different message types
+      const timeout = messageState.status === 'success' ? 2000 : // 2 seconds for success
+                      messageState.status === 'error' ? 5000 :   // 5 seconds for errors
+                      3000 // 3 seconds for info messages
+
       const timer = setTimeout(() => {
         dispatchMessage({ type: 'HIGHLIGHT_MESSAGE' }) // This will set highlight to false in the reducer
-      }, 600)
+      }, timeout)
       return () => clearTimeout(timer)
     }
-  }, [messageState.highlight])
+  }, [messageState.highlight, messageState.status])
 
   // Computed values
   const canNextFromStep1 = React.useMemo(() =>
@@ -311,7 +326,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   )
 
   const canNextFromStep2 = React.useMemo(() =>
-    !!wizardState.contractExternalId && !!wizardState.paySum && wizardState.paySum > 0,
+    !!wizardState.contractExternalId && !!wizardState.date,
     [wizardState]
   )
 
@@ -335,7 +350,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const setContractorRole = (role: WizardState['contractorRole']) => dispatchWizard({ type: 'SET_CONTRACTOR_ROLE', payload: role })
   const setAdvertiserInfo = (info: { name?: string | null; shortWithOpf?: string | null; info?: string | null }) => dispatchWizard({ type: 'SET_ADVERTISER_INFO', payload: info })
   const setContractorInfo = (info: { name?: string | null; shortWithOpf?: string | null; info?: string | null }) => dispatchWizard({ type: 'SET_CONTRACTOR_INFO', payload: info })
-  const setContractData = (data: { externalId: string; paySum?: number | null; payDateEnd?: string | null }) => dispatchWizard({ type: 'SET_CONTRACT_DATA', payload: data })
+  const setContractData = (data: { externalId: string; serial?: string | null; paySum?: number | null; date?: string | null; dateEnd?: string | null }) => dispatchWizard({ type: 'SET_CONTRACT_DATA', payload: data })
   const setCreativeData = (data: Partial<Pick<WizardState, 'creativeExternalId' | 'contractExternalIds' | 'kktus' | 'format' | 'contentUrls' | 'targetAudience' | 'text' | 'name'>>) => dispatchWizard({ type: 'SET_CREATIVE_DATA', payload: data })
   const setErid = (erid: string | null) => dispatchWizard({ type: 'SET_ERID', payload: erid })
   const addToPartyHistory = (item: PartyHistoryItem) => dispatchWizard({ type: 'ADD_TO_PARTY_HISTORY', payload: item })

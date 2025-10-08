@@ -1,8 +1,8 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { toast } from 'react-toastify'
 import http from '../api/http'
 import { useTokenStore, useDeviceStore } from './tokenStore'
+import { toast } from '../utils/toast'
 import type {
   LoginRequest,
   RegisterRequest,

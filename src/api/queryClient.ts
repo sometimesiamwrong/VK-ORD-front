@@ -1,5 +1,4 @@
 import { QueryClient } from '@tanstack/react-query'
-import { toast } from 'react-toastify'
 
 const defaultOptions = {
   queries: {
@@ -17,18 +16,18 @@ const defaultOptions = {
   mutations: {
     retry: false,
     onError: (error: any) => {
-      // Handle API errors globally
+      // Handle API errors globally - log to console, UI notifications handled in components
       if (error?.response?.data) {
         const apiResponse = error.response.data
         if (apiResponse.message) {
-          toast.error(apiResponse.message)
+          console.error('API Error:', apiResponse.message)
         } else {
-          toast.error('Произошла ошибка при выполнении запроса')
+          console.error('Произошла ошибка при выполнении запроса')
         }
       } else if (error?.message) {
-        toast.error(error.message)
+        console.error('API Error:', error.message)
       } else {
-        toast.error('Произошла неизвестная ошибка')
+        console.error('Произошла неизвестная ошибка')
       }
     },
   },

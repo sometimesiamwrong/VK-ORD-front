@@ -147,8 +147,10 @@ export interface CreateContractRequest extends IRequestWithVkOrdKey {
     externalId: string
     clientExternalId: string
     contractorExternalId: string
-    paySum: number
-    payDateEnd?: string | null
+    serial?: string | null
+    paySum?: number | null
+    date: string
+    dateEnd?: string | null
 }
 
 export interface ContractResponse {

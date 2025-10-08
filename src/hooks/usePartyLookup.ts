@@ -5,6 +5,77 @@ import { useApp } from '../context/AppContext'
 import { isValidInn, getPartyDisplayName, getPartyShortWithOpf } from '../utils'
 import type { DaDataPartyShortResponse } from '../types'
 
+const extractErrorMessage = (error: unknown, fallback: string): string => {
+  if (!error) return fallback
+
+  if (typeof error === 'string') {
+    return error.trim() || fallback
+  }
+
+  // Axios error shape
+  const axiosCandidate = error as {
+    message?: string | null
+    response?: {
+      data?: unknown
+      status?: number
+    }
+  }
+
+  // 1) Broken rules array from interceptor
+  const brokenRulesCandidate = error as {
+    brokenRules?: Array<{ message?: string | null }>
+  }
+  if (Array.isArray(brokenRulesCandidate?.brokenRules) && brokenRulesCandidate.brokenRules.length > 0) {
+    const combinedBrokenRules = brokenRulesCandidate.brokenRules
+      .map(rule => {
+        if (typeof rule?.message === 'string') {
+          return rule.message.trim()
+        } else if (rule?.message != null) {
+          return String(rule.message).trim()
+        } else {
+          return 'Неизвестная ошибка валидации'
+        }
+      })
+      .filter(Boolean)
+      .join('\n')
+
+    if (combinedBrokenRules) {
+      return combinedBrokenRules
+    }
+  }
+
+  // 2) Backend might send { message: string }
+  if (typeof axiosCandidate?.response?.data === 'object' && axiosCandidate.response.data !== null) {
+    const dataObj = axiosCandidate.response.data as { message?: string | null; errorMessage?: string | null }
+    const payloadMessage = dataObj.message || dataObj.errorMessage
+    if (typeof payloadMessage === 'string' && payloadMessage.trim()) {
+      return payloadMessage.trim()
+    }
+  }
+
+  // 3) Response data is an array of messages (raw broken rules bypassing interceptor)
+  if (Array.isArray(axiosCandidate?.response?.data)) {
+    const arrayMessage = (axiosCandidate.response.data as Array<{ Message?: string | null; message?: string | null }>)
+      .map((item) => (item?.Message || item?.message || '').trim())
+      .filter(Boolean)
+      .join('\n')
+    if (arrayMessage) {
+      return arrayMessage
+    }
+  }
+
+  if (typeof axiosCandidate?.response?.data === 'string' && axiosCandidate.response.data.trim()) {
+    return axiosCandidate.response.data.trim()
+  }
+
+  // 4) Top-level message from error object
+  if (typeof axiosCandidate?.message === 'string' && axiosCandidate.message.trim()) {
+    return axiosCandidate.message.trim()
+  }
+
+  return fallback
+}
+
 export const usePartyLookup = () => {
   const {
     wizardState,
@@ -59,8 +130,8 @@ export const usePartyLookup = () => {
           timestamp: Date.now()
         })
       }
-    } catch (e: any) {
-      setMessage(`Ошибка поиска: ${e?.message || e}`, 'error')
+    } catch (error) {
+      setMessage(extractErrorMessage(error, 'Ошибка поиска контрагента'), 'error')
     } finally {
       setLoading(`lookup-${kind}`, false)
     }
@@ -85,8 +156,8 @@ export const usePartyLookup = () => {
       await http.post<unknown>('/api/ClientApi/set-counterparty', { inn, types: role })
       // Предполагаем успех, если нет ошибки
       setMessage('Контрагент успешно создан', 'success')
-    } catch (e: any) {
-      setMessage(`Ошибка создания контрагента: ${e?.message || e}`, 'error')
+    } catch (error) {
+      setMessage(extractErrorMessage(error, 'Не удалось создать контрагента'), 'error')
     } finally {
       setLoading(`create-${kind}`, false)
     }

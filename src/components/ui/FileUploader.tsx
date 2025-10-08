@@ -1,32 +1,85 @@
 import React, { useState } from 'react'
 import http from '../../api/http'
+import { type UploadedFile } from '../../types'
 
 interface FileUploaderProps {
-  mediaExternalIds: string[]
-  onChange: (ids: string[]) => void
+  mediaFiles: UploadedFile[]
+  onChange: (files: UploadedFile[]) => void
   maxFiles?: number
 }
 
-interface UploadedFile {
-  externalId: string
-  fileName: string
-  url: string
+// Helper function to determine file type
+const getFileType = (fileName: string): 'image' | 'video' | 'audio' | 'document' => {
+  const ext = fileName.toLowerCase().split('.').pop() || ''
+  if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].includes(ext)) return 'image'
+  if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv'].includes(ext)) return 'video'
+  if (['mp3', 'wav', 'ogg', 'aac', 'flac', 'm4a'].includes(ext)) return 'audio'
+  return 'document'
+}
+
+// Helper function to generate preview for images
+const generateImagePreview = (file: File): Promise<string> => {
+  return new Promise((resolve) => {
+    const reader = new FileReader()
+    reader.onload = (e) => resolve(e.target?.result as string)
+    reader.readAsDataURL(file)
+  })
+}
+
+
+// Component for file preview
+const FilePreview: React.FC<{ file: UploadedFile }> = ({ file }) => {
+  const fileType = getFileType(file.fileName)
+
+  if (file.preview && (fileType === 'image' || fileType === 'video')) {
+    return (
+      <img
+        src={file.preview}
+        alt={file.fileName}
+        style={{
+          width: 32,
+          height: 32,
+          objectFit: 'cover',
+          borderRadius: 4,
+          border: '1px solid var(--vk-border, #ddd)'
+        }}
+      />
+    )
+  }
+
+  // Default icons for different file types
+  const getFileIcon = () => {
+    switch (fileType) {
+      case 'image': return '🖼️'
+      case 'video': return '🎥'
+      case 'audio': return '🎵'
+      default: return '📄'
+    }
+  }
+
+  return (
+    <span style={{ fontSize: '1.2em' }}>
+      {getFileIcon()}
+    </span>
+  )
 }
 
 export const FileUploader: React.FC<FileUploaderProps> = ({
-  mediaExternalIds,
+  mediaFiles,
   onChange,
   maxFiles = 10
 }) => {
-  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files
-    if (!files || files.length === 0) return
 
-    const currentCount = mediaExternalIds.length
+    if (!files || files.length === 0) {
+      return
+    }
+
+    const currentCount = mediaFiles.length
     if (currentCount >= maxFiles) {
       setError(`Максимальное количество файлов: ${maxFiles}`)
       return
@@ -47,26 +100,35 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
       const formData = new FormData()
       formData.append('file', file)
 
-      const response = await http.post<{ externalId: string; url: string }>('/api/media/upload', formData, {
+      const response = await http.post<string>('/api/media/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       })
 
-      if (response.data) {
-        const newFile: UploadedFile = {
-          externalId: response.data.externalId,
-          fileName: file.name,
-          url: response.data.url
-        }
+      const externalId = response.data
+      const fileType = getFileType(file.name)
 
-        setUploadedFiles(prev => [...prev, newFile])
-        onChange([...mediaExternalIds, response.data.externalId])
-      } else {
-        setError('Ошибка загрузки файла')
+      // Generate preview for images and videos
+      let preview: string | undefined
+      if (fileType === 'image') {
+        try {
+          preview = await generateImagePreview(file)
+        } catch (error) {
+          console.warn('Failed to generate image preview:', error)
+        }
       }
+
+      const newFile: UploadedFile = {
+        externalId: externalId,
+        fileName: file.name,
+        url: '',
+        preview: preview
+      }
+
+      onChange([...mediaFiles, newFile])
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ошибка загрузки файла')
+      setError(err instanceof Error ? err.message : 'Ошибка при выборе файла')
     } finally {
       setUploading(false)
       // Reset input
@@ -75,16 +137,15 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
   }
 
   const handleRemoveFile = (externalId: string) => {
-    setUploadedFiles(prev => prev.filter(f => f.externalId !== externalId))
-    onChange(mediaExternalIds.filter(id => id !== externalId))
+    onChange(mediaFiles.filter(f => f.externalId !== externalId))
   }
 
-  const canUploadMore = mediaExternalIds.length < maxFiles
+  const canUploadMore = mediaFiles.length < maxFiles
 
   return (
     <div style={{ display: 'grid', gap: 8 }}>
       <label>
-        Файлы креатива ({mediaExternalIds.length}/{maxFiles})
+        Файлы креатива ({mediaFiles.length}/{maxFiles})
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 6 }}>
           <input
             type="file"
@@ -133,10 +194,10 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
         </div>
       )}
 
-      {uploadedFiles.length > 0 && (
+      {mediaFiles.length > 0 && (
         <div className="vk-card" style={{ padding: 8 }}>
           <div style={{ display: 'grid', gap: 6 }}>
-            {uploadedFiles.map((file) => (
+            {mediaFiles.map((file) => (
               <div
                 key={file.externalId}
                 style={{
@@ -153,7 +214,7 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
                 }}
               >
                 <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-                  <span>📄</span>
+                  <FilePreview file={file} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div
                       style={{

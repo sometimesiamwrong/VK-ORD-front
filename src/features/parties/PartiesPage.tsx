@@ -17,7 +17,7 @@ import {
   OutlinedInput,
 } from '@mui/material'
 import type { SelectChangeEvent } from '@mui/material'
-import { toast } from 'react-toastify'
+import { toast } from '../../utils/toast'
 import type { DaDataPartyShortResponse } from '../../types'
 import { usePartyLookup, useSetCounterparty } from './hooks'
 

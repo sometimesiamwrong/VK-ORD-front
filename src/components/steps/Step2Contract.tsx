@@ -17,8 +17,10 @@ export const Step2Contract: React.FC = () => {
   const clearStep2 = () => {
     setContractData({
       externalId: '',
+      serial: null,
       paySum: null,
-      payDateEnd: null
+      date: null,
+      dateEnd: null,
     })
   }
 
@@ -34,22 +36,40 @@ export const Step2Contract: React.FC = () => {
               value={wizardState.contractExternalId}
               onChange={e => setContractData({
                 externalId: e.target.value,
+                serial: wizardState.serial,
                 paySum: wizardState.paySum,
-                payDateEnd: wizardState.payDateEnd
+                date: wizardState.date,
+                dateEnd: wizardState.dateEnd
               })}
               onBlur={() => {
                 if (!wizardState.contractExternalId || !wizardState.contractExternalId.trim()) {
                   setContractData({
                     externalId: generateContractExternalId(new Date(), 1),
+                    serial: wizardState.serial,
                     paySum: wizardState.paySum,
-                    payDateEnd: wizardState.payDateEnd
+                    date: wizardState.date,
+                    dateEnd: wizardState.dateEnd
                   })
                 }
               }}
             />
           </label>
           <label>
-            ИНН заказчика (clientExternalId)
+            Серийный номер (serial)
+            <input
+              className="vk-input"
+              value={wizardState.serial || ''}
+              onChange={e => setContractData({
+                externalId: wizardState.contractExternalId,
+                serial: e.target.value || null,
+                paySum: wizardState.paySum,
+                date: wizardState.date,
+                dateEnd: wizardState.dateEnd
+              })}
+            />
+          </label>
+          <label>
+            ИНН заказчика
             <input
               className="vk-input vk-input-inn"
               value={wizardState.advertiserInn}
@@ -57,7 +77,7 @@ export const Step2Contract: React.FC = () => {
             />
           </label>
           <label>
-            ИНН исполнителя (contractorExternalId)
+            ИНН исполнителя
             <input
               className="vk-input vk-input-inn"
               value={wizardState.contractorInn}
@@ -73,21 +93,41 @@ export const Step2Contract: React.FC = () => {
               value={wizardState.paySum || ''}
               onChange={e => setContractData({
                 externalId: wizardState.contractExternalId,
+                serial: wizardState.serial,
                 paySum: Number(e.target.value) || null,
-                payDateEnd: wizardState.payDateEnd
+                date: wizardState.date,
+                dateEnd: wizardState.dateEnd
               })}
             />
           </label>
           <label>
-            Дата окончания оплаты (payDateEnd)
+            Дата заключения договора
             <input
               className="vk-input"
               type="date"
-              value={wizardState.payDateEnd || ''}
+              required
+              value={wizardState.date || ''}
               onChange={e => setContractData({
                 externalId: wizardState.contractExternalId,
+                serial: wizardState.serial,
                 paySum: wizardState.paySum,
-                payDateEnd: e.target.value || null
+                date: e.target.value || null,
+                dateEnd: wizardState.dateEnd
+              })}
+            />
+          </label>
+          <label>
+            Дата окончания договора
+            <input
+              className="vk-input"
+              type="date"
+              value={wizardState.dateEnd || ''}
+              onChange={e => setContractData({
+                externalId: wizardState.contractExternalId,
+                serial: wizardState.serial,
+                paySum: wizardState.paySum,
+                date: wizardState.date,
+                dateEnd: e.target.value || null
               })}
             />
           </label>

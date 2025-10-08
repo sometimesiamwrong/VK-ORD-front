@@ -11,7 +11,7 @@ import {
   Divider,
 } from '@mui/material'
 import { useMutation } from '@tanstack/react-query'
-import { toast } from 'react-toastify'
+import { toast } from '../../utils/toast'
 import http from '../../api/http'
 import type { CreateContractRequest, ContractDetails } from '../../types'
 
@@ -20,8 +20,8 @@ export const ContractsPage: React.FC = () => {
     externalId: '',
     clientExternalId: '',
     contractorExternalId: '',
+    serial: '',
     paySum: '',
-    payDateEnd: '',
   })
 
   const [viewFormData, setViewFormData] = useState({
@@ -44,8 +44,8 @@ export const ContractsPage: React.FC = () => {
           externalId: '',
           clientExternalId: '',
           contractorExternalId: '',
+          serial: '',
           paySum: '',
-          payDateEnd: '',
         })
       }
     },
@@ -71,8 +71,8 @@ export const ContractsPage: React.FC = () => {
       externalId: formData.externalId,
       clientExternalId: formData.clientExternalId,
       contractorExternalId: formData.contractorExternalId,
-      paySum: parseFloat(formData.paySum),
-      payDateEnd: formData.payDateEnd || undefined,
+      serial: formData.serial || undefined,
+      paySum: formData.paySum && !isNaN(parseFloat(formData.paySum)) ? parseFloat(formData.paySum) : null,
     }
 
     createContractMutation.mutate(contractData)
@@ -139,21 +139,19 @@ export const ContractsPage: React.FC = () => {
               />
               <TextField
                 fullWidth
+                label="Серийный номер"
+                value={formData.serial}
+                onChange={handleChange('serial')}
+                helperText="Серийный номер контракта"
+              />
+              <TextField
+                fullWidth
                 label="Сумма оплаты"
                 type="number"
                 value={formData.paySum}
                 onChange={handleChange('paySum')}
                 required
                 helperText="Сумма в рублях"
-              />
-              <TextField
-                fullWidth
-                label="Дата окончания оплаты"
-                type="date"
-                value={formData.payDateEnd}
-                onChange={handleChange('payDateEnd')}
-                InputLabelProps={{ shrink: true }}
-                helperText="Опционально"
               />
             </Box>
 
@@ -248,14 +246,6 @@ export const ContractsPage: React.FC = () => {
                       </Typography>
                       <Typography variant="body1">
                         {contractDetails.paySum} ₽
-                      </Typography>
-                    </Box>
-                    <Box>
-                      <Typography variant="body2" color="text.secondary">
-                        Дата окончания
-                      </Typography>
-                      <Typography variant="body1">
-                        {contractDetails.payDateEnd || 'Не указана'}
                       </Typography>
                     </Box>
                   </Box>

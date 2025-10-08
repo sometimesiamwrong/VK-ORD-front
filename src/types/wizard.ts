@@ -12,6 +12,13 @@ export interface PartyHistoryItem {
   timestamp: number
 }
 
+export interface UploadedFile {
+  externalId: string
+  fileName: string
+  url: string
+  preview?: string // Data URL for image/video preview
+}
+
 export interface WizardState {
   step: WizardStep
   consent: boolean
@@ -29,10 +36,12 @@ export interface WizardState {
   contractorShortWithOpf?: string | null
   advertiserInfo?: string | null
   contractorInfo?: string | null
-  // step 2
+    // step 2
   contractExternalId: string
+  serial?: string | null
   paySum?: number | null
-  payDateEnd?: string | null
+  date?: string | null
+  dateEnd?: string | null
   // step 3
   creativeExternalId: string
   contractExternalIds: string[]
@@ -42,7 +51,7 @@ export interface WizardState {
   targetAudience?: string | null
   text?: string | null
   name?: string | null
-  mediaExternalIds: string[]
+  mediaFiles: UploadedFile[] // Заменяем mediaExternalIds на mediaFiles
   // result
   erid?: string | null
   // local history for suggestions

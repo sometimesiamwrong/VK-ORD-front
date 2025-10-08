@@ -4,7 +4,6 @@ export interface ContractDetails {
   clientExternalId: string
   contractorExternalId: string
   paySum: number
-  payDateEnd?: string
   createdAt?: string
   updatedAt?: string
 }
@@ -72,7 +71,7 @@ export interface CounterpartyJuridicalDetails {
 
 export interface CounterpartyItem {
   name?: string
-  roles?: string[]
+  roles?: (string | number | null)[] | null
   juridicalDetails?: CounterpartyJuridicalDetails
 }
 

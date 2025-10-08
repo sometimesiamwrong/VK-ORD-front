@@ -55,7 +55,7 @@ export const Step3Creative: React.FC = () => {
       targetAudience: null,
       text: null,
       name: null,
-      mediaExternalIds: []
+      mediaFiles: []
     })
     setKktyHints([])
   }
@@ -304,10 +304,9 @@ export const Step3Creative: React.FC = () => {
           />
 
           <FileUploader
-            mediaExternalIds={wizardState.mediaExternalIds}
-            onChange={(ids) => setCreativeData({
-              ...wizardState,
-              mediaExternalIds: ids
+            mediaFiles={wizardState.mediaFiles}
+            onChange={(files) => setCreativeData({
+              mediaFiles: files
             })}
             maxFiles={10}
           />

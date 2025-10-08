@@ -12,11 +12,14 @@ interface PartyModalProps {
 }
 
 const formatPartyType = (type: string | number | null | undefined): string => {
+  // 1 => ИП
+  // 2 => ЮР лицо
+  // 3 => Физ. лицо
   if (!type) return ''
   const typeStr = String(type).toLowerCase()
-  if (typeStr === 'ip') return 'ИП'
-  if (typeStr === 'juridical') return 'ЮР лицо'
-  if (typeStr === 'physical') return 'Физ. лицо'
+  if (typeStr === 'ip' || type === 1) return 'ИП'
+  if (typeStr === 'juridical' || type === 2) return 'ЮР лицо'
+  if (typeStr === 'physical' || type === 3) return 'Физ. лицо'
   return String(type)
 }
 

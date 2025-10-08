@@ -1,5 +1,7 @@
 import axios from 'axios'
 import type { AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
+import camelcaseKeys from 'camelcase-keys'
+import snakecaseKeys from 'snakecase-keys'
 import { useTokenStore, useEnvironmentStore } from '../auth/tokenStore'
 import { getCookie } from '../utils/cookies'
 import type { BrokenRule } from '../types'
@@ -98,6 +100,12 @@ http.interceptors.request.use(
       config.headers['x-vkord-credential-id'] = vkOrdCredentialId
     }
 
+    // Convert camelCase keys to snake_case in request data
+    // Skip FormData objects as they can't be processed by snakecaseKeys
+    if (config.data && typeof config.data === 'object' && !(config.data instanceof FormData)) {
+      config.data = snakecaseKeys(config.data, { deep: true })
+    }
+
     return config
   },
   (error) => {
@@ -108,6 +116,10 @@ http.interceptors.request.use(
 // Response interceptor
 http.interceptors.response.use(
   (response: AxiosResponse) => {
+    // Convert snake_case keys to camelCase in response data
+    if (response.data && typeof response.data === 'object') {
+      response.data = camelcaseKeys(response.data, { deep: true })
+    }
     return response
   },
   async (error) => {
@@ -115,7 +127,7 @@ http.interceptors.response.use(
 
     // Don't retry auth endpoints to avoid infinite loop
     const authEndpoints = ['/api/Auth/refresh', '/api/Auth/login', '/api/Auth/register']
-    if (authEndpoints.some(endpoint => originalRequest.url?.includes(endpoint))) {
+    if (originalRequest.url && authEndpoints.some(endpoint => originalRequest.url.includes(endpoint))) {
       return Promise.reject(error)
     }
 
@@ -154,8 +166,6 @@ http.interceptors.response.use(
             return
           }
 
-          console.log('🔄 Refreshing token...')
-
           // Try to refresh token - НЕ отправляем refreshToken в body, только в cookies
           const refreshResponse = await axios.post<any>(
             `${baseURL}api/Auth/refresh`,
@@ -165,7 +175,6 @@ http.interceptors.response.use(
 
           if (refreshResponse.data.success && refreshResponse.data.data) {
             const newToken = refreshResponse.data.data.token
-            console.log('✅ Token refreshed successfully')
             
             setAccessToken(newToken)
 
@@ -180,7 +189,6 @@ http.interceptors.response.use(
             resolve(newToken)
           } else {
             // Refresh failed, clear tokens and redirect to login
-            console.error('❌ Token refresh failed:', refreshResponse.data.message)
             clearTokens()
             processQueue(error, null)
             isRefreshing = false
@@ -189,7 +197,6 @@ http.interceptors.response.use(
           }
         } catch (refreshError: any) {
           // Refresh failed, clear tokens and redirect to login
-          console.error('❌ Token refresh error:', refreshError)
           useTokenStore.getState().clearTokens()
           processQueue(refreshError, null)
           isRefreshing = false
@@ -214,9 +221,6 @@ http.interceptors.response.use(
       try {
         const brokenRules: BrokenRule[] = error.response.data
         const brokenRulesError = handleBrokenRulesError(brokenRules)
-
-        // Log the original broken rules for debugging
-        console.error('🚨 Broken Rules Error:', brokenRules)
 
         return Promise.reject(brokenRulesError)
       } catch (parseError) {

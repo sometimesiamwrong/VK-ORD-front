@@ -11,8 +11,55 @@ const LOCAL_KEY = 'vkord-wizard-state'
 const ROLE_OPTIONS = [
   { value: 'advertiser', label: 'Рекламодатель' },
   { value: 'agency', label: 'Рекламное агентство' },
+  { value: 'ors', label: 'Оператор рекламных систем' },
   { value: 'publisher', label: 'Издатель' }
 ]
+
+const ROLE_MAP: Record<string, PartyRole[number]> = {
+  advertiser: 'advertiser',
+  'рекламодатель': 'advertiser',
+  '0': 'advertiser',
+  agency: 'agency',
+  'агентство': 'agency',
+  'рекламное агентство': 'agency',
+  '1': 'agency',
+  publisher: 'publisher',
+  'издатель': 'publisher',
+  '3': 'publisher',
+  ors: 'ors',
+  'оператор рекламных систем': 'ors',
+  'оператор рекламной системы': 'ors',
+  '2': 'ors'
+}
+
+const normalizeRoles = (roles: CounterpartyItem['roles']): PartyRole => {
+  if (!Array.isArray(roles)) {
+    return []
+  }
+
+  const normalized = new Set<PartyRole[number]>()
+
+  roles.forEach((role) => {
+    if (role === null || role === undefined) return
+
+    if (typeof role === 'number') {
+      const mapped = ROLE_MAP[String(role)]
+      if (mapped) {
+        normalized.add(mapped)
+      }
+      return
+    }
+
+    const key = role.toString().trim().toLowerCase()
+    const keyWithoutSpaces = key.replace(/\s+/g, ' ')
+    const mapped = ROLE_MAP[keyWithoutSpaces] || ROLE_MAP[key]
+    if (mapped) {
+      normalized.add(mapped)
+    }
+  })
+
+  return Array.from(normalized)
+}
 
 export const Step1Parties: React.FC = () => {
   const {
@@ -50,7 +97,7 @@ export const Step1Parties: React.FC = () => {
   }
 
   const applyCounterpartyFromList = (kind: 'advertiser' | 'contractor', inn: string) => {
-    const hit = counterpartiesList.find((c: CounterpartyItem) => c.juridicalDetails.inn === inn)
+  const hit = counterpartiesList.find((c: CounterpartyItem) => c.juridicalDetails?.inn === inn)
     if (!hit) return
 
     const displayName = hit.name
@@ -64,9 +111,9 @@ export const Step1Parties: React.FC = () => {
         shortWithOpf: null,
         info
       })
-      // Устанавливаем роли
-      if (hit.roles && Array.isArray(hit.roles) && hit.roles.length > 0) {
-        setAdvertiserRole(hit.roles as PartyRole)
+      const normalizedRoles = normalizeRoles(hit.roles)
+      if (normalizedRoles.length > 0) {
+        setAdvertiserRole(normalizedRoles)
       }
     } else {
       setContractorInn(inn)
@@ -75,9 +122,9 @@ export const Step1Parties: React.FC = () => {
         shortWithOpf: null,
         info
       })
-      // Устанавливаем роли
-      if (hit.roles && Array.isArray(hit.roles) && hit.roles.length > 0) {
-        setContractorRole(hit.roles as PartyRole)
+      const normalizedRoles = normalizeRoles(hit.roles)
+      if (normalizedRoles.length > 0) {
+        setContractorRole(normalizedRoles)
       }
     }
   }
@@ -88,11 +135,11 @@ export const Step1Parties: React.FC = () => {
   }
 
   const isAdvertiserInCounterparties = React.useMemo(() => {
-    return counterpartiesList.some((c: CounterpartyItem) => c.juridicalDetails.inn === wizardState.advertiserInn)
+    return counterpartiesList.some((c: CounterpartyItem) => c.juridicalDetails?.inn === wizardState.advertiserInn)
   }, [counterpartiesList, wizardState.advertiserInn])
 
   const isContractorInCounterparties = React.useMemo(() => {
-    return counterpartiesList.some((c: CounterpartyItem) => c.juridicalDetails.inn === wizardState.contractorInn)
+    return counterpartiesList.some((c: CounterpartyItem) => c.juridicalDetails?.inn === wizardState.contractorInn)
   }, [counterpartiesList, wizardState.contractorInn])
 
   // Обновляем список контрагентов после создания
@@ -119,7 +166,7 @@ export const Step1Parties: React.FC = () => {
                 onChange={e => {
                   const val = e.target.value.replace(/\D/g, '')
                   setAdvertiserInn(val)
-                  if (counterpartiesList.some((c: CounterpartyItem) => c.juridicalDetails.inn === val)) {
+                  if (counterpartiesList.some((c: CounterpartyItem) => c.juridicalDetails?.inn === val)) {
                     applyCounterpartyFromList('advertiser', val)
                   }
                 }}
@@ -181,7 +228,7 @@ export const Step1Parties: React.FC = () => {
                 onChange={e => {
                   const val = e.target.value.replace(/\D/g, '')
                   setContractorInn(val)
-                  if (counterpartiesList.some((c: CounterpartyItem) => c.juridicalDetails.inn === val)) {
+                  if (counterpartiesList.some((c: CounterpartyItem) => c.juridicalDetails?.inn === val)) {
                     applyCounterpartyFromList('contractor', val)
                   }
                 }}

@@ -20,7 +20,7 @@ export const useContractAndCreative = () => {
     let contractExternalId = wizardState.contractExternalId
     if (!contractExternalId || !contractExternalId.trim()) {
       contractExternalId = generateContractExternalId(new Date(), 1)
-      setContractData({ externalId: contractExternalId, paySum: wizardState.paySum, payDateEnd: wizardState.payDateEnd })
+      setContractData({ externalId: contractExternalId, serial: wizardState.serial, paySum: wizardState.paySum, date: wizardState.date, dateEnd: wizardState.dateEnd })
     }
 
     // Get credential ID from cookie
@@ -30,13 +30,20 @@ export const useContractAndCreative = () => {
       return
     }
 
+    if (!wizardState.date) {
+      setMessage('Дата заключения договора обязательна', 'error')
+      return
+    }
+
     const payload: CreateContractRequest = {
       apiCredentialPublicId,
       externalId: contractExternalId,
       clientExternalId: wizardState.advertiserInn,
       contractorExternalId: wizardState.contractorInn,
-      paySum: wizardState.paySum || 0,
-      payDateEnd: wizardState.payDateEnd || undefined
+      serial: wizardState.serial || undefined,
+      paySum: wizardState.paySum ?? null,
+      date: wizardState.date || '',
+      dateEnd: wizardState.dateEnd || undefined
     }
 
     setLoading('contract', true)
@@ -46,8 +53,10 @@ export const useContractAndCreative = () => {
       setMessage('Договор успешно создан', 'success')
       setContractData({
         externalId: contractExternalId,
+        serial: wizardState.serial,
         paySum: wizardState.paySum,
-        payDateEnd: wizardState.payDateEnd
+        date: wizardState.date,
+        dateEnd: wizardState.dateEnd
       })
       setCreativeData({ contractExternalIds: [contractExternalId] })
     } catch (e: any) {
@@ -75,7 +84,7 @@ export const useContractAndCreative = () => {
       targetAudience: wizardState.targetAudience || undefined,
       texts: wizardState.text ? [wizardState.text] : undefined,
       name: wizardState.name || undefined,
-      mediaExternalIds: wizardState.mediaExternalIds?.length ? wizardState.mediaExternalIds : undefined,
+      mediaExternalIds: wizardState.mediaFiles?.length ? wizardState.mediaFiles.map(f => f.externalId) : undefined,
       payType: 0 // Default to CPM
     }
 
