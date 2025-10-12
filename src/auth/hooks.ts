@@ -30,7 +30,7 @@ export const useLogin = () => {
   return useMutation({
     mutationFn: async (data: LoginRequest) => {
       const deviceId = getDeviceId()
-      const response = await http.post<AuthResponse>('/api/Auth/login', {
+      const response = await http.post<AuthResponse>('/api/auth/login', {
         ...data,
         deviceId
       })
@@ -58,7 +58,7 @@ export const useRegister = () => {
 
   return useMutation({
     mutationFn: async (data: RegisterRequest) => {
-      const response = await http.post<AuthResponse>('/api/Auth/register', data)
+      const response = await http.post<AuthResponse>('/api/auth/register', data)
       return response.data
     },
     onSuccess: (data) => {
@@ -83,7 +83,7 @@ export const useLogout = () => {
 
   return useMutation({
     mutationFn: async () => {
-      const response = await http.post<null>('/api/Auth/logout')
+      const response = await http.post<null>('/api/auth/logout')
       return response.data
     },
     onSuccess: () => {
@@ -112,7 +112,7 @@ export const useAutoRefresh = () => {
         throw new Error('No refresh token available')
       }
       
-      const response = await http.post<AuthResponse>('/api/Auth/refresh', {})
+      const response = await http.post<AuthResponse>('/api/auth/refresh', {})
       return response.data
     },
     onSuccess: (data) => {
@@ -137,7 +137,7 @@ export const useUserProfile = () => {
   return useQuery({
     queryKey: ['userProfile'],
     queryFn: async () => {
-      const response = await http.get<UserProfileResponse>('/api/Users/me')
+      const response = await http.get<UserProfileResponse>('/api/users/me')
       return response.data
     },
   })
@@ -146,7 +146,7 @@ export const useUserProfile = () => {
 export const useUpdateUserProfile = () => {
   return useMutation({
     mutationFn: async (data: UpdateUserRequest) => {
-      const response = await http.patch<UserProfileResponse>('/api/Users/me', data)
+      const response = await http.patch<UserProfileResponse>('/api/users/me', data)
       return response.data
     },
     onSuccess: (data) => {

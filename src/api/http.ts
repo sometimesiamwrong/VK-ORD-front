@@ -126,7 +126,7 @@ http.interceptors.response.use(
     const originalRequest = error.config
 
     // Don't retry auth endpoints to avoid infinite loop
-    const authEndpoints = ['/api/Auth/refresh', '/api/Auth/login', '/api/Auth/register']
+    const authEndpoints = ['/api/auth/refresh', '/api/auth/login', '/api/auth/register']
     if (originalRequest.url && authEndpoints.some(endpoint => originalRequest.url.includes(endpoint))) {
       return Promise.reject(error)
     }
@@ -168,7 +168,7 @@ http.interceptors.response.use(
 
           // Try to refresh token - НЕ отправляем refreshToken в body, только в cookies
           const refreshResponse = await axios.post<any>(
-            `${baseURL}api/Auth/refresh`,
+            `${baseURL}api/auth/refresh`,
             {}, // Пустой body - refresh token в cookies
             { withCredentials: true }
           )

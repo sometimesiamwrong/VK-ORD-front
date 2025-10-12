@@ -32,6 +32,7 @@ import {
   AccountCircle,
   AutoAwesome as AutoAwesomeIcon,
   People as PeopleIcon,
+  Receipt as ReceiptIcon,
 } from '@mui/icons-material'
 import { useLogout } from '../../auth/hooks'
 import { useEnvironmentStore } from '../../auth/tokenStore'
@@ -77,6 +78,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
     { text: 'Дашборд', icon: <DashboardIcon />, path: '/dashboard' },
     { text: 'Визард ERID', icon: <AutoAwesomeIcon />, path: '/wizard' },
     { text: 'Контрагенты', icon: <PeopleIcon />, path: '/parties' },
+    { text: 'Акты', icon: <ReceiptIcon />, path: '/acts' },
     { text: 'Профиль', icon: <PersonIcon />, path: '/profile' },
     { text: 'Credentials', icon: <VpnKeyIcon />, path: '/credentials' },
     { text: 'Контракты', icon: <DescriptionIcon />, path: '/contracts' },

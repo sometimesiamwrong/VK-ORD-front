@@ -96,7 +96,7 @@ export const usePartyLookup = () => {
 
     setLoading(`lookup-${kind}`, true)
     try {
-      const response = await http.post<DaDataPartyShortResponse>('/api/ClientApi/party', { inn })
+      const response = await http.post<DaDataPartyShortResponse>('/api/clientapi/party', { inn })
       const partyData = response.data
 
       // Предполагаем успех, если данные получены
@@ -153,7 +153,7 @@ export const usePartyLookup = () => {
 
     setLoading(`create-${kind}`, true)
     try {
-      await http.post<unknown>('/api/ClientApi/set-counterparty', { inn, types: role })
+      await http.post<unknown>('/api/clientapi/set-counterparty', { inn, types: role })
       // Предполагаем успех, если нет ошибки
       setMessage('Контрагент успешно создан', 'success')
     } catch (error) {
@@ -172,7 +172,7 @@ export const useCounterpartiesList = () => {
     queryKey: ['counterparties'],
     queryFn: async () => {
       try {
-        const response = await http.get('/api/ClientApi/counterparties')
+        const response = await http.get('/api/clientapi/counterparties')
         if (response.data?.data) {
           return response.data.data
         }

@@ -6,8 +6,8 @@ export const useCreativesList = (offset: number, limit: number) => {
   return useQuery({
     queryKey: ['creatives', { offset, limit }],
     queryFn: async () => {
-      const response = await http.get<GetCreativesResponse>('/api/Creatives', {
-        params: { Offset: offset, Limit: limit }
+      const response = await http.get<GetCreativesResponse>('/api/creatives', {
+        params: { offset, limit }
       })
       return response.data
     }
@@ -17,7 +17,7 @@ export const useCreativesList = (offset: number, limit: number) => {
 export const useCreativeByErid = () => {
   return useMutation({
     mutationFn: async (erid: string) => {
-      const response = await http.get<VkOrdCreativeV3Response>(`/api/Creatives/by-erid/${erid}`)
+      const response = await http.get<VkOrdCreativeV3Response>(`/api/creatives/by-erid/${erid}`)
       return response.data
     }
   })

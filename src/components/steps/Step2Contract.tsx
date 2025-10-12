@@ -19,8 +19,8 @@ export const Step2Contract: React.FC = () => {
       externalId: '',
       serial: null,
       paySum: null,
-      date: null,
-      dateEnd: null,
+      Date: null,
+      DateEnd: null,
     })
   }
 
@@ -36,36 +36,18 @@ export const Step2Contract: React.FC = () => {
               value={wizardState.contractExternalId}
               onChange={e => setContractData({
                 externalId: e.target.value,
-                serial: wizardState.serial,
                 paySum: wizardState.paySum,
-                date: wizardState.date,
-                dateEnd: wizardState.dateEnd
+                payDateEnd: wizardState.payDateEnd
               })}
               onBlur={() => {
                 if (!wizardState.contractExternalId || !wizardState.contractExternalId.trim()) {
                   setContractData({
                     externalId: generateContractExternalId(new Date(), 1),
-                    serial: wizardState.serial,
                     paySum: wizardState.paySum,
-                    date: wizardState.date,
-                    dateEnd: wizardState.dateEnd
+                    payDateEnd: wizardState.payDateEnd
                   })
                 }
               }}
-            />
-          </label>
-          <label>
-            Серийный номер (serial)
-            <input
-              className="vk-input"
-              value={wizardState.serial || ''}
-              onChange={e => setContractData({
-                externalId: wizardState.contractExternalId,
-                serial: e.target.value || null,
-                paySum: wizardState.paySum,
-                date: wizardState.date,
-                dateEnd: wizardState.dateEnd
-              })}
             />
           </label>
           <label>
@@ -95,39 +77,21 @@ export const Step2Contract: React.FC = () => {
                 externalId: wizardState.contractExternalId,
                 serial: wizardState.serial,
                 paySum: Number(e.target.value) || null,
-                date: wizardState.date,
-                dateEnd: wizardState.dateEnd
+                payDateEnd: wizardState.payDateEnd
               })}
             />
           </label>
           <label>
-            Дата заключения договора
+            Дата окончания оплаты (payDateEnd)
             <input
               className="vk-input"
               type="date"
-              required
-              value={wizardState.date || ''}
+              value={wizardState.payDateEnd || ''}
               onChange={e => setContractData({
                 externalId: wizardState.contractExternalId,
                 serial: wizardState.serial,
                 paySum: wizardState.paySum,
-                date: e.target.value || null,
-                dateEnd: wizardState.dateEnd
-              })}
-            />
-          </label>
-          <label>
-            Дата окончания договора
-            <input
-              className="vk-input"
-              type="date"
-              value={wizardState.dateEnd || ''}
-              onChange={e => setContractData({
-                externalId: wizardState.contractExternalId,
-                serial: wizardState.serial,
-                paySum: wizardState.paySum,
-                date: wizardState.date,
-                dateEnd: e.target.value || null
+                payDateEnd: e.target.value || null
               })}
             />
           </label>

@@ -50,7 +50,7 @@ export interface PartyLookupRequest {
 }
 
 export interface PartyLookupResponse {
-  inn?: string
+  externalId?: string
   name?: string
   type?: string
   shortWithOpf?: string
@@ -70,6 +70,7 @@ export interface CounterpartyJuridicalDetails {
 }
 
 export interface CounterpartyItem {
+  external_id?: string
   name?: string
   roles?: (string | number | null)[] | null
   juridicalDetails?: CounterpartyJuridicalDetails

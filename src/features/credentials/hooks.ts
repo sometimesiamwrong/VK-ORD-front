@@ -18,7 +18,7 @@ export const useCredentials = () => {
     queryKey: [...CREDENTIALS_QUERY_KEY, userProfile?.publicId],
     queryFn: async () => {
       if (!userProfile?.publicId) return []
-      const response = await http.get<ApiCredentialResponse[]>(`/api/Credentials/${userProfile.publicId}`)
+      const response = await http.get<ApiCredentialResponse[]>(`/api/credentials/${userProfile.publicId}`)
       return response.data || []
     },
     enabled: !!userProfile?.publicId
@@ -31,7 +31,7 @@ export const useCreateCredential = () => {
 
   return useMutation({
     mutationFn: async (data: CreateApiCredentialRequest) => {
-      const response = await http.post<ApiCredentialResponse>('/api/Credentials', data)
+      const response = await http.post<ApiCredentialResponse>('/api/credentials', data)
       return response.data
     },
     onSuccess: () => {
@@ -46,7 +46,7 @@ export const useUpdateCredential = () => {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: UpdateApiCredentialRequest }) => {
-      const response = await http.put<ApiCredentialResponse>(`/api/Credentials/${id}`, data)
+      const response = await http.put<ApiCredentialResponse>(`/api/credentials/${id}`, data)
       return response.data
     },
     onSuccess: () => {
@@ -61,7 +61,7 @@ export const useDeleteCredential = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      await http.delete(`/api/Credentials/${id}`)
+      await http.delete(`/api/credentials/${id}`)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: CREDENTIALS_QUERY_KEY })

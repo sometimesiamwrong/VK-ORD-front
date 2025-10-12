@@ -5,4 +5,5 @@ export { FileUploader } from './FileUploader'
 export { PartySelector } from './PartySelector'
 export { PartyModal } from './PartyModal'
 export { ToastNotification } from './ToastNotification'
+export { Button } from './button'
 

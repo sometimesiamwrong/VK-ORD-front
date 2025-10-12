@@ -2,7 +2,7 @@ import { useCallback } from 'react'
 import http from '../api/http'
 import { useApp } from '../context/AppContext'
 import { generateContractExternalId, getCookie } from '../utils'
-import type { CreateContractRequest, CreateCreativeRequest, VkOrdCreativeV3RequestResponse, GetKktyByTextResponse } from '../types'
+import type { CreateContractRequest, CreateCreativeRequest, VkOrdCreativeV3RequestResponse, GetKktyByTextResponseLegacy } from '../types'
 
 export const useContractAndCreative = () => {
   const {
@@ -20,7 +20,7 @@ export const useContractAndCreative = () => {
     let contractExternalId = wizardState.contractExternalId
     if (!contractExternalId || !contractExternalId.trim()) {
       contractExternalId = generateContractExternalId(new Date(), 1)
-      setContractData({ externalId: contractExternalId, serial: wizardState.serial, paySum: wizardState.paySum, date: wizardState.date, dateEnd: wizardState.dateEnd })
+      setContractData({ externalId: contractExternalId, paySum: wizardState.paySum, payDateEnd: wizardState.payDateEnd })
     }
 
     // Get credential ID from cookie
@@ -30,33 +30,25 @@ export const useContractAndCreative = () => {
       return
     }
 
-    if (!wizardState.date) {
-      setMessage('Дата заключения договора обязательна', 'error')
-      return
-    }
-
     const payload: CreateContractRequest = {
       apiCredentialPublicId,
       externalId: contractExternalId,
       clientExternalId: wizardState.advertiserInn,
       contractorExternalId: wizardState.contractorInn,
       serial: wizardState.serial || undefined,
-      paySum: wizardState.paySum ?? null,
-      date: wizardState.date || '',
-      dateEnd: wizardState.dateEnd || undefined
+      paySum: wizardState.paySum || 0,
+      payDateEnd: wizardState.payDateEnd || undefined
     }
 
     setLoading('contract', true)
     try {
-      await http.post('/api/ClientApi/create_contract', payload)
+      await http.post('/api/clientapi/create_contract', payload)
       // Contract creation doesn't return data in new API
       setMessage('Договор успешно создан', 'success')
       setContractData({
         externalId: contractExternalId,
-        serial: wizardState.serial,
         paySum: wizardState.paySum,
-        date: wizardState.date,
-        dateEnd: wizardState.dateEnd
+        payDateEnd: wizardState.payDateEnd
       })
       setCreativeData({ contractExternalIds: [contractExternalId] })
     } catch (e: any) {
@@ -84,13 +76,13 @@ export const useContractAndCreative = () => {
       targetAudience: wizardState.targetAudience || undefined,
       texts: wizardState.text ? [wizardState.text] : undefined,
       name: wizardState.name || undefined,
-      mediaExternalIds: wizardState.mediaFiles?.length ? wizardState.mediaFiles.map(f => f.externalId) : undefined,
+      mediaExternalIds: wizardState.mediaExternalIds?.length ? wizardState.mediaExternalIds : undefined,
       payType: 0 // Default to CPM
     }
 
     setLoading('creative', true)
     try {
-      const response = await http.post<VkOrdCreativeV3RequestResponse>('/api/ClientApi/create_creative', payload)
+      const response = await http.post<VkOrdCreativeV3RequestResponse>('/api/clientapi/create_creative', payload)
       const creativeData = response.data
 
       // Предполагаем успех, если данные получены
@@ -117,7 +109,7 @@ export const useContractAndCreative = () => {
 
     setLoading('ai-kkty', true)
     try {
-      const response = await http.post<GetKktyByTextResponse>('/api/Ai/get-kkty_by-text', { text })
+      const response = await http.post<GetKktyByTextResponseLegacy>('/api/ai/get-kkty_by-text', { text })
       const aiData = response.data
 
       // Предполагаем успех, если данные получены

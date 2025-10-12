@@ -18,6 +18,7 @@ import { CreativesPage } from './features/creatives/CreativesPage'
 import { MediaPage } from './features/media/MediaPage'
 import { WizardPage } from './features/wizard/WizardPage'
 import { PartiesPage } from './features/parties/PartiesPage'
+import { ActsPage } from './features/acts/ActsPage'
 
 // Auth guard component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -160,6 +161,16 @@ export const AppRouter: React.FC = () => {
                 <ProtectedRoute>
                   <DashboardLayout>
                     <PartiesPage />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/acts"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <ActsPage />
                   </DashboardLayout>
                 </ProtectedRoute>
               }

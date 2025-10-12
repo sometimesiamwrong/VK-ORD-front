@@ -99,6 +99,13 @@ export function loadFromCookie(key: string): string | null {
 // Экспорт новых утилит для работы с куками
 export * from './cookies'
 
+import { type ClassValue, clsx } from "clsx"
+import { twMerge } from "tailwind-merge"
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+
 
 export function isMobileDevice(): boolean {
     try {

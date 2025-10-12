@@ -16,7 +16,7 @@ type WizardAction =
   | { type: 'SET_CONTRACTOR_ROLE'; payload: WizardState['contractorRole'] }
   | { type: 'SET_ADVERTISER_INFO'; payload: { name?: string | null; shortWithOpf?: string | null; info?: string | null } }
   | { type: 'SET_CONTRACTOR_INFO'; payload: { name?: string | null; shortWithOpf?: string | null; info?: string | null } }
-  | { type: 'SET_CONTRACT_DATA'; payload: { externalId: string; serial?: string | null; paySum?: number | null; date?: string | null; dateEnd?: string | null } }
+  | { type: 'SET_CONTRACT_DATA'; payload: { externalId: string; paySum?: number | null; payDateEnd?: string | null } }
   | { type: 'SET_CREATIVE_DATA'; payload: Partial<Pick<WizardState, 'creativeExternalId' | 'contractExternalIds' | 'kktus' | 'format' | 'contentUrls' | 'targetAudience' | 'text' | 'name' | 'mediaFiles'>> }
   | { type: 'SET_ERID'; payload: string | null }
   | { type: 'ADD_TO_PARTY_HISTORY'; payload: PartyHistoryItem }
@@ -51,8 +51,7 @@ const initialWizardState: WizardState = {
   contractExternalId: generateContractExternalId(new Date(), 1),
   serial: null,
   paySum: null,
-  date: null,
-  dateEnd: null,
+  payDateEnd: null,
   creativeExternalId: nowTimestampString(),
   contractExternalIds: [],
   kktus: [],
@@ -108,8 +107,7 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
         contractExternalId: action.payload.externalId,
         serial: action.payload.serial,
         paySum: action.payload.paySum,
-        date: action.payload.date,
-        dateEnd: action.payload.dateEnd
+        payDateEnd: action.payload.payDateEnd
       }
     case 'SET_CREATIVE_DATA':
       return { ...state, ...action.payload }
@@ -146,8 +144,7 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
             contractExternalId: '',
             serial: null,
             paySum: null,
-            date: null,
-            dateEnd: null,
+            payDateEnd: null,
             erid: null
           }
         case 3:
@@ -219,7 +216,7 @@ interface AppContextType {
   setContractorRole: (role: WizardState['contractorRole']) => void
   setAdvertiserInfo: (info: { name?: string | null; shortWithOpf?: string | null; info?: string | null }) => void
   setContractorInfo: (info: { name?: string | null; shortWithOpf?: string | null; info?: string | null }) => void
-  setContractData: (data: { externalId: string; serial?: string | null; paySum?: number | null; date?: string | null; dateEnd?: string | null }) => void
+  setContractData: (data: { externalId: string; paySum?: number | null; payDateEnd?: string | null }) => void
   setCreativeData: (data: Partial<Pick<WizardState, 'creativeExternalId' | 'contractExternalIds' | 'kktus' | 'format' | 'contentUrls' | 'targetAudience' | 'text' | 'name' | 'mediaFiles'>>) => void
   setErid: (erid: string | null) => void
   addToPartyHistory: (item: PartyHistoryItem) => void
@@ -326,7 +323,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   )
 
   const canNextFromStep2 = React.useMemo(() =>
-    !!wizardState.contractExternalId && !!wizardState.date,
+    !!wizardState.contractExternalId && !!wizardState.paySum && wizardState.paySum > 0,
     [wizardState]
   )
 
@@ -350,7 +347,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const setContractorRole = (role: WizardState['contractorRole']) => dispatchWizard({ type: 'SET_CONTRACTOR_ROLE', payload: role })
   const setAdvertiserInfo = (info: { name?: string | null; shortWithOpf?: string | null; info?: string | null }) => dispatchWizard({ type: 'SET_ADVERTISER_INFO', payload: info })
   const setContractorInfo = (info: { name?: string | null; shortWithOpf?: string | null; info?: string | null }) => dispatchWizard({ type: 'SET_CONTRACTOR_INFO', payload: info })
-  const setContractData = (data: { externalId: string; serial?: string | null; paySum?: number | null; date?: string | null; dateEnd?: string | null }) => dispatchWizard({ type: 'SET_CONTRACT_DATA', payload: data })
+  const setContractData = (data: { externalId: string; paySum?: number | null; payDateEnd?: string | null }) => dispatchWizard({ type: 'SET_CONTRACT_DATA', payload: data })
   const setCreativeData = (data: Partial<Pick<WizardState, 'creativeExternalId' | 'contractExternalIds' | 'kktus' | 'format' | 'contentUrls' | 'targetAudience' | 'text' | 'name'>>) => dispatchWizard({ type: 'SET_CREATIVE_DATA', payload: data })
   const setErid = (erid: string | null) => dispatchWizard({ type: 'SET_ERID', payload: erid })
   const addToPartyHistory = (item: PartyHistoryItem) => dispatchWizard({ type: 'ADD_TO_PARTY_HISTORY', payload: item })

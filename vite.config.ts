@@ -1,4 +1,6 @@
-import { defineConfig } from 'vite'
+import path from "path"
+import tailwindcss from "@tailwindcss/vite"
+import { defineConfig } from "vite"
 
 export default defineConfig(({ command, mode }) => {
     // В development используем proxy, в production - полный URL
@@ -6,6 +8,12 @@ export default defineConfig(({ command, mode }) => {
     const apiBaseUrl = mode === 'production' ? CLOUD_API : ''  // В dev режиме используем proxy
 
     return {
+        plugins: [tailwindcss()],
+        resolve: {
+            alias: {
+                "@": path.resolve(__dirname, "./src"),
+            },
+        },
         server: {
             port: 5173,
             proxy: command === 'serve' ? {

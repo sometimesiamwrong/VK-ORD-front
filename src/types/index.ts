@@ -7,6 +7,40 @@ export type T = {
     code?: string
 }
 
+// Cache Response Base Class
+export interface CacheResponse {
+    source: DataSource
+    retrievedAt: string
+    cacheExpiresAt?: string
+    cacheCreatedAt?: string
+    cacheVersion?: number
+    dataHash?: string
+    cacheStatistics?: CacheStatistics
+}
+
+export interface CacheStatistics {
+    executionTimeMs: number
+    cacheHit: boolean
+    dataSizeBytes: number
+    recordCount: number
+    metrics?: Record<string, any>
+}
+
+export const DataSource = {
+    Cache: 0,
+    Api: 1,
+    Mixed: 2
+} as const
+
+export type DataSource = typeof DataSource[keyof typeof DataSource]
+
+// Page Request
+export interface PageRequest {
+    page?: number
+    limit?: number
+    offset?: number
+}
+
 // Broken Rules Error Handling
 export interface BrokenRule {
     code: number
@@ -21,79 +55,97 @@ export interface BrokenRulesError {
 }
 
 // VK ORD Enums
-export enum VkOrdCreativeForm {
-    Banner = 0,
-    TextBlock = 1,
-    TextGraphicBlock = 2,
-    Audio = 3,
-    Video = 4,
-    LiveAudio = 5,
-    LiveVideo = 6,
-    TextVideoBlock = 7,
-    TextGraphicVideoBlock = 8,
-    TextAudioBlock = 9,
-    TextGraphicAudioBlock = 10,
-    TextAudioVideoBlock = 11,
-    TextGraphicAudioVideoBlock = 12,
-    BannerHtml5 = 13
-}
+export const VkOrdCreativeForm = {
+    Banner: 0,
+    TextBlock: 1,
+    TextGraphicBlock: 2,
+    Audio: 3,
+    Video: 4,
+    LiveAudio: 5,
+    LiveVideo: 6,
+    TextVideoBlock: 7,
+    TextGraphicVideoBlock: 8,
+    TextAudioBlock: 9,
+    TextGraphicAudioBlock: 10,
+    TextAudioVideoBlock: 11,
+    TextGraphicAudioVideoBlock: 12,
+    BannerHtml5: 13
+} as const
 
-export enum VkOrdPayType {
-    Cpm = 0,
-    Cpc = 1,
-    Cpa = 2,
-    Cpview = 3
-}
+export type VkOrdCreativeForm = typeof VkOrdCreativeForm[keyof typeof VkOrdCreativeForm]
 
-export enum VkOrdPersonRoles {
-    Advertiser = 0,
-    Agency = 1,
-    Ors = 2,
-    Publisher = 3
-}
+export const VkOrdPayType = {
+    Cpm: 0,
+    Cpc: 1,
+    Cpa: 2,
+    Cpview: 3
+} as const
 
-export enum VkOrdContractType {
-    Advertising = 0,
-    AdvertisingWithDistribution = 1,
-    AdvertisingWithProduction = 2
-}
+export type VkOrdPayType = typeof VkOrdPayType[keyof typeof VkOrdPayType]
 
-export enum VkOrdActionType {
-    AdvertiserPays = 0,
-    AgencyPays = 1,
-    PublisherPays = 2,
-    OrsPays = 3
-}
+export const VkOrdPersonRoles = {
+    Advertiser: 0,
+    Agency: 1,
+    Ors: 2,
+    Publisher: 3
+} as const
 
-export enum VkOrdSubjectType {
-    Advertising = 0,
-    AdvertisingWithDistribution = 1,
-    AdvertisingWithProduction = 2,
-    AdvertisingWithDistributionAndProduction = 3,
-    SocialAdvertising = 4
-}
+export type VkOrdPersonRoles = typeof VkOrdPersonRoles[keyof typeof VkOrdPersonRoles]
 
-export enum VkOrdContractFlag {
-    IsActive = 0,
-    IsArchived = 1,
-    IsDeleted = 2,
-    IsDraft = 3
-}
+export const VkOrdContractType = {
+    Advertising: 0,
+    AdvertisingWithDistribution: 1,
+    AdvertisingWithProduction: 2
+} as const
 
-export enum VkOrdCreativeFlag {
-    IsActive = 0,
-    IsArchived = 1,
-    IsDeleted = 2
-}
+export type VkOrdContractType = typeof VkOrdContractType[keyof typeof VkOrdContractType]
 
-export enum VkOrdPersonType {
-    Individual = 0,
-    LegalEntity = 1,
-    ForeignLegalEntity = 2,
-    ForeignIndividual = 3,
-    Branch = 4,
-    RepresentativeOffice = 5
-}
+export const VkOrdActionType = {
+    AdvertiserPays: 0,
+    AgencyPays: 1,
+    PublisherPays: 2,
+    OrsPays: 3
+} as const
+
+export type VkOrdActionType = typeof VkOrdActionType[keyof typeof VkOrdActionType]
+
+export const VkOrdSubjectType = {
+    Advertising: 0,
+    AdvertisingWithDistribution: 1,
+    AdvertisingWithProduction: 2,
+    AdvertisingWithDistributionAndProduction: 3,
+    SocialAdvertising: 4
+} as const
+
+export type VkOrdSubjectType = typeof VkOrdSubjectType[keyof typeof VkOrdSubjectType]
+
+export const VkOrdContractFlag = {
+    IsActive: 0,
+    IsArchived: 1,
+    IsDeleted: 2,
+    IsDraft: 3
+} as const
+
+export type VkOrdContractFlag = typeof VkOrdContractFlag[keyof typeof VkOrdContractFlag]
+
+export const VkOrdCreativeFlag = {
+    IsActive: 0,
+    IsArchived: 1,
+    IsDeleted: 2
+} as const
+
+export type VkOrdCreativeFlag = typeof VkOrdCreativeFlag[keyof typeof VkOrdCreativeFlag]
+
+export const VkOrdPersonType = {
+    Individual: 0,
+    LegalEntity: 1,
+    ForeignLegalEntity: 2,
+    ForeignIndividual: 3,
+    Branch: 4,
+    RepresentativeOffice: 5
+} as const
+
+export type VkOrdPersonType = typeof VkOrdPersonType[keyof typeof VkOrdPersonType]
 
 // Base interface for requests with VK ORD key
 export interface IRequestWithVkOrdKey {
@@ -148,9 +200,8 @@ export interface CreateContractRequest extends IRequestWithVkOrdKey {
     clientExternalId: string
     contractorExternalId: string
     serial?: string | null
-    paySum?: number | null
-    date: string
-    dateEnd?: string | null
+    paySum: number
+    payDateEnd?: string | null
 }
 
 export interface ContractResponse {
@@ -173,6 +224,7 @@ export interface VkOrdContract {
     amount?: string | null
     has_additional_contracts?: boolean
     cid?: string | null
+    externalId?: string | null
     locked_fields?: any[] | null
 }
 
@@ -218,8 +270,8 @@ export interface VkOrdCreativeV3Response {
     flags?: VkOrdCreativeFlag[] | null
 }
 
-// AI KKTY types
-export interface GetKktyByTextRequest {
+// AI KKTY types (legacy)
+export interface GetKktyByTextRequestLegacy {
     text?: string | null
 }
 
@@ -238,7 +290,7 @@ export interface MatchedCategory {
     matchedItemsInSubcategory?: string[] | null
 }
 
-export interface GetKktyByTextResponse {
+export interface GetKktyByTextResponseLegacy {
     kkty?: KktyItem[] | null
     matchedCategories?: MatchedCategory[] | null
 }
@@ -345,10 +397,191 @@ export type AiKktyResponse = {
     matchedCategories: AiMatchedCategory[]
 }
 
+// Statistics types
+export interface ActStatisticsRequest {
+    startDate: string
+    endDate: string
+    counterpartyInn?: string
+    contractExternalId?: string
+    creativeExternalId?: string
+    maxResults?: number
+}
+
+export interface ActStatisticsItem {
+    id: number
+    externalId: string
+    creativeExternalId: string
+    padExternalId: string
+    showsCount: number
+    invoiceShowsCount: number
+    amount: number
+    amountPerEvent: number
+    payType: string
+    period: string
+    statisticsType: string
+    dateStartPlanned: string
+    dateEndPlanned: string
+    dateStartActual: string
+    dateEndActual: string
+    cachedAt: string
+    expiresAt: string
+    lastUpdated: string
+    syncStatus: string
+}
+
+export interface GetActStatisticsResponse extends CacheResponse {
+    statistics: ActStatisticsItem[]
+    totalCount: number
+    returnedCount: number
+    totalAmount: number
+    totalShows: number
+}
+
+// Contract types (extended)
+export interface ContractDto {
+    id: number
+    externalId: string
+    type: VkOrdContractType
+    clientExternalId: string
+    contractorExternalId: string
+    parentContractExternalId?: string
+    amount: number
+    cachedAt: string
+    expiresAt: string
+    lastUpdated: string
+    syncStatus: string
+}
+
+export interface GetContractDetailsResponse extends CacheResponse {
+    contract: ContractDto
+    creatives: CreativeDto[]
+    totalCreatives: number
+    returnedCreatives: number
+}
+
+export interface CreativeDto {
+    id: number
+    externalId: string
+    erid: string
+    personExternalId: string
+    name: string
+    brand: string
+    category: string
+    description: string
+    payType: VkOrdPayType
+    form: VkOrdCreativeForm
+    targeting: string
+    status: string
+    cachedAt: string
+    expiresAt: string
+    lastUpdated: string
+    syncStatus: string
+}
+
+export interface GetContractBetweenResponse extends CacheResponse {
+    contract: ContractDto
+}
+
+// Counterparty types (extended)
+export interface CounterpartyDto {
+    external_id: string
+    inn: string
+    name: string
+    rs_url: string
+    roles: string[]
+    juridical_details: {
+        inn: string
+        kpp: string
+        phone: string
+        foreign_epayment_method: string
+        foreign_registration_number: string
+        foreign_inn: string
+        foreign_oksm_country_code: string
+    }
+    last_updated: string
+    sync_status: string
+}
+
+export interface GetCounterpartiesByInnResponse extends CacheResponse {
+    counterparties: CounterpartyDto[]
+    totalCount: number
+    returnedCount: number
+}
+
+export interface GetCounterpartyContractsResponse extends CacheResponse {
+    contracts: ContractDto[]
+    totalCount: number
+    returnedCount: number
+}
+
+export interface GetRelatedCounterpartiesResponse extends CacheResponse {
+    relatedCounterparties: CounterpartyDto[]
+    totalCount: number
+    returnedCount: number
+}
+
+// Media types (extended)
+export interface MediaUploadRequest {
+    file: File
+}
+
+export interface GetMediaListResponse extends CacheResponse {
+    media: VkOrdMediaInfoResponse[]
+    totalCount: number
+    total_items_count: number
+    limit: number
+}
+
+// AI types (extended)
+export interface GetKktyByTextRequest {
+    text: string
+}
+
+export interface GetKktyByTextResponse {
+    kkty: string[]
+}
+
+// DaData types (extended)
+export interface DaDataPartyResponse {
+    value: string
+    status: string
+    opf: {
+        type: string
+        code: string
+        full: string
+        short: string
+    }
+    name: {
+        fullWithOpf: string
+        shortWithOpf: string
+        latin: string
+        full: string
+        short: string
+    }
+    inn: string
+    ogrn: string
+    okpo: string
+    okato: string
+    oktmo: string
+    okogu: string
+    okfs: string
+    okved: string
+    fio: {
+        surname: string
+        name: string
+        patronymic: string
+    }
+    type: string
+    phone: string
+    kpp: string
+    email: string
+}
+
 // Re-export all types
 export * from './auth'
 export * from './credentials'
 export * from './business'
 export * from './wizard'
+export * from './acts'
 
 

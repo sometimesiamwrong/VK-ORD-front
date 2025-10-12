@@ -33,8 +33,8 @@ import type {
   CreateCreativeRequest,
   CreativeDetails,
   CreativeStatus,
-  VkOrdCreativeForm,
 } from '../../types'
+import { VkOrdCreativeForm } from '../../types'
 import { useCreativesList, useCreativeByErid } from './hooks'
 
 export const CreativesPage: React.FC = () => {
