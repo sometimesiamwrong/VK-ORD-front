@@ -2,7 +2,8 @@ import http from '../api/http'
 import type {
   GetCounterpartiesByInnResponse,
   GetCounterpartyContractsResponse,
-  GetRelatedCounterpartiesResponse
+  GetRelatedCounterpartiesResponse,
+  PageRequest
 } from '../types'
 
 export interface GetCounterpartiesByInnParams {
@@ -33,6 +34,16 @@ export interface GetRelatedCounterpartiesParams {
   refreshThreshold?: number
   maxResults?: number
   relationTypes?: string[]
+}
+
+export interface GetCounterpartiesListParams extends PageRequest {
+  // Additional parameters for the counterparties list endpoint
+}
+
+export interface GetCounterpartiesListResponse {
+  data: any[]
+  total_items_count: number
+  limit: number
 }
 
 export class CounterpartiesService {
@@ -66,6 +77,14 @@ export class CounterpartiesService {
     const response = await http.get<GetRelatedCounterpartiesResponse>(`/api/v1/counterparties/${inn}/related`, {
       params: queryParams
     })
+    return response.data
+  }
+
+  /**
+   * Получить список сохраненных контрагентов
+   */
+  static async getCounterpartiesList(params: GetCounterpartiesListParams = {}): Promise<GetCounterpartiesListResponse> {
+    const response = await http.post<GetCounterpartiesListResponse>('/api/clientapi/counterparties', params)
     return response.data
   }
 }

@@ -2,6 +2,7 @@ import { useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import http from '../api/http'
 import { useApp } from '../context/AppContext'
+import CounterpartiesService from '../services/counterparties'
 import { isValidInn, getPartyDisplayName, getPartyShortWithOpf } from '../utils'
 import type { DaDataPartyShortResponse } from '../types'
 
@@ -167,19 +168,20 @@ export const usePartyLookup = () => {
 }
 
 // Hook для получения списка сохраненных контрагентов
-export const useCounterpartiesList = () => {
+export const useCounterpartiesList = (params?: { limit?: number; offset?: number }) => {
   return useQuery({
-    queryKey: ['counterparties'],
+    queryKey: ['counterparties', 'list', params],
     queryFn: async () => {
       try {
-        const response = await http.get('/api/clientapi/counterparties')
-        if (response.data?.data) {
-          return response.data.data
-        }
-        return []
+        const response = await CounterpartiesService.getCounterpartiesList(params || {})
+        return response
       } catch (error: any) {
         console.error('Error fetching counterparties:', error)
-        return []
+        return {
+          data: [],
+          total_items_count: 0,
+          limit: 0
+        }
       }
     },
     staleTime: 30000, // 30 seconds

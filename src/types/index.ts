@@ -36,7 +36,6 @@ export type DataSource = typeof DataSource[keyof typeof DataSource]
 
 // Page Request
 export interface PageRequest {
-    page?: number
     limit?: number
     offset?: number
 }
