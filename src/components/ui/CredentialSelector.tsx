@@ -180,7 +180,7 @@ export const CredentialSelector: React.FC<CredentialSelectorProps> = ({
           color: 'var(--vk-muted)'
         }}>
           💡 Управляйте токенами на странице{' '}
-          <a href="/credentials" style={{ color: 'var(--vk-primary)', textDecoration: 'none' }}>
+          <a href="/#/credentials" style={{ color: 'var(--vk-primary)', textDecoration: 'none' }}>
             Credentials
           </a>
         </div>
