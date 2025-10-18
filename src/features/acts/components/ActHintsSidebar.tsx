@@ -7,11 +7,11 @@ import {
   CardContent,
   Checkbox,
   FormControlLabel,
-  Button,
   Accordion,
   AccordionSummary,
   AccordionDetails,
 } from '@mui/material'
+import { Button } from '@/components/ui/button'
 import {
   CheckCircle as CheckCircleIcon,
   Schedule as ScheduleIcon,
@@ -151,21 +151,21 @@ export const ActHintsSidebar: React.FC<ActHintsSidebarProps> = ({
           </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
             <Button
-              variant="outlined"
-              startIcon={<AddIcon />}
+              variant="outline"
+              size="sm"
+              className="w-full"
               onClick={onCreateRelatedAct}
-              size="small"
-              fullWidth
             >
+              <AddIcon className="mr-2 h-4 w-4" />
               Создать связанный акт
             </Button>
             <Button
-              variant="outlined"
-              startIcon={<FileCopyIcon />}
+              variant="outline"
+              size="sm"
+              className="w-full"
               onClick={onCopyClientDetails}
-              size="small"
-              fullWidth
             >
+              <FileCopyIcon className="mr-2 h-4 w-4" />
               Копировать реквизиты клиента
             </Button>
           </Box>

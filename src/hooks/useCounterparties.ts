@@ -3,8 +3,36 @@ import CounterpartiesService from '../services/counterparties'
 import type {
   GetCounterpartiesByInnParams,
   GetCounterpartyContractsParams,
-  GetRelatedCounterpartiesParams
+  GetRelatedCounterpartiesParams,
+  GetCounterpartiesListParams
 } from '../services/counterparties'
+import type { CounterpartyDto, CounterpartyItem } from '../types'
+
+// Функция преобразования CounterpartyDto в CounterpartyItem
+const transformCounterpartyDto = (dto: CounterpartyDto): CounterpartyItem => {
+  const juridicalDetails = dto.data.juridicalDetails || dto.data.juridical_details
+  return {
+    id: dto.id,
+    external_id: dto.external_id || dto.externalId,
+    name: dto.data.name,
+    roles: dto.data.roles,
+    juridical_details: juridicalDetails ? {
+      type: juridicalDetails.type,
+      model_scheme: juridicalDetails.model_scheme || juridicalDetails.modelScheme,
+      inn: juridicalDetails.inn,
+      kpp: juridicalDetails.kpp,
+      phone: juridicalDetails.phone,
+      foreign_epayment_method: juridicalDetails.foreign_epayment_method,
+      foreign_registration_number: juridicalDetails.foreign_registration_number,
+      foreign_inn: juridicalDetails.foreign_inn,
+      foreign_oksm_country_code: juridicalDetails.foreign_oksm_country_code
+    } : undefined,
+    sync_status: dto.sync_status || dto.syncStatus,
+    expires_at: dto.expires_at || dto.expiresAt,
+    updated_at: dto.updated_at || dto.updatedAt,
+    created_at: dto.created_at || dto.createdAt
+  }
+}
 
 export const useCounterpartiesByInn = () => {
   return useMutation({
@@ -43,23 +71,73 @@ export const useCounterpartiesByInnQuery = (params: GetCounterpartiesByInnParams
 }
 
 export const useCounterpartyContractsQuery = (params: GetCounterpartyContractsParams, enabled = true) => {
+  console.log('useCounterpartyContractsQuery called with params:', params, 'enabled:', enabled)
   return useQuery({
-    queryKey: ['counterparties', 'contracts', params.inn, params],
+    queryKey: ['counterparties', 'contracts', params.externalId, params],
     queryFn: async () => {
-      return await CounterpartiesService.getCounterpartyContracts(params)
+      console.log('Fetching contracts for externalId:', params.externalId)
+      const result = await CounterpartiesService.getCounterpartyContracts(params)
+      console.log('Contracts API response:', result)
+      return result
     },
-    enabled: enabled && !!params.inn,
+    enabled: enabled && !!params.externalId,
     staleTime: 5 * 60 * 1000, // 5 minutes
   })
 }
 
 export const useRelatedCounterpartiesQuery = (params: GetRelatedCounterpartiesParams, enabled = true) => {
   return useQuery({
-    queryKey: ['counterparties', 'related', params.inn, params],
+    queryKey: ['counterparties', 'related', params.externalId, params],
     queryFn: async () => {
       return await CounterpartiesService.getRelatedCounterparties(params)
     },
-    enabled: enabled && !!params.inn,
+    enabled: enabled && !!params.externalId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  })
+}
+
+export const useCounterpartyByExternalIdQuery = (externalId: string, enabled = true) => {
+  console.log('=== useCounterpartyByExternalIdQuery START ===')
+  console.log('useCounterpartyByExternalIdQuery called with:', { externalId, enabled })
+  console.log('Query will be enabled:', enabled && !!externalId)
+  
+  return useQuery({
+    queryKey: ['counterparties', 'by-external-id', externalId],
+    queryFn: async () => {
+      console.log('=== Fetching counterparty by externalId ===')
+      console.log('externalId:', externalId)
+      console.log('Calling CounterpartiesService.getCounterpartyByExternalId...')
+      
+      try {
+        const dto = await CounterpartiesService.getCounterpartyByExternalId(externalId)
+        console.log('Raw DTO received:', dto)
+        
+        const transformed = transformCounterpartyDto(dto)
+        console.log('Transformed counterparty:', transformed)
+        console.log('=== Fetching counterparty COMPLETED ===')
+        
+        return transformed
+      } catch (error) {
+        console.error('Error fetching counterparty by externalId:', error)
+        throw error
+      }
+    },
+    enabled: enabled && !!externalId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  })
+}
+
+export const useCounterpartiesListQuery = (params: GetCounterpartiesListParams = {}, enabled = true) => {
+  return useQuery({
+    queryKey: ['counterparties', 'list', params],
+    queryFn: async () => {
+      const response = await CounterpartiesService.getCounterpartiesList(params)
+      return {
+        ...response,
+        data: response.data.map(transformCounterpartyDto)
+      }
+    },
+    enabled,
     staleTime: 5 * 60 * 1000, // 5 minutes
   })
 }

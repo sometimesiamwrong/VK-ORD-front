@@ -3,7 +3,6 @@ import {
   Paper,
   Box,
   Typography,
-  Button,
   Tabs,
   Tab,
   TextField,
@@ -20,6 +19,7 @@ import {
   Chip,
   Autocomplete,
 } from '@mui/material'
+import { Button } from '@/components/ui/button'
 import {
   Save as SaveIcon,
   Send as SendIcon,
@@ -158,25 +158,31 @@ export const ActEditor: React.FC<ActEditorProps> = ({
         <Box sx={{ display: 'flex', gap: 1 }}>
           {isCreatingNew ? (
             <>
-              <Button variant="outlined" startIcon={<CancelIcon />} onClick={onCancel}>
+              <Button variant="outline" onClick={onCancel}>
+                <CancelIcon className="mr-2 h-4 w-4" />
                 Отмена
               </Button>
-              <Button variant="contained" startIcon={<SaveIcon />} onClick={onSave}>
+              <Button onClick={onSave}>
+                <SaveIcon className="mr-2 h-4 w-4" />
                 Сохранить черновик
               </Button>
             </>
           ) : (
             <>
-              <Button variant="outlined" startIcon={<SaveIcon />} onClick={onSave}>
+              <Button variant="outline" onClick={onSave}>
+                <SaveIcon className="mr-2 h-4 w-4" />
                 Сохранить черновик
               </Button>
-              <Button variant="contained" startIcon={<SendIcon />} onClick={onSubmit}>
+              <Button onClick={onSubmit}>
+                <SendIcon className="mr-2 h-4 w-4" />
                 Отправить в VK ORD
               </Button>
-              <Button variant="outlined" startIcon={<FileDownloadIcon />} onClick={onExport}>
+              <Button variant="outline" onClick={onExport}>
+                <FileDownloadIcon className="mr-2 h-4 w-4" />
                 Экспорт PDF
               </Button>
-              <Button variant="outlined" color="error" startIcon={<DeleteIcon />} onClick={onDelete}>
+              <Button variant="destructive" onClick={onDelete}>
+                <DeleteIcon className="mr-2 h-4 w-4" />
                 Удалить
               </Button>
             </>

@@ -52,6 +52,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
 
   const [mobileOpen, setMobileOpen] = React.useState(false)
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null)
+  
+  console.log('DashboardLayout rendered, children:', children, 'environment:', environment);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen)

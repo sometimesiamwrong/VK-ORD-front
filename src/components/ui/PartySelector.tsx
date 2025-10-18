@@ -44,12 +44,12 @@ export const PartySelector: React.FC<PartySelectorProps> = ({
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
         {counterparties.map((party) => (
           <button
-            key={party.juridicalDetails.inn}
+            key={party.juridical_details?.inn || party.external_id}
             type="button"
             className="vk-btn vk-btn--small"
             disabled={disabled}
-            onClick={() => onSelect(party.juridicalDetails.inn)}
-            title={`${party.name}\nИНН: ${party.juridicalDetails.inn}\nТип: ${formatPartyType(party.juridicalDetails.type)}`}
+            onClick={() => onSelect(party.juridical_details?.inn || '')}
+            title={`${party.name}\nИНН: ${party.juridical_details?.inn}\nТип: ${formatPartyType(party.juridical_details?.type)}`}
             style={{
               fontSize: '0.85em',
               padding: '4px 8px',
@@ -60,7 +60,7 @@ export const PartySelector: React.FC<PartySelectorProps> = ({
             }}
           >
             {party.name}
-            {party.juridicalDetails.type && ` (${formatPartyType(party.juridicalDetails.type)})`}
+            {party.juridical_details?.type && ` (${formatPartyType(party.juridical_details.type)})`}
           </button>
         ))}
       </div>

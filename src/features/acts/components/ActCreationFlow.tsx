@@ -16,104 +16,136 @@ import {
   Person as PersonIcon,
   Add as AddIcon,
 } from '@mui/icons-material'
-import { useParties, usePartiesSearch, useContractsByParty, useRelatedParties, useContractBetweenParties } from '../hooks'
+import { toast } from 'sonner'
+import { useParties, usePartiesSearch } from '../hooks'
+import { useCounterpartyContractsQuery, useCounterpartyByExternalIdQuery } from '../../../hooks/useCounterparties'
 import { PartyModal } from '../../../components/ui/PartyModal'
 import type { CounterpartyItem, ContractDto } from '../../../types'
 
 interface ActCreationFlowProps {
-  onActCreate: (firstParty: CounterpartyItem, secondParty: CounterpartyItem, contract: ContractDto) => void
+  onActCreate: (client: CounterpartyItem, contractor: CounterpartyItem, contract: ContractDto) => void
 }
 
 export const ActCreationFlow: React.FC<ActCreationFlowProps> = ({ onActCreate }) => {
-  const [firstParty, setFirstParty] = useState<CounterpartyItem | null>(null)
-  const [secondParty, setSecondParty] = useState<CounterpartyItem | null>(null)
+  const [client, setClient] = useState<CounterpartyItem | null>(null)
+  const [contractor, setContractor] = useState<CounterpartyItem | null>(null)
   const [selectedContract, setSelectedContract] = useState<ContractDto | null>(null)
   const [isPartyModalOpen, setIsPartyModalOpen] = useState(false)
-  const [partyModalType, setPartyModalType] = useState<'first' | 'second'>('first')
+  const [partyModalType, setPartyModalType] = useState<'client' | 'contractor'>('client')
 
   // API hooks
   const { data: parties = [], isLoading: isLoadingParties } = useParties()
   const partiesSearchMutation = usePartiesSearch()
-  const { data: contractsData, isLoading: isLoadingContracts } = useContractsByParty(
-    firstParty?.juridicalDetails?.inn || ''
+  
+  // Получаем контракты клиента (только когда он выбран)
+  const { data: contractsData, isLoading: isLoadingContracts, error: contractsError } = useCounterpartyContractsQuery(
+    {
+      externalId: client?.external_id || '',
+      cacheOnly: false
+    },
+    !!client?.external_id
   )
   const contracts = contractsData?.contracts || []
-  const { data: relatedPartiesData, isLoading: isLoadingRelatedParties } = useRelatedParties(
-    firstParty?.juridicalDetails?.inn || ''
+  
+  // Определяем externalId контрактора на основе выбранного контракта
+  // Контрактор ВСЕГДА берется из поля contractorExternalId в data договора
+  // API возвращает camelCase в data!
+  const contractorExternalId = selectedContract?.data?.contractorExternalId 
+    || selectedContract?.data?.contractor_external_id 
+    || selectedContract?.contractorExternalId 
+    || ''
+  
+  console.log('=== ActCreationFlow State ===')
+  console.log('selectedContract:', selectedContract)
+  console.log('selectedContract.data:', selectedContract?.data)
+  console.log('contractorExternalId (camelCase):', selectedContract?.data?.contractorExternalId)
+  console.log('contractor_external_id (snake_case):', selectedContract?.data?.contractor_external_id)
+  console.log('Final contractorExternalId:', contractorExternalId)
+  console.log('Will fetch contractor:', !!contractorExternalId)
+  
+  // Автоматически загружаем контрактора по его externalId через API (только когда контракт выбран)
+  // Используется ручка: GET /api/client/counterparties/${externalId}
+  const { data: contractorFromContract, error: contractorError, isLoading: isLoadingContractor } = useCounterpartyByExternalIdQuery(
+    contractorExternalId,
+    !!contractorExternalId
   )
-  const relatedParties = relatedPartiesData?.relatedCounterparties || []
-  const { data: contractBetweenData, isLoading: isLoadingContractBetween } = useContractBetweenParties(
-    firstParty?.juridicalDetails?.inn || '',
-    secondParty?.juridicalDetails?.inn || ''
-  )
-  const contractBetweenParties = contractBetweenData?.contract || null
+  
+  console.log('Contractor query state:', { 
+    isLoading: isLoadingContractor, 
+    hasData: !!contractorFromContract, 
+    hasError: !!contractorError 
+  })
 
-  const handleFirstPartyClick = () => {
-    setPartyModalType('first')
+  const handleClientClick = () => {
+    setPartyModalType('client')
     setIsPartyModalOpen(true)
-  }
-
-  const handleSecondPartyClick = () => {
-    if (!firstParty) {
-      return // Нельзя выбрать второго контрагента без первого
-    }
-    setPartyModalType('second')
-    setIsPartyModalOpen(true)
-  }
-
-  const handleContractClick = () => {
-    if (!firstParty) {
-      return // Нельзя выбрать договор без первого контрагента
-    }
-    // Логика выбора договора будет реализована позже
   }
 
   const handlePartySelect = (party: CounterpartyItem | null) => {
-    if (partyModalType === 'first') {
-      setFirstParty(party)
-      setSecondParty(null) // Сбрасываем второго контрагента
+    // Модальное окно используется только для выбора клиента
+    // Контрактор определяется автоматически из договора
+    if (partyModalType === 'client') {
+      setClient(party)
+      setContractor(null) // Сбрасываем контрактора
       setSelectedContract(null) // Сбрасываем договор
-    } else {
-      setSecondParty(party)
-      // Договор автоматически найдется через хук useContractBetweenParties
     }
     setIsPartyModalOpen(false)
   }
 
-  // Автоматически устанавливаем договор когда найден между контрагентами
+  // Автоматически устанавливаем контрактора когда загружен из контракта
   useEffect(() => {
-    if (contractBetweenParties && firstParty && secondParty) {
-      setSelectedContract(contractBetweenParties)
+    console.log('=== Contractor Auto-Set Effect ===')
+    console.log('contractorFromContract:', contractorFromContract)
+    console.log('selectedContract:', selectedContract)
+    console.log('current contractor:', contractor)
+    
+    if (contractorFromContract && selectedContract && !contractor) {
+      console.log('✅ Auto-setting contractor from contract:', contractorFromContract)
+      setContractor(contractorFromContract)
+    } else {
+      console.log('❌ Not setting contractor:', {
+        hasContractorFromContract: !!contractorFromContract,
+        hasSelectedContract: !!selectedContract,
+        alreadyHasContractor: !!contractor
+      })
     }
-  }, [contractBetweenParties, firstParty, secondParty])
+  }, [contractorFromContract, selectedContract, contractor])
+
+  // Обработка ошибок загрузки контрактов
+  useEffect(() => {
+    if (contractsError) {
+      console.error('Error loading contracts:', contractsError)
+      toast.error('Ошибка при загрузке договоров')
+    }
+  }, [contractsError])
+
+  // Обработка ошибок загрузки контрактора
+  useEffect(() => {
+    if (contractorError) {
+      console.error('Error loading contractor:', contractorError)
+      toast.error('Ошибка при загрузке данных контрактора')
+      setContractor(null) // Сбрасываем контрактора при ошибке
+    }
+  }, [contractorError])
 
   const handleContractSelect = (contract: ContractDto | null) => {
+    console.log('=== Contract selected ===')
+    console.log('Contract:', contract)
+    console.log('contract.data:', contract?.data)
+    console.log('client_external_id:', contract?.data?.client_external_id)
+    console.log('contractor_external_id:', contract?.data?.contractor_external_id)
     setSelectedContract(contract)
-    // Автоматически заполняем второго контрагента на основе договора
-    if (contract && firstParty) {
-      // Находим второго контрагента по contractorExternalId или clientExternalId
-      const secondPartyInn = contract.clientExternalId === firstParty.juridicalDetails?.inn 
-        ? contract.contractorExternalId 
-        : contract.clientExternalId
-      
-      // Ищем контрагента в списке связанных
-      const foundParty = relatedParties.find(party => 
-        party.juridicalDetails?.inn === secondPartyInn
-      )
-      
-      if (foundParty) {
-        setSecondParty(foundParty)
-      }
-    }
+    // Сбрасываем контрактора, чтобы он загрузился заново через хук
+    setContractor(null)
   }
 
   const handleCreateAct = () => {
-    if (firstParty && secondParty && selectedContract) {
-      onActCreate(firstParty, secondParty, selectedContract)
+    if (client && contractor && selectedContract) {
+      onActCreate(client, contractor, selectedContract)
     }
   }
 
-  const canCreateAct = firstParty && secondParty && selectedContract
+  const canCreateAct = client && contractor && selectedContract
 
   return (
     <Paper sx={{ p: 3 }}>
@@ -122,29 +154,29 @@ export const ActCreationFlow: React.FC<ActCreationFlowProps> = ({ onActCreate })
       </Typography>
       
       <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
-        {/* Первый контрагент */}
+        {/* Клиент */}
         <Card 
           sx={{ 
             flex: 1, 
             cursor: 'pointer',
-            border: firstParty ? '2px solid' : '1px solid',
-            borderColor: firstParty ? 'primary.main' : 'divider',
+            border: client ? '2px solid' : '1px solid',
+            borderColor: client ? 'primary.main' : 'divider',
             '&:hover': { borderColor: 'primary.main' }
           }}
-          onClick={handleFirstPartyClick}
+          onClick={handleClientClick}
         >
           <CardContent sx={{ textAlign: 'center', py: 3 }}>
             <BusinessIcon sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
             <Typography variant="h6" gutterBottom>
-              Первый контрагент
+              Клиент
             </Typography>
-            {firstParty ? (
+            {client ? (
               <Box>
                 <Typography variant="body1" fontWeight="bold">
-                  {firstParty.name}
+                  {client.name}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  ИНН: {firstParty.juridicalDetails?.inn || ''}
+                  ИНН: {client.juridical_details?.inn || ''}
                 </Typography>
               </Box>
             ) : (
@@ -159,13 +191,10 @@ export const ActCreationFlow: React.FC<ActCreationFlowProps> = ({ onActCreate })
         <Card 
           sx={{ 
             flex: 1, 
-            cursor: firstParty ? 'pointer' : 'not-allowed',
             border: selectedContract ? '2px solid' : '1px solid',
             borderColor: selectedContract ? 'primary.main' : 'divider',
-            opacity: firstParty ? 1 : 0.5,
-            '&:hover': firstParty ? { borderColor: 'primary.main' } : {}
+            opacity: client ? 1 : 0.5,
           }}
-          onClick={handleContractClick}
         >
           <CardContent sx={{ textAlign: 'center', py: 3 }}>
             <ContractIcon sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
@@ -175,49 +204,56 @@ export const ActCreationFlow: React.FC<ActCreationFlowProps> = ({ onActCreate })
             {selectedContract ? (
               <Box>
                 <Typography variant="body1" fontWeight="bold">
-                  {selectedContract.externalId || 'Без номера'}
+                  {selectedContract.external_id || selectedContract.externalId || selectedContract.data?.serial || 'Без номера'}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Сумма: {selectedContract.amount || '0'} ₽
+                  Сумма: {selectedContract.data?.amount || selectedContract.amount || '0'} ₽
                 </Typography>
               </Box>
             ) : (
               <Typography variant="body2" color="text.secondary">
-                {firstParty ? 'Нажмите для выбора' : 'Сначала выберите контрагента'}
+                {client ? 'Выберите договор из списка ниже' : 'Сначала выберите клиента'}
               </Typography>
             )}
           </CardContent>
         </Card>
 
-        {/* Второй контрагент */}
+        {/* Контрактор (Заказчик) */}
         <Card 
           sx={{ 
             flex: 1, 
-            cursor: firstParty ? 'pointer' : 'not-allowed',
-            border: secondParty ? '2px solid' : '1px solid',
-            borderColor: secondParty ? 'primary.main' : 'divider',
-            opacity: firstParty ? 1 : 0.5,
-            '&:hover': firstParty ? { borderColor: 'primary.main' } : {}
+            border: contractor ? '2px solid' : '1px solid',
+            borderColor: contractor ? 'primary.main' : 'divider',
+            opacity: selectedContract ? 1 : 0.5,
           }}
-          onClick={handleSecondPartyClick}
         >
           <CardContent sx={{ textAlign: 'center', py: 3 }}>
             <PersonIcon sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
             <Typography variant="h6" gutterBottom>
-              Второй контрагент
+              Контрактор (Заказчик)
             </Typography>
-            {secondParty ? (
+            {contractor ? (
               <Box>
                 <Typography variant="body1" fontWeight="bold">
-                  {secondParty.name}
+                  {contractor.name}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  ИНН: {secondParty.juridicalDetails?.inn || ''}
+                  ИНН: {contractor.juridical_details?.inn || ''}
+                </Typography>
+                <Typography variant="caption" color="success.main">
+                  Определён автоматически
+                </Typography>
+              </Box>
+            ) : selectedContract ? (
+              <Box>
+                <CircularProgress size={24} sx={{ mb: 1 }} />
+                <Typography variant="body2" color="text.secondary">
+                  Загрузка контрактора...
                 </Typography>
               </Box>
             ) : (
               <Typography variant="body2" color="text.secondary">
-                {firstParty ? 'Нажмите для выбора' : 'Сначала выберите первого контрагента'}
+                Выберите договор
               </Typography>
             )}
           </CardContent>
@@ -225,11 +261,15 @@ export const ActCreationFlow: React.FC<ActCreationFlowProps> = ({ onActCreate })
       </Box>
 
       {/* Автокомплит для договоров */}
-      {firstParty && (
+      {client && (
         <Box sx={{ mb: 3 }}>
           <Autocomplete
             options={contracts}
-            getOptionLabel={(option) => `${option.externalId || 'Без номера'} - ${option.amount || '0'} ₽`}
+            getOptionLabel={(option) => {
+              const serial = option.data?.serial || option.external_id || option.externalId || 'Без номера'
+              const amount = option.data?.amount || option.amount || '0'
+              return `${serial} - ${amount} ₽`
+            }}
             value={selectedContract}
             onChange={(_, newValue) => handleContractSelect(newValue)}
             loading={isLoadingContracts}
@@ -253,10 +293,10 @@ export const ActCreationFlow: React.FC<ActCreationFlowProps> = ({ onActCreate })
               <li {...props}>
                 <Box>
                   <Typography variant="body1">
-                    {option.externalId || 'Без номера'}
+                    {option.data?.serial || option.external_id || option.externalId || 'Без номера'}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Сумма: {option.amount || '0'} ₽ • Статус: {option.syncStatus}
+                    Сумма: {option.data?.amount || option.amount || '0'} ₽ • Статус: {option.sync_status || option.syncStatus}
                   </Typography>
                 </Box>
               </li>
@@ -281,30 +321,24 @@ export const ActCreationFlow: React.FC<ActCreationFlowProps> = ({ onActCreate })
         </Button>
       </Box>
 
-      {/* Модальное окно выбора контрагента */}
+      {/* Модальное окно выбора клиента */}
       <PartyModal
         open={isPartyModalOpen}
         onClose={() => setIsPartyModalOpen(false)}
         onSelect={handlePartySelect}
-        title={partyModalType === 'first' ? 'Выберите первого контрагента' : 'Выберите второго контрагента'}
+        title="Выберите клиента"
         counterparties={parties}
         loading={isLoadingParties || partiesSearchMutation.isPending}
         onSearch={async (query: string) => {
           if (!query.trim()) {
-            // Если это выбор второго контрагента, показываем только связанных
-            return partyModalType === 'second' ? relatedParties : parties
+            return parties
           }
           try {
             const result = await partiesSearchMutation.mutateAsync(query)
-            // Если это выбор второго контрагента, фильтруем только связанных
-            if (partyModalType === 'second') {
-              return result.filter((party: CounterpartyItem) => 
-                relatedParties.some(related => related.juridicalDetails?.inn === party.juridicalDetails?.inn)
-              )
-            }
             return result
           } catch (error) {
             console.error('Search error:', error)
+            toast.error('Ошибка при поиске контрагентов')
             return []
           }
         }}

@@ -6,21 +6,11 @@
   "tailwind": {
     "config": "tailwind.config.js",
     "css": "src/styles/index.css",
-    "baseColor": "neutral",
-    "cssVariables": true,
-    "prefix": ""
+    "baseColor": "slate",
+    "cssVariables": true
   },
   "aliases": {
     "components": "@/components",
-    "utils": "@/utils",
-    "ui": "@/components/ui",
-    "lib": "@/utils",
-    "hooks": "@/hooks"
-  },
-  "registries": {
-    "@vk": "http://localhost:8080/{name}.json",
-    "@shadcn": "https://ui.shadcn.com/registry/{name}.json",
-    "@aceternity": "https://ui.aceternity.com/registry/{name}.json",
-    "@cult-ui": "https://cult-ui.com/r/{name}.json"
+    "utils": "@/lib"
   }
 }

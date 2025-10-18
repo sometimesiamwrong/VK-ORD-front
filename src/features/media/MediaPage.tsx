@@ -3,20 +3,20 @@ import {
   Typography,
   Paper,
   Box,
-  Button,
   TextField,
   Alert,
   Card,
   CardContent,
   Divider,
 } from '@mui/material'
+import { Button } from '@/components/ui/button'
 import {
   CloudUpload as CloudUploadIcon,
   Search as SearchIcon,
   Delete as DeleteIcon,
 } from '@mui/icons-material'
 import { useMutation } from '@tanstack/react-query'
-import { toast } from '../../utils/toast'
+import { toast } from 'sonner'
 import http from '../../api/http'
 import type { MediaUploadResponse, MediaDetails } from '../../types'
 
@@ -140,12 +140,10 @@ export const MediaPage: React.FC = () => {
               />
               <label htmlFor="file-upload">
                 <Button
-                  variant="outlined"
-                  component="span"
-                  startIcon={<CloudUploadIcon />}
-                  fullWidth
-                  sx={{ mb: 2 }}
+                  variant="outline"
+                  className="w-full mb-2"
                 >
+                  <CloudUploadIcon className="mr-2 h-4 w-4" />
                   Выбрать файл
                 </Button>
               </label>
@@ -166,8 +164,7 @@ export const MediaPage: React.FC = () => {
             </Box>
 
             <Button
-              variant="contained"
-              fullWidth
+              className="w-full"
               onClick={handleUpload}
               disabled={!selectedFile || uploadMutation.isPending}
             >
@@ -201,10 +198,10 @@ export const MediaPage: React.FC = () => {
                   />
                   <Button
                     type="submit"
-                    variant="outlined"
-                    startIcon={<SearchIcon />}
+                    variant="outline"
                     disabled={viewMutation.isPending}
                   >
+                    <SearchIcon className="mr-2 h-4 w-4" />
                     Найти
                   </Button>
                 </Box>
@@ -227,11 +224,10 @@ export const MediaPage: React.FC = () => {
                   />
                   <Button
                     type="submit"
-                    variant="contained"
-                    color="error"
-                    startIcon={<DeleteIcon />}
+                    variant="destructive"
                     disabled={deleteMutation.isPending}
                   >
+                    <DeleteIcon className="mr-2 h-4 w-4" />
                     Удалить
                   </Button>
                 </Box>
@@ -332,12 +328,10 @@ export const MediaPage: React.FC = () => {
                   {/* Link to file */}
                   <Box sx={{ mt: 3, textAlign: 'center' }}>
                     <Button
-                      variant="outlined"
-                      href={mediaDetails.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                      variant="outline"
+                      asChild
                     >
-                      Открыть файл
+                      <a href={mediaDetails.url} target="_blank" rel="noopener noreferrer">Открыть файл</a>
                     </Button>
                   </Box>
                 </CardContent>

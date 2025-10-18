@@ -42,7 +42,7 @@ export const useContractAndCreative = () => {
 
     setLoading('contract', true)
     try {
-      await http.post('/api/clientapi/create_contract', payload)
+      await http.post('/api/client/create_contract', payload)
       // Contract creation doesn't return data in new API
       setMessage('Договор успешно создан', 'success')
       setContractData({
@@ -82,7 +82,7 @@ export const useContractAndCreative = () => {
 
     setLoading('creative', true)
     try {
-      const response = await http.post<VkOrdCreativeV3RequestResponse>('/api/clientapi/create_creative', payload)
+      const response = await http.post<VkOrdCreativeV3RequestResponse>('/api/client/create_creative', payload)
       const creativeData = response.data
 
       // Предполагаем успех, если данные получены

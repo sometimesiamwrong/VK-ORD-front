@@ -1,7 +1,8 @@
+import { Button } from '../ui/button'
 import React, { useState } from 'react'
 import { useApp } from '../../context/AppContext'
 import { useContractAndCreative } from '../../hooks/useContractAndCreative'
-import { CustomSelect } from '../ui/CustomSelect'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { TagSelector } from '../ui/TagSelector'
 import { FileUploader } from '../ui/FileUploader'
 import { nowTimestampString } from '../../utils'
@@ -137,15 +138,24 @@ export const Step3Creative: React.FC = () => {
           </label>
           <label>
             Формат
-            <CustomSelect
-              options={FORMAT_OPTIONS}
+            <Select
               value={wizardState.format?.toString() || VkOrdCreativeForm.Banner.toString()}
-              onChange={value => setCreativeData({
+              onValueChange={value => setCreativeData({
                 ...wizardState,
                 format: parseInt(value as string) as VkOrdCreativeForm
               })}
-              size="wide"
-            />
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Формат" />
+              </SelectTrigger>
+              <SelectContent>
+                {FORMAT_OPTIONS.map(option => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </label>
           <label>
             Ссылки на контент
@@ -189,21 +199,15 @@ export const Step3Creative: React.FC = () => {
                     title={url}
                   >
                     {url}
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={() => removeUrlAt(idx)}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        color: '#fff',
-                        cursor: 'pointer',
-                        fontSize: 14,
-                        lineHeight: 1,
-                        padding: 0
-                      }}
                       aria-label="Удалить ссылку"
+                      className="text-white hover:text-white hover:bg-white/10 h-auto w-auto p-1"
                     >
                       ×
-                    </button>
+                    </Button>
                   </span>
                 ))}
               </div>
@@ -284,14 +288,13 @@ export const Step3Creative: React.FC = () => {
           )}
 
           <div className="vk-mobile-row" style={{ justifyContent: 'center', gap: 20 }}>
-            <button
-              className="vk-btn vk-btn-magic"
-              style={{ marginTop: 8, marginBottom: 8 }}
+            <Button
+              className="mt-2 mb-2"
               disabled={!wizardState.text?.trim() || loadingState['ai-kkty']}
               onClick={handleGuessKkty}
             >
               {loadingState['ai-kkty'] ? '✨ Подбор…' : '✨ Узнать ККТУ по тексту'}
-            </button>
+            </Button>
           </div>
 
           <TagSelector
@@ -313,19 +316,18 @@ export const Step3Creative: React.FC = () => {
         </div>
 
         <div className="vk-mobile-button-row">
-          <button className="vk-btn" onClick={clearStep3}>
+          <Button variant="outline" onClick={clearStep3}>
             Очистить поля
-          </button>
-          <button className="vk-btn" onClick={() => setStep(2)}>
+          </Button>
+          <Button variant="outline" onClick={() => setStep(2)}>
             Назад
-          </button>
-          <button
-            className="vk-btn vk-btn--primary"
+          </Button>
+          <Button
             disabled={!canSubmitCreative || loadingState['creative']}
             onClick={createCreative}
           >
             {loadingState['creative'] ? 'Отправка…' : 'Получить ERID'}
-          </button>
+          </Button>
         </div>
       </div>
     </details>

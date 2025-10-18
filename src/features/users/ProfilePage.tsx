@@ -4,12 +4,12 @@ import {
   Paper,
   Box,
   TextField,
-  Button,
   Alert,
   Divider,
   Card,
   CardContent,
 } from '@mui/material'
+import { Button } from '@/components/ui/button'
 import { useNavigate } from 'react-router-dom'
 import { useUserProfile, useUpdateUserProfile } from '../../auth/hooks'
 
@@ -139,19 +139,18 @@ export const ProfilePage: React.FC = () => {
 
             <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
               {!editMode ? (
-                <Button variant="contained" onClick={handleEdit}>
+                <Button onClick={handleEdit}>
                   Редактировать
                 </Button>
               ) : (
                 <>
                   <Button
-                    variant="contained"
                     onClick={handleSave}
                     disabled={updateProfileMutation.isPending}
                   >
                     {updateProfileMutation.isPending ? 'Сохранение...' : 'Сохранить'}
                   </Button>
-                  <Button variant="outlined" onClick={handleCancel}>
+                  <Button variant="outline" onClick={handleCancel}>
                     Отмена
                   </Button>
                 </>
@@ -242,8 +241,6 @@ export const ProfilePage: React.FC = () => {
 
               <Box sx={{ display: 'flex', justifyContent: 'center' }}>
                 <Button
-                  variant="contained"
-                  color="primary"
                   onClick={() => navigate('/wizard')}
                 >
                   Быстро получить ERID

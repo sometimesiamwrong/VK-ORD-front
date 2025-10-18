@@ -2,8 +2,8 @@ import React from 'react'
 import {
   Box,
   Typography,
-  Button,
 } from '@mui/material'
+import { Button } from '@/components/ui/button'
 import { useState } from 'react'
 import { useActs, useParties, usePartiesSearch, useActDetails, useContractsByParty, useContractCreatives } from './hooks'
 import { PartyLookup } from './components/PartyLookup'
@@ -11,7 +11,7 @@ import { ActListPanel } from './components/ActListPanel'
 import { ActEditor } from './components/ActEditor'
 import { ActHintsSidebar } from './components/ActHintsSidebar'
 import { ActCreationFlow } from './components/ActCreationFlow'
-import { toast } from '../../utils/toast'
+import { toast } from 'sonner'
 import type { CounterpartyItem, ActSummary, ContractDto } from '../../types'
 
 export const ActsPage: React.FC = () => {
@@ -102,7 +102,7 @@ export const ActsPage: React.FC = () => {
         <Box sx={{ mb: 3 }}>
           <ActCreationFlow onActCreate={handleActCreateFromFlow} />
           <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-            <Button variant="outlined" onClick={handleCancelCreationFlow}>
+            <Button variant="outline" onClick={handleCancelCreationFlow}>
               Отмена
             </Button>
           </Box>

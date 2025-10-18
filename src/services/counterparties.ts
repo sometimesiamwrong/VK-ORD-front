@@ -3,45 +3,31 @@ import type {
   GetCounterpartiesByInnResponse,
   GetCounterpartyContractsResponse,
   GetRelatedCounterpartiesResponse,
-  PageRequest
+  CounterpartyDto
 } from '../types'
 
 export interface GetCounterpartiesByInnParams {
   inn: string
-  cacheOnly?: boolean
-  forceRefresh?: boolean
-  cacheTtlMinutes?: number
-  refreshThreshold?: number
-  includeRelatedData?: boolean
-  maxResults?: number
 }
 
 export interface GetCounterpartyContractsParams {
-  inn: string
+  externalId: string
   cacheOnly?: boolean
-  forceRefresh?: boolean
-  cacheTtlMinutes?: number
-  refreshThreshold?: number
-  maxResults?: number
-  includeAdditionalContracts?: boolean
 }
 
 export interface GetRelatedCounterpartiesParams {
-  inn: string
-  cacheOnly?: boolean
-  forceRefresh?: boolean
-  cacheTtlMinutes?: number
-  refreshThreshold?: number
-  maxResults?: number
+  externalId: string
   relationTypes?: string[]
 }
 
-export interface GetCounterpartiesListParams extends PageRequest {
-  // Additional parameters for the counterparties list endpoint
+export interface GetCounterpartiesListParams {
+  limit?: number
+  offset?: number
 }
 
 export interface GetCounterpartiesListResponse {
-  data: any[]
+  data: CounterpartyDto[]
+  total_count: number
   total_items_count: number
   limit: number
 }
@@ -62,8 +48,8 @@ export class CounterpartiesService {
    * Получить договоры контрагента
    */
   static async getCounterpartyContracts(params: GetCounterpartyContractsParams): Promise<GetCounterpartyContractsResponse> {
-    const { inn, ...queryParams } = params
-    const response = await http.get<GetCounterpartyContractsResponse>(`/api/v1/counterparties/${inn}/contracts`, {
+    const { externalId, ...queryParams } = params
+    const response = await http.get<GetCounterpartyContractsResponse>(`/api/client/counterparties/${externalId}/contracts`, {
       params: queryParams
     })
     return response.data
@@ -73,10 +59,18 @@ export class CounterpartiesService {
    * Получить связанных контрагентов
    */
   static async getRelatedCounterparties(params: GetRelatedCounterpartiesParams): Promise<GetRelatedCounterpartiesResponse> {
-    const { inn, ...queryParams } = params
-    const response = await http.get<GetRelatedCounterpartiesResponse>(`/api/v1/counterparties/${inn}/related`, {
+    const { externalId, ...queryParams } = params
+    const response = await http.get<GetRelatedCounterpartiesResponse>(`/api/client/counterparties/${externalId}/related`, {
       params: queryParams
     })
+    return response.data
+  }
+
+  /**
+   * Получить контрагента по external ID
+   */
+  static async getCounterpartyByExternalId(externalId: string): Promise<CounterpartyDto> {
+    const response = await http.get<CounterpartyDto>(`/api/client/counterparties/${externalId}`)
     return response.data
   }
 
@@ -84,7 +78,12 @@ export class CounterpartiesService {
    * Получить список сохраненных контрагентов
    */
   static async getCounterpartiesList(params: GetCounterpartiesListParams = {}): Promise<GetCounterpartiesListResponse> {
-    const response = await http.post<GetCounterpartiesListResponse>('/api/clientapi/counterparties', params)
+    const response = await http.get<GetCounterpartiesListResponse>('/api/client/counterparties', {
+      params: {
+        limit: params.limit || 100,
+        offset: params.offset || 0
+      }
+    })
     return response.data
   }
 }

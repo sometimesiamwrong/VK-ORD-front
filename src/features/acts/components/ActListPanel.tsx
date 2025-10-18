@@ -2,7 +2,6 @@ import React from 'react'
 import {
   Box,
   Typography,
-  Button,
   Table,
   TableBody,
   TableCell,
@@ -16,6 +15,7 @@ import {
   IconButton,
   Paper,
 } from '@mui/material'
+import { Button } from '@/components/ui/button'
 import {
   Add as AddIcon,
   Edit as EditIcon,
@@ -93,11 +93,10 @@ export const ActListPanel: React.FC<ActListPanelProps> = ({
           Акты {selectedCompany ? `компании "${selectedCompany.name}"` : ''}
         </Typography>
         <Button
-          variant="contained"
-          startIcon={<AddIcon />}
           onClick={onCreateAct}
           disabled={!selectedCompany}
         >
+          <AddIcon className="mr-2 h-4 w-4" />
           Создать акт
         </Button>
       </Box>

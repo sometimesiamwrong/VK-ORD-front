@@ -70,10 +70,25 @@ export interface CounterpartyJuridicalDetails {
 }
 
 export interface CounterpartyItem {
+  id?: number
   external_id?: string
   name?: string
-  roles?: (string | number | null)[] | null
-  juridicalDetails?: CounterpartyJuridicalDetails
+  roles?: string[]
+  juridical_details?: {
+    type?: string
+    model_scheme?: string
+    inn?: string
+    kpp?: string
+    phone?: string
+    foreign_epayment_method?: string
+    foreign_registration_number?: string
+    foreign_inn?: string
+    foreign_oksm_country_code?: string
+  }
+  sync_status?: string
+  expires_at?: string
+  updated_at?: string
+  created_at?: string
 }
 
 // Legacy aliases for backward compatibility

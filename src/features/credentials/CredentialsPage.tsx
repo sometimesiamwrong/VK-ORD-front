@@ -3,14 +3,12 @@ import {
   Typography,
   Paper,
   Box,
-  Button,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -24,6 +22,7 @@ import {
   Chip,
   Tooltip,
 } from '@mui/material'
+import { Button } from '@/components/ui/button'
 import {
   Add as AddIcon,
   Edit as EditIcon,
@@ -150,11 +149,8 @@ export const CredentialsPage: React.FC = () => {
         <Typography variant="h4">
           VK ORD Credentials
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleOpenCreateDialog}
-        >
+        <Button onClick={handleOpenCreateDialog}>
+          <AddIcon className="mr-2 h-4 w-4" />
           Добавить токен
         </Button>
       </Box>
@@ -168,11 +164,8 @@ export const CredentialsPage: React.FC = () => {
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
             Добавьте токен VK ORD для работы с API
           </Typography>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleOpenCreateDialog}
-          >
+          <Button onClick={handleOpenCreateDialog}>
+            <AddIcon className="mr-2 h-4 w-4" />
             Добавить первый токен
           </Button>
         </Paper>
@@ -216,21 +209,21 @@ export const CredentialsPage: React.FC = () => {
                     {credential.updatedAt ? new Date(credential.updatedAt).toLocaleDateString('ru-RU') : 'Неизвестно'}
                   </TableCell>
                   <TableCell align="right">
-                    <IconButton
-                      size="small"
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={() => handleOpenEditDialog(credential)}
-                      color="primary"
                     >
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton
-                      size="small"
+                      <EditIcon className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={() => credential.id && handleDelete(credential.id)}
-                      color="error"
                       disabled={!credential.id}
                     >
-                      <DeleteIcon />
-                    </IconButton>
+                      <DeleteIcon className="h-4 w-4" />
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -284,10 +277,9 @@ export const CredentialsPage: React.FC = () => {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog}>Отмена</Button>
+          <Button variant="outline" onClick={handleCloseDialog}>Отмена</Button>
           <Button
             onClick={handleSubmit}
-            variant="contained"
             disabled={
               createMutation.isPending ||
               updateMutation.isPending ||

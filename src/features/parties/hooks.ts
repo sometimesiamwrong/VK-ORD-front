@@ -8,7 +8,7 @@ export const usePartyLookup = () => {
   return useMutation({
     mutationFn: async (inn: string) => {
       const response = await http.post<DaDataPartyShortResponse>(
-        '/api/clientapi/party',
+        '/api/client/party',
         { inn }
       )
       return response.data
@@ -26,7 +26,7 @@ export const useSetCounterparty = () => {
       }
 
       const response = await http.post<unknown>(
-        '/api/clientapi/set-counterparty',
+        '/api/client/set-counterparty',
         {
           apiCredentialPublicId,
           inn: data.inn,

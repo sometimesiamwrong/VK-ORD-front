@@ -1,8 +1,9 @@
+import { Button } from '../ui/button'
 import React from 'react'
 import { useApp } from '../../context/AppContext'
 import { usePartyLookup, useCounterpartiesList } from '../../hooks/usePartyLookup'
 import { isValidInn, saveToLocalStorage } from '../../utils'
-import { CustomSelect } from '../ui/CustomSelect'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { PartyModal } from '../ui/PartyModal'
 import type { PartyRole, CounterpartyItem } from '../../types'
 
@@ -97,11 +98,11 @@ export const Step1Parties: React.FC = () => {
   }
 
   const applyCounterpartyFromList = (kind: 'advertiser' | 'contractor', inn: string) => {
-  const hit = counterpartiesList.find((c: CounterpartyItem) => c.juridicalDetails?.inn === inn)
+  const hit = counterpartiesList.find((c: CounterpartyItem) => c.juridical_details?.inn === inn)
     if (!hit) return
 
     const displayName = hit.name
-    const type = hit.juridicalDetails.type
+    const type = hit.juridical_details?.type
     const info = `${displayName} (${type === 'ip' ? 'ИП' : type === 'juridical' ? 'ЮР лицо' : type === 'physical' ? 'Физ. лицо' : type})`
 
     if (kind === 'advertiser') {
@@ -135,11 +136,11 @@ export const Step1Parties: React.FC = () => {
   }
 
   const isAdvertiserInCounterparties = React.useMemo(() => {
-    return counterpartiesList.some((c: CounterpartyItem) => c.juridicalDetails?.inn === wizardState.advertiserInn)
+    return counterpartiesList.some((c: CounterpartyItem) => c.juridical_details?.inn === wizardState.advertiserInn)
   }, [counterpartiesList, wizardState.advertiserInn])
 
   const isContractorInCounterparties = React.useMemo(() => {
-    return counterpartiesList.some((c: CounterpartyItem) => c.juridicalDetails?.inn === wizardState.contractorInn)
+    return counterpartiesList.some((c: CounterpartyItem) => c.juridical_details?.inn === wizardState.contractorInn)
   }, [counterpartiesList, wizardState.contractorInn])
 
   // Обновляем список контрагентов после создания
@@ -166,7 +167,7 @@ export const Step1Parties: React.FC = () => {
                 onChange={e => {
                   const val = e.target.value.replace(/\D/g, '')
                   setAdvertiserInn(val)
-                  if (counterpartiesList.some((c: CounterpartyItem) => c.juridicalDetails?.inn === val)) {
+                  if (counterpartiesList.some((c: CounterpartyItem) => c.juridical_details?.inn === val)) {
                     applyCounterpartyFromList('advertiser', val)
                   }
                 }}
@@ -175,37 +176,44 @@ export const Step1Parties: React.FC = () => {
                 placeholder="10 или 12 цифр"
                 maxLength={12}
               />
-              <button
+              <Button
                 type="button"
-                className="vk-btn"
+                variant="outline"
                 onClick={() => setModalField('advertiser')}
                 aria-label="Выбрать рекламодателя из списка"
               >
                 Выбрать
-              </button>
+              </Button>
             </div>
-            <CustomSelect
-              options={ROLE_OPTIONS}
-              value={wizardState.advertiserRole}
-              onChange={value => setAdvertiserRole(value as PartyRole)}
-              multiSelect={true}
-              hasError={wizardState.advertiserRole.length === 0}
-            />
+            <Select
+              value={wizardState.advertiserRole[0]}
+              onValueChange={value => setAdvertiserRole([value as PartyRole[0]])}
+            >
+              <SelectTrigger hasError={wizardState.advertiserRole.length === 0}>
+                <SelectValue placeholder="Роль рекламодателя" />
+              </SelectTrigger>
+              <SelectContent>
+                {ROLE_OPTIONS.map(option => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-            <button
-              className="vk-btn vk-btn--primary"
+            <Button
               disabled={!isValidInn(wizardState.advertiserInn) || loadingState['lookup-advertiser']}
               onClick={() => lookupInn('advertiser')}
             >
               {loadingState['lookup-advertiser'] ? 'Поиск…' : 'Проверить'}
-            </button>
-            <button
-              className="vk-btn"
+            </Button>
+            <Button
+              variant="outline"
               disabled={!isValidInn(wizardState.advertiserInn) || wizardState.advertiserRole.length === 0 || loadingState['create-advertiser']}
               onClick={() => handleCreateCounterparty('advertiser')}
             >
               {loadingState['create-advertiser'] ? (isAdvertiserInCounterparties ? 'Обновление…' : 'Создание…') : (isAdvertiserInCounterparties ? 'Обновить в VK ОРД' : 'Создать в VK ОРД')}
-            </button>
+            </Button>
           </div>
           
         </div>
@@ -228,7 +236,7 @@ export const Step1Parties: React.FC = () => {
                 onChange={e => {
                   const val = e.target.value.replace(/\D/g, '')
                   setContractorInn(val)
-                  if (counterpartiesList.some((c: CounterpartyItem) => c.juridicalDetails?.inn === val)) {
+                  if (counterpartiesList.some((c: CounterpartyItem) => c.juridical_details?.inn === val)) {
                     applyCounterpartyFromList('contractor', val)
                   }
                 }}
@@ -237,37 +245,44 @@ export const Step1Parties: React.FC = () => {
                 placeholder="10 или 12 цифр"
                 maxLength={12}
               />
-              <button
+              <Button
                 type="button"
-                className="vk-btn"
+                variant="outline"
                 onClick={() => setModalField('contractor')}
                 aria-label="Выбрать исполнителя из списка"
               >
                 Выбрать
-              </button>
+              </Button>
             </div>
-            <CustomSelect
-              options={ROLE_OPTIONS}
-              value={wizardState.contractorRole}
-              onChange={value => setContractorRole(value as PartyRole)}
-              multiSelect={true}
-              hasError={wizardState.contractorRole.length === 0}
-            />
+            <Select
+              value={wizardState.contractorRole[0]}
+              onValueChange={value => setContractorRole([value as PartyRole[0]])}
+            >
+              <SelectTrigger hasError={wizardState.contractorRole.length === 0}>
+                <SelectValue placeholder="Роль исполнителя" />
+              </SelectTrigger>
+              <SelectContent>
+                {ROLE_OPTIONS.map(option => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-            <button
-              className="vk-btn vk-btn--primary"
+            <Button
               disabled={!isValidInn(wizardState.contractorInn) || loadingState['lookup-contractor']}
               onClick={() => lookupInn('contractor')}
             >
               {loadingState['lookup-contractor'] ? 'Поиск…' : 'Проверить'}
-            </button>
-            <button
-              className="vk-btn"
+            </Button>
+            <Button
+              variant="outline"
               disabled={!isValidInn(wizardState.contractorInn) || wizardState.contractorRole.length === 0 || loadingState['create-contractor']}
               onClick={() => handleCreateCounterparty('publisher')}
             >
               {loadingState['create-contractor'] ? (isContractorInCounterparties ? 'Обновление…' : 'Создание…') : (isContractorInCounterparties ? 'Обновить в VK ОРД' : 'Создать в VK ОРД')}
-            </button>
+            </Button>
           </div>
           
         </div>
@@ -289,19 +304,18 @@ export const Step1Parties: React.FC = () => {
         </div>
 
         <div className="vk-mobile-button-row">
-          <button className="vk-btn" onClick={clearStep1}>
+          <Button variant="outline" onClick={clearStep1}>
             Очистить поля
-          </button>
-          <button className="vk-btn" onClick={() => saveToLocalStorage(LOCAL_KEY, wizardState)}>
+          </Button>
+          <Button variant="outline" onClick={() => saveToLocalStorage(LOCAL_KEY, wizardState)}>
             Сохранить шаг
-          </button>
-          <button
-            className="vk-btn vk-btn--primary"
+          </Button>
+          <Button
             disabled={!canNextFromStep1}
             onClick={() => setStep(2)}
           >
             Далее
-          </button>
+          </Button>
         </div>
       </div>
     </details>

@@ -4,11 +4,11 @@ import {
   Container,
   Paper,
   TextField,
-  Button,
   Typography,
   Box,
   Alert,
 } from '@mui/material'
+import { Button } from '@/components/ui/button'
 import { useRegister } from '../../auth/hooks'
 
 export const RegisterPage: React.FC = () => {
@@ -94,9 +94,7 @@ export const RegisterPage: React.FC = () => {
 
             <Button
               type="submit"
-              fullWidth
-              variant="contained"
-              sx={{ mt: 3, mb: 2 }}
+              className="w-full mt-3 mb-2"
               disabled={registerMutation.isPending || !formData.userName || !formData.password}
             >
               {registerMutation.isPending ? 'Регистрация...' : 'Зарегистрироваться'}

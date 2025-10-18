@@ -2,7 +2,7 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import http from '../api/http'
 import { useTokenStore, useDeviceStore } from './tokenStore'
-import { toast } from '../utils/toast'
+import { toast } from 'sonner'
 import type {
   LoginRequest,
   RegisterRequest,
@@ -101,21 +101,25 @@ export const useLogout = () => {
 
 // Auto-refresh on app start
 export const useAutoRefresh = () => {
-  const navigate = useNavigate()
+ const navigate = useNavigate()
   const { setAccessToken, setRefreshToken, getRefreshToken } = useTokenStore()
 
   return useMutation({
     mutationFn: async () => {
       const refreshToken = getRefreshToken()
+      console.log('useAutoRefresh: Attempting to refresh token, refreshToken exists:', !!refreshToken);
       // Если нет refresh token в куках, выбрасываем ошибку
       if (!refreshToken) {
+        console.log('useAutoRefresh: No refresh token available');
         throw new Error('No refresh token available')
       }
       
       const response = await http.post<AuthResponse>('/api/auth/refresh', {})
+      console.log('useAutoRefresh: Refresh response received:', response.data);
       return response.data
     },
     onSuccess: (data) => {
+      console.log('useAutoRefresh: Refresh success, data:', data);
       if (data) {
         setAccessToken(data.token || '')
         // Обновляем refresh token, если сервер вернул новый
@@ -123,10 +127,12 @@ export const useAutoRefresh = () => {
           setRefreshToken(data.refreshToken)
         }
       } else {
+        console.log('useAutoRefresh: No data in response, navigating to login');
         navigate('/login')
       }
     },
-    onError: () => {
+    onError: (error) => {
+      console.log('useAutoRefresh: Refresh error, navigating to login', error);
       navigate('/login')
     },
   })
@@ -134,13 +140,20 @@ export const useAutoRefresh = () => {
 
 // User profile
 export const useUserProfile = () => {
-  return useQuery({
+  return useQuery<UserProfileResponse | undefined>({
     queryKey: ['userProfile'],
     queryFn: async () => {
-      const response = await http.get<UserProfileResponse>('/api/users/me')
-      return response.data
-    },
-  })
+      try {
+        console.log('useUserProfile: Fetching user profile');
+        const response = await http.get<UserProfileResponse>('/api/users/me')
+        console.log('useUserProfile: User profile response:', response.data);
+        return response.data
+      } catch (error) {
+        console.log('useUserProfile: Error fetching user profile:', error);
+        throw error
+      }
+    }
+ })
 }
 
 export const useUpdateUserProfile = () => {
@@ -161,6 +174,7 @@ export const useUpdateUserProfile = () => {
 export const useAuth = () => {
   const { accessToken } = useTokenStore()
   const isAuthenticated = !!accessToken
+  console.log('useAuth: accessToken exists:', !!accessToken, 'isAuthenticated:', isAuthenticated);
 
   return {
     isAuthenticated,

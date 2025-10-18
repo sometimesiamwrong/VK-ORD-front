@@ -1,3 +1,4 @@
+import { Toaster } from "@/components/ui/sonner"
 import React, { useEffect } from 'react'
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClientProvider } from '@tanstack/react-query'
@@ -18,7 +19,7 @@ import { CreativesPage } from './features/creatives/CreativesPage'
 import { MediaPage } from './features/media/MediaPage'
 import { WizardPage } from './features/wizard/WizardPage'
 import { PartiesPage } from './features/parties/PartiesPage'
-import { ActsPage } from './features/acts/ActsPage'
+import { ActsPage } from './features/acts/ActsPage';
 
 // Auth guard component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -27,17 +28,23 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   const [hasTriedRefresh, setHasTriedRefresh] = React.useState(false)
 
   useEffect(() => {
+    console.log('ProtectedRoute useEffect: isAuthenticated:', isAuthenticated, 'hasTriedRefresh:', hasTriedRefresh, 'autoRefresh.isPending:', autoRefresh.isPending);
     if (!isAuthenticated && !hasTriedRefresh && !autoRefresh.isPending) {
       // Try to refresh token on app start (only once)
+      console.log('ProtectedRoute: Attempting to refresh token');
       setHasTriedRefresh(true)
       autoRefresh.mutate()
     }
   }, [isAuthenticated, hasTriedRefresh, autoRefresh])
 
+  console.log('ProtectedRoute: isAuthenticated:', isAuthenticated, 'autoRefresh.isPending:', autoRefresh.isPending, 'hasTriedRefresh:', hasTriedRefresh);
+  
   if (!isAuthenticated && (autoRefresh.isPending || !hasTriedRefresh)) {
+    console.log('ProtectedRoute: Showing loading state');
     return <div>Loading...</div>
   }
 
+  console.log('ProtectedRoute: Rendering children or redirecting');
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />
 }
 
@@ -65,6 +72,7 @@ export const AppRouter: React.FC = () => {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+      <Toaster />
       <QueryClientProvider client={queryClient}>
         <HashRouter>
           <Routes>

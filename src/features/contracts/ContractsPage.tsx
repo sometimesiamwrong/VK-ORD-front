@@ -4,14 +4,14 @@ import {
   Paper,
   Box,
   TextField,
-  Button,
   Alert,
   Card,
   CardContent,
   Divider,
 } from '@mui/material'
+import { Button } from '@/components/ui/button'
 import { useMutation } from '@tanstack/react-query'
-import { toast } from '../../utils/toast'
+import { toast } from 'sonner'
 import http from '../../api/http'
 import type { CreateContractRequest, ContractDetails } from '../../types'
 
@@ -163,9 +163,7 @@ export const ContractsPage: React.FC = () => {
 
               <Button
                 type="submit"
-                variant="contained"
-                fullWidth
-                sx={{ mt: 3 }}
+                className="w-full mt-3"
                 disabled={createContractMutation.isPending}
               >
                 {createContractMutation.isPending ? 'Создание...' : 'Создать/Обновить контракт'}
@@ -193,8 +191,8 @@ export const ContractsPage: React.FC = () => {
               />
               <Button
                 type="submit"
-                variant="outlined"
-                fullWidth
+                variant="outline"
+                className="w-full"
                 disabled={viewContractMutation.isPending}
               >
                 {viewContractMutation.isPending ? 'Загрузка...' : 'Найти контракт'}

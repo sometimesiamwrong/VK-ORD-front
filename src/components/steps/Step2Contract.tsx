@@ -1,3 +1,4 @@
+import { Button } from '../ui/button'
 import React from 'react'
 import { useApp } from '../../context/AppContext'
 import { useContractAndCreative } from '../../hooks/useContractAndCreative'
@@ -97,26 +98,24 @@ export const Step2Contract: React.FC = () => {
           </label>
         </div>
         <div className="vk-mobile-button-row">
-          <button className="vk-btn" onClick={clearStep2}>
+          <Button variant="outline" onClick={clearStep2}>
             Очистить поля
-          </button>
-          <button className="vk-btn" onClick={() => setStep(1)}>
+          </Button>
+          <Button variant="outline" onClick={() => setStep(1)}>
             Назад
-          </button>
-          <button
-            className="vk-btn vk-btn--primary"
+          </Button>
+          <Button
             disabled={loadingState['contract']}
             onClick={saveContract}
           >
             {loadingState['contract'] ? 'Сохранение…' : 'Сохранить'}
-          </button>
-          <button
-            className="vk-btn vk-btn--primary"
+          </Button>
+          <Button
             disabled={!canNextFromStep2}
             onClick={() => setStep(3)}
           >
             Далее
-          </button>
+          </Button>
         </div>
       </div>
     </details>

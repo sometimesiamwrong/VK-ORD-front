@@ -60,6 +60,14 @@ export const PartyModal: React.FC<PartyModalProps> = ({
   const [searchResults, setSearchResults] = React.useState<CounterpartyItem[]>(counterparties)
 
   React.useEffect(() => {
+    console.log('PartyModal - counterparties:', counterparties)
+    console.log('PartyModal - counterparties length:', counterparties.length)
+    if (counterparties.length > 0) {
+      console.log('PartyModal - first counterparty:', counterparties[0])
+    }
+  }, [counterparties])
+
+  React.useEffect(() => {
     if (query.trim().length >= 3 && onSearch) {
       onSearch(query).then(setSearchResults).catch(() => setSearchResults(counterparties))
     } else {
@@ -69,7 +77,7 @@ export const PartyModal: React.FC<PartyModalProps> = ({
 
   const filtered = searchResults.filter((c) => {
     if (!query.trim()) return true
-    const inn = c.juridicalDetails?.inn || ''
+    const inn = c.juridical_details?.inn || ''
     const name = c.name || ''
     return inn.includes(query.trim()) || name.toLowerCase().includes(query.trim().toLowerCase())
   })
@@ -124,16 +132,16 @@ export const PartyModal: React.FC<PartyModalProps> = ({
             <div className="vk-modal__list">
               {pageItems.map((party) => (
                 <button
-                  key={`${party.juridicalDetails?.inn || 'unknown'}-${party.name || 'unknown'}`}
+                  key={`${party.juridical_details?.inn || 'unknown'}-${party.name || 'unknown'}`}
                   className="vk-modal__item"
                   onClick={() => onSelect(party)}
-                  title={`${party.name || 'Неизвестно'}\nИНН: ${party.juridicalDetails?.inn || 'Не указан'}\nТип: ${formatPartyType(party.juridicalDetails?.type)}`}
+                  title={`${party.name || 'Неизвестно'}\nИНН: ${party.juridical_details?.inn || 'Не указан'}\nТип: ${formatPartyType(party.juridical_details?.type)}`}
                 >
                   <div className="vk-modal__item-name">{party.name || 'Неизвестно'}</div>
                   <div className="vk-modal__item-meta">
-                    <span>ИНН: {party.juridicalDetails?.inn || 'Не указан'}</span>
+                    <span>ИНН: {party.juridical_details?.inn || 'Не указан'}</span>
                     <span>•</span>
-                    <span>{formatPartyType(party.juridicalDetails?.type)}</span>
+                    <span>{formatPartyType(party.juridical_details?.type)}</span>
                   </div>
                 </button>
               ))}

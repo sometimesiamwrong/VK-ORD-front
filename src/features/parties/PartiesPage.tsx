@@ -4,7 +4,6 @@ import {
   Paper,
   Box,
   TextField,
-  Button,
   Alert,
   Card,
   CardContent,
@@ -16,8 +15,9 @@ import {
   Chip,
   OutlinedInput,
 } from '@mui/material'
+import { Button } from '@/components/ui/button'
 import type { SelectChangeEvent } from '@mui/material'
-import { toast } from '../../utils/toast'
+import { toast } from 'sonner'
 import type { DaDataPartyShortResponse } from '../../types'
 import { usePartyLookup, useSetCounterparty } from './hooks'
 
@@ -121,8 +121,7 @@ export const PartiesPage: React.FC = () => {
               />
               <Button
                 type="submit"
-                variant="contained"
-                fullWidth
+                className="w-full"
                 disabled={lookupMutation.isPending}
               >
                 {lookupMutation.isPending ? 'Поиск...' : 'Найти контрагента'}
@@ -261,8 +260,7 @@ export const PartiesPage: React.FC = () => {
 
               <Button
                 type="submit"
-                variant="contained"
-                fullWidth
+                className="w-full"
                 disabled={createMutation.isPending}
               >
                 {createMutation.isPending ? 'Создание...' : 'Создать контрагента'}

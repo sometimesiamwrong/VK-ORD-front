@@ -4,7 +4,6 @@ import {
   Paper,
   Box,
   TextField,
-  Button,
   Alert,
   Card,
   CardContent,
@@ -14,12 +13,12 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  IconButton,
   List,
   ListItem,
   ListItemText,
   ListItemSecondaryAction,
 } from '@mui/material'
+import { Button } from '@/components/ui/button'
 import {
   Add as AddIcon,
   Delete as DeleteIcon,
@@ -27,7 +26,7 @@ import {
   Info as InfoIcon,
 } from '@mui/icons-material'
 import { useMutation } from '@tanstack/react-query'
-import { toast } from '../../utils/toast'
+import { toast } from 'sonner'
 import http from '../../api/http'
 import type {
   CreateCreativeRequest,
@@ -294,9 +293,9 @@ export const CreativesPage: React.FC = () => {
                       value={newContractId}
                       onChange={(e) => setNewContractId(e.target.value)}
                     />
-                    <IconButton onClick={addContractId} disabled={!newContractId}>
-                      <AddIcon />
-                    </IconButton>
+                    <Button variant="outline" size="icon" onClick={addContractId} disabled={!newContractId}>
+                      <AddIcon className="h-4 w-4" />
+                    </Button>
                   </Box>
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                     {formData.contractExternalIds.map((id) => (
@@ -323,9 +322,9 @@ export const CreativesPage: React.FC = () => {
                       value={newKktyCode}
                       onChange={(e) => setNewKktyCode(e.target.value)}
                     />
-                    <IconButton onClick={addKktyCode} disabled={!newKktyCode}>
-                      <AddIcon />
-                    </IconButton>
+                    <Button variant="outline" size="icon" onClick={addKktyCode} disabled={!newKktyCode}>
+                      <AddIcon className="h-4 w-4" />
+                    </Button>
                   </Box>
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                     {formData.kktus.map((code) => (
@@ -352,18 +351,18 @@ export const CreativesPage: React.FC = () => {
                       value={newContentUrl}
                       onChange={(e) => setNewContentUrl(e.target.value)}
                     />
-                    <IconButton onClick={addContentUrl} disabled={!newContentUrl}>
-                      <AddIcon />
-                    </IconButton>
+                    <Button variant="outline" size="icon" onClick={addContentUrl} disabled={!newContentUrl}>
+                      <AddIcon className="h-4 w-4" />
+                    </Button>
                   </Box>
                   <List dense>
                     {formData.targetUrls?.map((url, index) => (
                       <ListItem key={index}>
                         <ListItemText primary={url} />
                         <ListItemSecondaryAction>
-                          <IconButton edge="end" onClick={() => removeContentUrl(url)}>
-                            <DeleteIcon />
-                          </IconButton>
+                          <Button variant="ghost" size="icon" onClick={() => removeContentUrl(url)}>
+                            <DeleteIcon className="h-4 w-4" />
+                          </Button>
                         </ListItemSecondaryAction>
                       </ListItem>
                     ))}
@@ -408,9 +407,7 @@ export const CreativesPage: React.FC = () => {
 
               <Button
                 type="submit"
-                variant="contained"
-                fullWidth
-                sx={{ mt: 3 }}
+                className="w-full mt-3"
                 disabled={createCreativeMutation.isPending}
               >
                 {createCreativeMutation.isPending ? 'Создание...' : 'Создать креатив'}
@@ -433,11 +430,11 @@ export const CreativesPage: React.FC = () => {
                     Показано {totalItemsCount > 0 ? `${listOffset + 1}–${Math.min(listOffset + listLimit, totalItemsCount)}` : 0} из {totalItemsCount}
                   </Typography>
                   <Box sx={{ display: 'flex', gap: 1 }}>
-                    <Button variant="outlined" onClick={() => setListOffset(0)} disabled={currentPage <= 1}>«</Button>
-                    <Button variant="outlined" onClick={handlePrev} disabled={currentPage <= 1}>Назад</Button>
+                    <Button variant="outline" onClick={() => setListOffset(0)} disabled={currentPage <= 1}>«</Button>
+                    <Button variant="outline" onClick={handlePrev} disabled={currentPage <= 1}>Назад</Button>
                     <Typography variant="body2" color="text.secondary" sx={{ px: 1 }}>Стр. {currentPage}/{totalPages}</Typography>
-                    <Button variant="outlined" onClick={handleNext} disabled={currentPage >= totalPages}>Вперед</Button>
-                    <Button variant="outlined" onClick={() => setListOffset((totalPages - 1) * listLimit)} disabled={currentPage >= totalPages}>»</Button>
+                    <Button variant="outline" onClick={handleNext} disabled={currentPage >= totalPages}>Вперед</Button>
+                    <Button variant="outline" onClick={() => setListOffset((totalPages - 1) * listLimit)} disabled={currentPage >= totalPages}>»</Button>
                   </Box>
                 </Box>
                 <List dense>
@@ -449,7 +446,7 @@ export const CreativesPage: React.FC = () => {
                   )}
                   {creatives.map((c: CreativeDetails) => (
                     <ListItem key={c.externalId} secondaryAction={
-                      <Button size="small" variant="text" onClick={() => viewCreativeMutation.mutate(c.externalId)}>Открыть</Button>
+                      <Button variant="link" size="sm" onClick={() => viewCreativeMutation.mutate(c.externalId)}>Открыть</Button>
                     }>
                       <ListItemText
                         primary={c.name || c.externalId}
@@ -477,10 +474,10 @@ export const CreativesPage: React.FC = () => {
                   />
                   <Button
                     type="submit"
-                    variant="outlined"
-                    startIcon={<SearchIcon />}
+                    variant="outline"
                     disabled={viewCreativeMutation.isPending}
                   >
+                    <SearchIcon className="mr-2 h-4 w-4" />
                     Найти
                   </Button>
                 </Box>
@@ -503,10 +500,10 @@ export const CreativesPage: React.FC = () => {
                   />
                   <Button
                     type="submit"
-                    variant="outlined"
-                    startIcon={<InfoIcon />}
+                    variant="outline"
                     disabled={getStatusMutation.isPending}
                   >
+                    <InfoIcon className="mr-2 h-4 w-4" />
                     Статус
                   </Button>
                 </Box>
@@ -529,10 +526,10 @@ export const CreativesPage: React.FC = () => {
                   />
                   <Button
                     type="submit"
-                    variant="outlined"
-                    startIcon={<SearchIcon />}
+                    variant="outline"
                     disabled={creativeByErid.isPending}
                   >
+                    <SearchIcon className="mr-2 h-4 w-4" />
                     Найти
                   </Button>
                 </Box>
@@ -555,11 +552,10 @@ export const CreativesPage: React.FC = () => {
                   />
                   <Button
                     type="submit"
-                    variant="contained"
-                    color="error"
-                    startIcon={<DeleteIcon />}
+                    variant="destructive"
                     disabled={deleteCreativeMutation.isPending}
                   >
+                    <DeleteIcon className="mr-2 h-4 w-4" />
                     Удалить
                   </Button>
                 </Box>

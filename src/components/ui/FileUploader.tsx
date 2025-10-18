@@ -1,4 +1,8 @@
-import React, { useState } from 'react'
+import React, { useState, useCallback } from 'react'
+import { useDropzone } from 'react-dropzone'
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Button } from "@/components/ui/button"
 import http from '../../api/http'
 import { type UploadedFile } from '../../types'
 
@@ -8,7 +12,6 @@ interface FileUploaderProps {
   maxFiles?: number
 }
 
-// Helper function to determine file type
 const getFileType = (fileName: string): 'image' | 'video' | 'audio' | 'document' => {
   const ext = fileName.toLowerCase().split('.').pop() || ''
   if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].includes(ext)) return 'image'
@@ -17,7 +20,6 @@ const getFileType = (fileName: string): 'image' | 'video' | 'audio' | 'document'
   return 'document'
 }
 
-// Helper function to generate preview for images
 const generateImagePreview = (file: File): Promise<string> => {
   return new Promise((resolve) => {
     const reader = new FileReader()
@@ -26,8 +28,6 @@ const generateImagePreview = (file: File): Promise<string> => {
   })
 }
 
-
-// Component for file preview
 const FilePreview: React.FC<{ file: UploadedFile }> = ({ file }) => {
   const fileType = getFileType(file.fileName)
 
@@ -36,18 +36,11 @@ const FilePreview: React.FC<{ file: UploadedFile }> = ({ file }) => {
       <img
         src={file.preview}
         alt={file.fileName}
-        style={{
-          width: 32,
-          height: 32,
-          objectFit: 'cover',
-          borderRadius: 4,
-          border: '1px solid var(--vk-border, #ddd)'
-        }}
+        className="h-8 w-8 rounded-md border object-cover"
       />
     )
   }
 
-  // Default icons for different file types
   const getFileIcon = () => {
     switch (fileType) {
       case 'image': return '🖼️'
@@ -58,7 +51,7 @@ const FilePreview: React.FC<{ file: UploadedFile }> = ({ file }) => {
   }
 
   return (
-    <span style={{ fontSize: '1.2em' }}>
+    <span className="text-2xl">
       {getFileIcon()}
     </span>
   )
@@ -72,26 +65,14 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files
-
-    if (!files || files.length === 0) {
-      return
-    }
-
-    const currentCount = mediaFiles.length
-    if (currentCount >= maxFiles) {
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    if (mediaFiles.length >= maxFiles) {
       setError(`Максимальное количество файлов: ${maxFiles}`)
       return
     }
 
-    const file = files[0]
-    const remainingSlots = maxFiles - currentCount
-
-    if (files.length > remainingSlots) {
-      setError(`Можно загрузить еще ${remainingSlots} файл(ов)`)
-      return
-    }
+    const file = acceptedFiles[0]
+    if (!file) return
 
     setUploading(true)
     setError(null)
@@ -109,7 +90,6 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
       const externalId = response.data
       const fileType = getFileType(file.name)
 
-      // Generate preview for images and videos
       let preview: string | undefined
       if (fileType === 'image') {
         try {
@@ -128,13 +108,23 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
 
       onChange([...mediaFiles, newFile])
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ошибка при выборе файла')
+      setError(err instanceof Error ? err.message : 'Ошибка при загрузке файла')
     } finally {
       setUploading(false)
-      // Reset input
-      event.target.value = ''
     }
-  }
+  }, [mediaFiles, maxFiles, onChange])
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    maxFiles: 1,
+    multiple: false,
+    accept: {
+      'image/*': [],
+      'video/*': [],
+      'audio/*': [],
+    },
+    disabled: mediaFiles.length >= maxFiles || uploading,
+  })
 
   const handleRemoveFile = (externalId: string) => {
     onChange(mediaFiles.filter(f => f.externalId !== externalId))
@@ -143,125 +133,64 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
   const canUploadMore = mediaFiles.length < maxFiles
 
   return (
-    <div style={{ display: 'grid', gap: 8 }}>
-      <label>
-        Файлы креатива ({mediaFiles.length}/{maxFiles})
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 6 }}>
-          <input
-            type="file"
-            id="file-upload-creative"
-            style={{ display: 'none' }}
-            onChange={handleFileSelect}
-            disabled={!canUploadMore || uploading}
-            accept="image/*,video/*,audio/*,.pdf"
-          />
-          <label htmlFor="file-upload-creative">
-            <button
-              type="button"
-              className="vk-btn"
-              onClick={(e) => {
-                e.preventDefault()
-                document.getElementById('file-upload-creative')?.click()
-              }}
-              disabled={!canUploadMore || uploading}
-              style={{
-                cursor: (!canUploadMore || uploading) ? 'not-allowed' : 'pointer',
-                opacity: (!canUploadMore || uploading) ? 0.6 : 1
-              }}
-            >
-              {uploading ? '⏳ Загрузка...' : '📎 Выбрать файл'}
-            </button>
-          </label>
-          {!canUploadMore && (
-            <span style={{ color: 'var(--vk-muted)', fontSize: '0.9em' }}>
-              Достигнут лимит файлов
-            </span>
-          )}
-        </div>
-      </label>
+    <div className="grid gap-2">
+      <Label>Файлы креатива ({mediaFiles.length}/{maxFiles})</Label>
+      <div
+        {...getRootProps()}
+        className={`flex cursor-pointer flex-col items-center justify-center rounded-md border-2 border-dashed p-4 text-center ${
+          isDragActive ? 'border-primary' : ''
+        } ${(!canUploadMore || uploading) ? 'cursor-not-allowed opacity-60' : ''}`}
+      >
+        <Input {...getInputProps()} />
+        {uploading ? (
+          <>
+            <p className="text-sm text-muted-foreground">⏳ Загрузка...</p>
+          </>
+        ) : (
+          <>
+            <p className="text-sm text-muted-foreground">
+              Перетащите файл сюда или нажмите, чтобы выбрать
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Максимальный размер файла: 10MB. Лимит: {maxFiles} файлов.
+            </p>
+          </>
+        )}
+      </div>
 
       {error && (
-        <div
-          className="vk-card"
-          style={{
-            backgroundColor: 'var(--vk-error-bg, #fee)',
-            color: 'var(--vk-error, #c00)',
-            padding: '8px 12px',
-            borderRadius: 4
-          }}
-        >
+        <div className="rounded-md border border-destructive bg-destructive/10 p-2 text-sm text-destructive">
           {error}
         </div>
       )}
 
       {mediaFiles.length > 0 && (
-        <div className="vk-card" style={{ padding: 8 }}>
-          <div style={{ display: 'grid', gap: 6 }}>
-            {mediaFiles.map((file) => (
-              <div
-                key={file.externalId}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '6px 8px',
-                  backgroundColor: 'var(--vk-bg-secondary, #f5f5f5)',
-                  borderRadius: 4,
-                  width: '100%',
-                  maxWidth: '100%',
-                  boxSizing: 'border-box',
-                  overflow: 'hidden'
-                }}
-              >
-                <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-                  <FilePreview file={file} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div
-                      style={{
-                        fontSize: '0.9em',
-                        fontWeight: 500,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                        maxWidth: '100%'
-                      }}
-                    >
-                      {file.fileName}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: '0.75em',
-                        color: 'var(--vk-muted)',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                        maxWidth: '100%'
-                      }}
-                    >
-                      ID: {file.externalId}
-                    </div>
-                  </div>
+        <div className="mt-2 grid gap-2">
+          {mediaFiles.map((file) => (
+            <div
+              key={file.externalId}
+              className="flex items-center justify-between rounded-md bg-secondary/10 p-2"
+            >
+              <div className="flex min-w-0 items-center gap-2">
+                <FilePreview file={file} />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{file.fileName}</p>
+                  <p className="truncate text-xs text-muted-foreground">ID: {file.externalId}</p>
                 </div>
-                <button
-                  type="button"
-                  className="vk-btn"
-                  onClick={() => handleRemoveFile(file.externalId)}
-                  style={{
-                    padding: '4px 8px',
-                    fontSize: '0.85em',
-                    backgroundColor: 'var(--vk-error-bg, #fee)',
-                    color: 'var(--vk-error, #c00)'
-                  }}
-                  title="Удалить файл"
-                >
-                  ✕
-                </button>
               </div>
-            ))}
-          </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleRemoveFile(file.externalId)}
+                title="Удалить файл"
+                className="h-auto w-auto p-1 text-destructive hover:bg-destructive/10"
+              >
+                ✕
+              </Button>
+            </div>
+          ))}
         </div>
       )}
     </div>
   )
 }
-

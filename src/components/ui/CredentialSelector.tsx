@@ -3,7 +3,7 @@ import { useCredentials } from '../../features/credentials/hooks'
 import { useEnvironmentStore, useTokenStore } from '../../auth/tokenStore'
 import { useUserProfile } from '../../auth/hooks'
 import { saveToCookie } from '../../utils'
-import { toast } from '../../utils/toast'
+import { toast } from 'sonner'
 
 interface CredentialSelectorProps {
   vkApiKey: string | null
@@ -26,9 +26,12 @@ export const CredentialSelector: React.FC<CredentialSelectorProps> = ({
 
 
   // Filter credentials by current environment and ensure they have valid publicId
-  const filteredCredentials = credentials?.filter(
+  // Defensive: ensure credentials is an array before using array methods
+  const credsArray = Array.isArray(credentials) ? credentials : []
+
+  const filteredCredentials = credsArray.filter(
     c => c.environment === (useSandbox ? 'Sandbox' : 'Production') && c.publicId
-  ) || []
+  )
 
   const [selectedCredentialId, setSelectedCredentialId] = useState<string>('')
 

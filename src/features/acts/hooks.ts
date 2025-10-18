@@ -32,8 +32,8 @@ export const usePartiesSearch = () => {
       const lowerQuery = query.toLowerCase()
       return parties.filter((party: CounterpartyItem) =>
         party.name?.toLowerCase().includes(lowerQuery) ||
-        party.juridicalDetails?.inn?.includes(query) ||
-        party.juridicalDetails?.kpp?.includes(query)
+        party.juridical_details?.inn?.includes(query) ||
+        party.juridical_details?.kpp?.includes(query)
       )
     }
   })
@@ -168,13 +168,11 @@ export const useSubmitAct = () => {
 }
 
 // Contracts hooks - get contracts for a counterparty using new API
-export const useContractsByParty = (partyInn: string) => {
+export const useContractsByParty = (partyExternalId: string) => {
   return useCounterpartyContractsQuery({
-    inn: partyInn,
-    cacheOnly: false,
-    forceRefresh: false,
-    maxResults: 100
-  }, !!partyInn)
+    externalId: partyExternalId,
+    cacheOnly: false
+  }, !!partyExternalId)
 }
 
 // Creatives hooks - get creatives for a contract using new API
@@ -183,26 +181,23 @@ export const useContractCreatives = (contractExternalId: string) => {
 }
 
 // Related parties hook - get parties that have contracts with the selected party
-export const useRelatedParties = (partyInn: string) => {
+export const useRelatedParties = (partyExternalId: string) => {
   const query = useRelatedCounterpartiesQuery({
-    inn: partyInn,
-    cacheOnly: false,
-    forceRefresh: false,
-    maxResults: 100
-  }, !!partyInn)
+    externalId: partyExternalId
+  }, !!partyExternalId)
 
   // Transform CounterpartyDto to CounterpartyItem format
   const transformedData = query.data ? {
     ...query.data,
     relatedCounterparties: query.data.relatedCounterparties.map((dto): CounterpartyItem => ({
-      external_id: dto.external_id,
-      name: dto.name,
-      roles: dto.roles,
-      juridicalDetails: {
-        inn: dto.juridical_details.inn,
-        kpp: dto.juridical_details.kpp,
-        type: 'juridical' // Default type, could be enhanced
-      }
+      external_id: dto.external_id || dto.externalId,
+      name: dto.data.name,
+      roles: dto.data.roles,
+      juridical_details: dto.data.juridical_details || dto.data.juridicalDetails ? {
+        inn: (dto.data.juridical_details || dto.data.juridicalDetails)!.inn,
+        kpp: (dto.data.juridical_details || dto.data.juridicalDetails)!.kpp,
+        type: (dto.data.juridical_details || dto.data.juridicalDetails)!.type || 'juridical'
+      } : undefined
     }))
   } : undefined
 

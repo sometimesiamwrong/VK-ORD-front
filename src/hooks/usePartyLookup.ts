@@ -4,7 +4,33 @@ import http from '../api/http'
 import { useApp } from '../context/AppContext'
 import CounterpartiesService from '../services/counterparties'
 import { isValidInn, getPartyDisplayName, getPartyShortWithOpf } from '../utils'
-import type { DaDataPartyShortResponse } from '../types'
+import type { DaDataPartyShortResponse, CounterpartyDto, CounterpartyItem } from '../types'
+
+// Функция преобразования CounterpartyDto в CounterpartyItem
+const transformCounterpartyDto = (dto: CounterpartyDto): CounterpartyItem => {
+  const juridicalDetails = dto.data.juridicalDetails || dto.data.juridical_details
+  return {
+    id: dto.id,
+    external_id: dto.external_id || dto.externalId,
+    name: dto.data.name,
+    roles: dto.data.roles,
+    juridical_details: juridicalDetails ? {
+      type: juridicalDetails.type,
+      model_scheme: juridicalDetails.model_scheme || juridicalDetails.modelScheme,
+      inn: juridicalDetails.inn,
+      kpp: juridicalDetails.kpp,
+      phone: juridicalDetails.phone,
+      foreign_epayment_method: juridicalDetails.foreign_epayment_method,
+      foreign_registration_number: juridicalDetails.foreign_registration_number,
+      foreign_inn: juridicalDetails.foreign_inn,
+      foreign_oksm_country_code: juridicalDetails.foreign_oksm_country_code
+    } : undefined,
+    sync_status: dto.sync_status || dto.syncStatus,
+    expires_at: dto.expires_at || dto.expiresAt,
+    updated_at: dto.updated_at || dto.updatedAt,
+    created_at: dto.created_at || dto.createdAt
+  }
+}
 
 const extractErrorMessage = (error: unknown, fallback: string): string => {
   if (!error) return fallback
@@ -97,7 +123,7 @@ export const usePartyLookup = () => {
 
     setLoading(`lookup-${kind}`, true)
     try {
-      const response = await http.post<DaDataPartyShortResponse>('/api/clientapi/party', { inn })
+      const response = await http.post<DaDataPartyShortResponse>('/api/client/party', { inn })
       const partyData = response.data
 
       // Предполагаем успех, если данные получены
@@ -154,7 +180,7 @@ export const usePartyLookup = () => {
 
     setLoading(`create-${kind}`, true)
     try {
-      await http.post<unknown>('/api/clientapi/set-counterparty', { inn, types: role })
+      await http.post<unknown>('/api/client/set-counterparty', { inn, types: role })
       // Предполагаем успех, если нет ошибки
       setMessage('Контрагент успешно создан', 'success')
     } catch (error) {
@@ -173,15 +199,41 @@ export const useCounterpartiesList = (params?: { limit?: number; offset?: number
     queryKey: ['counterparties', 'list', params],
     queryFn: async () => {
       try {
-        const response = await CounterpartiesService.getCounterpartiesList(params || {})
-        return response
+        // Provide default pagination parameters
+        const defaultParams = {
+          limit: 100,
+          offset: 0,
+          ...params
+        }
+        console.log('Fetching counterparties with params:', defaultParams)
+        const response = await CounterpartiesService.getCounterpartiesList(defaultParams)
+        console.log('Counterparties response:', response)
+        console.log('Counterparties response.data:', response.data)
+        
+        // Проверяем структуру ответа и извлекаем массив контрагентов
+        let counterpartiesArray: CounterpartyDto[];
+        if (response.data && typeof response.data === 'object' && '$values' in response.data) {
+          // Если структура содержит $values, используем его
+          counterpartiesArray = (response.data as any).$values;
+        } else {
+          // Иначе используем response.data как массив
+          counterpartiesArray = response.data;
+        }
+        
+        console.log('Counterparties array:', counterpartiesArray)
+        console.log('Counterparties array length:', counterpartiesArray.length)
+        if (counterpartiesArray.length > 0) {
+          console.log('First counterparty DTO:', counterpartiesArray[0])
+          console.log('Transformed first counterparty:', transformCounterpartyDto(counterpartiesArray[0]))
+        }
+        const transformed = counterpartiesArray.map(transformCounterpartyDto)
+        console.log('Transformed counterparties:', transformed)
+        return transformed
       } catch (error: any) {
         console.error('Error fetching counterparties:', error)
-        return {
-          data: [],
-          total_items_count: 0,
-          limit: 0
-        }
+        console.error('Error response:', error.response?.data)
+        console.error('Error status:', error.response?.status)
+        return []
       }
     },
     staleTime: 30000, // 30 seconds

@@ -6,8 +6,8 @@ import {
   Card,
   CardContent,
   CardActions,
-  Button,
 } from '@mui/material'
+import { Button } from '@/components/ui/button'
 import {
   Description as DescriptionIcon,
   Movie as MovieIcon,
@@ -20,9 +20,10 @@ import { useUserProfile } from '../../auth/hooks'
 
 export const DashboardPage: React.FC = () => {
   const navigate = useNavigate()
-  const { data: userProfile } = useUserProfile()
+  const { data: userProfile, isLoading, error } = useUserProfile()
+  console.log('DashboardPage rendered, userProfile:', userProfile, 'isLoading:', isLoading, 'error:', error);
 
-  const quickActions = [
+ const quickActions = [
     {
       title: 'Контракты',
       description: 'Создание и управление контрактами',
@@ -87,9 +88,8 @@ export const DashboardPage: React.FC = () => {
               </CardContent>
               <CardActions>
                 <Button
-                  size="small"
-                  fullWidth
-                  variant="contained"
+                  size="sm"
+                  className="w-full"
                   onClick={() => navigate(action.path)}
                 >
                   Перейти

@@ -4,11 +4,11 @@ import {
   Container,
   Paper,
   TextField,
-  Button,
   Typography,
   Box,
   Alert,
 } from '@mui/material'
+import { Button } from '@/components/ui/button'
 import { useLogin } from '../../auth/hooks'
 
 export const LoginPage: React.FC = () => {
@@ -82,9 +82,7 @@ export const LoginPage: React.FC = () => {
 
             <Button
               type="submit"
-              fullWidth
-              variant="contained"
-              sx={{ mt: 3, mb: 2 }}
+              className="w-full mt-3 mb-2"
               disabled={loginMutation.isPending || !formData.userName || !formData.password}
             >
               {loginMutation.isPending ? 'Вход...' : 'Войти'}

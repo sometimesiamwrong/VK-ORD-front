@@ -439,16 +439,44 @@ export interface GetActStatisticsResponse extends CacheResponse {
 // Contract types (extended)
 export interface ContractDto {
     id: number
-    externalId: string
-    type: VkOrdContractType
-    clientExternalId: string
-    contractorExternalId: string
+    externalId?: string
+    external_id?: string
+    type?: VkOrdContractType
+    clientExternalId?: string
+    contractorExternalId?: string
     parentContractExternalId?: string
-    amount: number
-    cachedAt: string
-    expiresAt: string
-    lastUpdated: string
-    syncStatus: string
+    amount?: number | string
+    cachedAt?: string
+    expiresAt?: string
+    expires_at?: string
+    lastUpdated?: string
+    syncStatus?: string
+    sync_status?: string
+    data?: {
+        // camelCase (используется в ответах API)
+        createDate?: string
+        type?: string
+        clientExternalId?: string
+        contractorExternalId?: string
+        subjectType?: string
+        date?: string
+        dateEnd?: string
+        serial?: string
+        flags?: string[]
+        amount?: string
+        hasAdditionalContracts?: boolean
+        lockedFields?: any[]
+        parentContractExternalId?: string
+        // snake_case (legacy/fallback)
+        create_date?: string
+        client_external_id?: string
+        contractor_external_id?: string
+        subject_type?: string
+        date_end?: string
+        has_additional_contracts?: boolean
+        locked_fields?: any[]
+        parent_contract_external_id?: string
+    }
 }
 
 export interface GetContractDetailsResponse extends CacheResponse {
@@ -477,28 +505,59 @@ export interface CreativeDto {
     syncStatus: string
 }
 
-export interface GetContractBetweenResponse extends CacheResponse {
-    contract: ContractDto
-}
 
 // Counterparty types (extended)
 export interface CounterpartyDto {
-    external_id: string
-    inn: string
-    name: string
-    rs_url: string
-    roles: string[]
-    juridical_details: {
-        inn: string
-        kpp: string
-        phone: string
-        foreign_epayment_method: string
-        foreign_registration_number: string
-        foreign_inn: string
-        foreign_oksm_country_code: string
+    id: number
+    logical_account_id?: number
+    logicalAccountId?: number
+    external_id?: string
+    externalId?: string
+    updated_at?: string
+    updatedAt?: string
+    created_at?: string
+    createdAt?: string
+    version: number
+    json_data?: string
+    jsonData?: string
+    data_hash?: string
+    dataHash?: string
+    is_deleted?: boolean
+    isDeleted?: boolean
+    expires_at?: string
+    expiresAt?: string
+    sync_status?: string
+    syncStatus?: string
+    contract_parties?: any[]
+    contractParties?: any[]
+    data: {
+        name: string
+        roles: string[]
+        juridical_details?: {
+            type: string
+            model_scheme?: string
+            modelScheme?: string
+            inn: string
+            kpp?: string
+            phone?: string
+            foreign_epayment_method?: string
+            foreign_registration_number?: string
+            foreign_inn?: string
+            foreign_oksm_country_code?: string
+        }
+        juridicalDetails?: {
+            type: string
+            model_scheme?: string
+            modelScheme?: string
+            inn: string
+            kpp?: string
+            phone?: string
+            foreign_epayment_method?: string
+            foreign_registration_number?: string
+            foreign_inn?: string
+            foreign_oksm_country_code?: string
+        }
     }
-    last_updated: string
-    sync_status: string
 }
 
 export interface GetCounterpartiesByInnResponse extends CacheResponse {
