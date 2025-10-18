@@ -1,0 +1,1965 @@
+
+ ▐▛███▜▌   Claude Code v2.0.21
+▝▜█████▛▘  Sonnet 4.5 · Claude API
+  ▘▘ ▝▝    C:\PROGECTS\My\AdLawyer\AdLawyerFront
+
+> /clear 
+  ⎿  (no content)
+
+> [Image #1][Image #2] @source_example.html  Привет! Я тебе отправил два изображения, где изображено модальное окно создания акта. 
+Также тебе отправил исходный скомпилированный код со страницы VK URD, откуда я это все забрал, чтобы представить как пример. Что я 
+хочу? Сейчас я хочу сгенерировать план по тому, как мы внедрим функцию создания и редактирования, скорее всего это будет на одной 
+странице, в мое приложение. Важный нюанс, что я хочу облегчить жизнь пользователя и автоматически подтягивать необходимые данные. 
+Например, есть договор внутри акта. Этот договор можно подставить через flow создания акта, где мы вызываем клиента, выбираем 
+исполнителя и подтягивается автоматический договор. Его же можно передать и в таблицу. Не таблицу. Модальное окно создания акта, чтобы 
+автоматически подтянуть данные. А по этому договору также автоматически можно сразу подтянуть креативы к этому договору. Чтобы быстрее 
+заполнить все данные. Я хочу, чтобы ты использовал агента для бэкэнда, а также использовал агента для UX UI, чтобы создать план того, 
+как мы реализуем эту функцию через создание страницы, где можно будет создать или редактировать акт. Необходимые поля я тебе отправил. 
+Представь, пожалуйста, мне план, где нулевым пунктом будет создание примерного интерфейса того, как это будет выглядеть. Чтобы я 
+подкорректировал его. Я хочу видеть, что ты напланировал и как ты будешь с этим взаимодействовать. Если есть какие-то вопросы, задавай 
+их мне. 
+  ⎿  Read source_example.html (1 lines)
+
+● Привет! Отлично, я вижу задачу. Давай начнем с анализа того, что уже есть в проекте, и создадим детальный план реализации.
+
+  Сначала мне нужно:
+  1. Изучить backend API для актов
+  2. Проанализировать текущую реализацию ActsPage
+  3. Создать UX/UI концепцию
+  4. Составить план разработки
+
+  Давай запущу агентов параллельно для исследования:
+
+● backend-inspector(Investigate acts backend API)
+  ⎿  Done (69 tool uses · 0 tokens · 5m 10s)                                                                                          
+
+● Explore(Explore acts feature implementation)
+  ⎿  Done (27 tool uses · 60.2k tokens · 2m 4s)                                                                                       
+
+● Отлично! Я получил детальный анализ frontend-части. Backend агент превысил лимит, давай попробую его еще раз с более узким фокусом. А
+   также запущу UI/UX агента для проектирования интерфейса.
+
+● backend-inspector(Acts API endpoints structure)
+  ⎿  Done (21 tool uses · 58.2k tokens · 1m 46s)                                                                                      
+
+● ui-ux-reviewer(Design act creation/edit interface)
+  ⎿  Done (10 tool uses · 68.3k tokens · 4m 14s)                                                                                      
+
+● Отлично! Я получил всю необходимую информацию. Теперь создам для тебя детальный план реализации функции создания и редактирования
+  актов.
+
+  📋 ПЛАН РЕАЛИЗАЦИИ: СОЗДАНИЕ И РЕДАКТИРОВАНИЕ АКТОВ
+
+  ---
+  ⚠️ КРИТИЧЕСКАЯ НАХОДКА
+
+  Backend API для актов НЕ РЕАЛИЗОВАН!
+  - Отсутствует ActsController
+  - Есть только модели для статистики (GetActStatisticsRequest/Response)
+  - Нужно создать полный CRUD для актов на backend
+
+  ---
+  🎨 ЭТАП 0: ДИЗАЙН ИНТЕРФЕЙСА (для утверждения)
+
+  Рекомендуемый подход:
+
+  Основная концепция: Full-page Sheet (боковая панель) с Accordion-секциями вместо табов
+
+  Структура интерфейса:
+
+  ┌─────────────────────────────────────────────────────────────┐
+  │ ✕  Создание акта                     [Черновик] [Не сохранено] │
+  ├─────────────────────────────────────────────────────────────┤
+  │                                                               │
+  │ ▼ ОСНОВНЫЕ ДАННЫЕ АКТА        [№123] [1,200 ₽] [✓]          │
+  │   ┌─────────────────────────────────────────────────────┐   │
+  │   │ • Номер акта (если есть)                            │   │
+  │   │ • Договор акта * [Автоматически заполнен]           │   │
+  │   │ • Роль заказчика * | Роль исполнителя *             │   │
+  │   │ • Сумма с НДС * | Ставка НДС * [✓ Рассчитать авто] │   │
+  │   │   💡 Сумма НДС: 200 ₽ | Без НДС: 1,000 ₽           │   │
+  │   │ • Период: [📅 01.01.2025] - [📅 31.01.2025]        │   │
+  │   │ • Дата выставления * [📅 31.01.2025]               │   │
+  │   │ • Посреднический договор (опционально)              │   │
+  │   └─────────────────────────────────────────────────────┘   │
+  │                                                               │
+  │ ▶ РАСПРЕДЕЛЕНИЕ              [2 распр.] [5 крeat.] [⚠️ 100₽] │
+  │                                                               │
+  │ ▶ СТАТИСТИКА                                    [12 метрик]  │
+  │                                                               │
+  ├─────────────────────────────────────────────────────────────┤
+  │         [Отмена]  [Сохранить черновик]  [Отправить →]        │
+  └─────────────────────────────────────────────────────────────┘
+
+  Ключевые UX-улучшения:
+
+  1. Автозаполнение с визуальными индикаторами
+    - Бейджи "Авто" на автозаполненных полях
+    - Skeleton loader при загрузке данных
+    - Зеленая галочка при успешном заполнении
+  2. Прогрессивное раскрытие
+    - Accordion вместо табов - видны все секции сразу
+    - Свернутые секции показывают саммари (сумма, количество)
+    - Индикаторы ошибок на заголовках секций
+  3. Вложенная структура распределений
+  📦 Распределение 1 [1,000 ₽] [3 креатива]       [Удалить]
+     ├─ Договор: "Договор №234"
+     ├─ Сумма: 1,000 ₽ | НДС: 20%
+     └─ Креативы:
+        ├─ 📄 Креатив 1 [▼]
+        │   ├─ Площадка: Telegram
+        │   ├─ Период: 01.01-31.01
+        │   └─ Показов: 100,000 из 120,000
+        ├─ 📄 Креатив 2 [▶]
+        └─ [+ Добавить креатив]
+
+  [+ Добавить распределение]
+  4. Real-time валидация
+    - ⚠️ Алерт: "Расхождение: сумма распределений (1,100₽) ≠ общая сумма (1,200₽)"
+    - ✅ Алерт: "Сумма распределений совпадает с общей суммой"
+  5. Умные чекбоксы
+    - "Рассчитать автоматически" → пересчет НДС
+    - "Плановые даты = фактическим" → копирование дат
+    - "Показать все креативы" → фильтр по договору
+
+  Вопросы для уточнения:
+                                                                                                                                      
+● User answered Claude's questions:
+  ⎿
+     · Где должна открываться форма создания/редактирования акта? → Отдельная страница /acts/create и /acts/:id/edit
+     · Как должна работать автоматическая подстановка данных при создании акта? → Из flow создания (партия → контрагент → договор), 
+     Ручной выбор договора в форме, Из таблицы актов (клик по договору)
+     · Как организовать секцию 'Распределение' (разаллокация)? → Accordion с Card для каждого распределения
+     · Нужна ли функция автоматического создания распределений на основе договора? → Нет, только ручное добавление
+
+● Отлично! Спасибо за ответы. Теперь составлю полный детальный план с учетом твоих предпочтений.
+
+● Отлично! Вот детальный план реализации функции создания и редактирования актов:
+
+  ---
+  📋 ДЕТАЛЬНЫЙ ПЛАН РЕАЛИЗАЦИИ: ФУНКЦИЯ АКТОВ
+
+  ✅ УТВЕРЖДЕННЫЙ ДИЗАЙН
+
+  Архитектурные решения (на основе твоих ответов):
+
+  1. Расположение: Отдельные страницы /acts/create и /acts/:id/edit
+  2. Автозаполнение:
+    - Из ActCreationFlow (партия → контрагент → договор)
+    - Ручной выбор договора в форме с автозагрузкой креативов
+    - Из таблицы актов (передача contractId через query params)
+  3. Распределения: Accordion с Card для каждого распределения + Collapsible для креативов
+  4. Управление: Только ручное добавление распределений (без автогенерации)
+
+  ---
+  🚨 КРИТИЧЕСКАЯ ПРОБЛЕМА: Backend API не реализован!
+
+  Необходимо создать полный backend для актов перед началом frontend-разработки.
+
+  ---
+  📊 ЭТАП 0: УТВЕРЖДЕНИЕ UI/UX КОНЦЕПЦИИ
+
+  Итоговый дизайн страницы:
+
+  ┌─────────────────────────────────────────────────────────────────┐
+  │ ← Акты          Создание акта                     [Черновик]    │
+  ├─────────────────────────────────────────────────────────────────┤
+  │                                                                   │
+  │ ┌─────────────────────────────────────────────────────────────┐ │
+  │ │ ▼ ОСНОВНЫЕ ДАННЫЕ АКТА      [№123] [1,200 ₽] [✓]          │ │
+  │ │   ╭─────────────────────────────────────────────────────╮   │ │
+  │ │   │ Номер акта (если есть): _______________             │   │ │
+  │ │   │                                                      │   │ │
+  │ │   │ Договор акта *:  [▼ Договор №234] [🔄 Авто]        │   │ │
+  │ │   │                                                      │   │ │
+  │ │   │ Роль заказчика *    │ Роль исполнителя *           │   │ │
+  │ │   │ [Издатель ▼]        │ [Рекламодатель ▼]            │   │ │
+  │ │   │                                                      │   │ │
+  │ │   │ Сумма с НДС *       │ Ставка НДС * [✓ Рассчитать] │   │ │
+  │ │   │ [1200.00]           │ [20] %                        │   │ │
+  │ │   │                                                      │   │ │
+  │ │   │ 💡 Сумма НДС: 200 ₽ | Без НДС: 1,000 ₽            │   │ │
+  │ │   │                                                      │   │ │
+  │ │   │ Период: [📅 01.01.2025] - [📅 31.01.2025]         │   │ │
+  │ │   │ Дата выставления *: [📅 31.01.2025]               │   │ │
+  │ │   │                                                      │   │ │
+  │ │   │ Посреднический договор: [Не выбран ▼]              │   │ │
+  │ │   ╰─────────────────────────────────────────────────────╯   │ │
+  │ └─────────────────────────────────────────────────────────────┘ │
+  │                                                                   │
+  │ ┌─────────────────────────────────────────────────────────────┐ │
+  │ │ ▶ РАСПРЕДЕЛЕНИЕ         [2 распр.] [5 креат.] [⚠️ 100₽]   │ │
+  │ │                                                             │ │
+  │ │   При раскрытии:                                            │ │
+  │ │   ╭─────────────────────────────────────────────────────╮   │ │
+  │ │   │ 📦 Распределение 1    [1,000 ₽] [3 креат.]  [❌]   │   │ │
+  │ │   │                                                      │   │ │
+  │ │   │ Договор: [Договор №234 ▼]                           │   │ │
+  │ │   │ Сумма * [1000] │ НДС * [20] [✓ Рассчитать авто]    │   │ │
+  │ │   │                                                      │   │ │
+  │ │   │ ──────────────────────────────────────               │   │ │
+  │ │   │ Креативы:                                            │   │ │
+  │ │   │                                                      │   │ │
+  │ │   │ ┌────────────────────────────────────────────────┐  │   │ │
+  │ │   │ │ 📄 Название креатива123 [▼] [❌]              │  │   │ │
+  │ │   │ │    [Banner] [Telegram]                         │  │   │ │
+  │ │   │ │    01.01-31.01 • 100K показов                  │  │   │ │
+  │ │   │ │                                                 │  │   │ │
+  │ │   │ │ [Раскрыто]                                      │  │   │ │
+  │ │   │ │ • Креатив *: [Креатив123 ▼]                    │  │   │ │
+  │ │   │ │   [🔘 Показать все креативы]                   │  │   │ │
+  │ │   │ │ • Площадка *: [Telegram ▼]                     │  │   │ │
+  │ │   │ │ • Факт. начало * [📅] │ Факт. конец * [📅]    │  │   │ │
+  │ │   │ │   [✓ Плановые даты = фактическим]             │  │   │ │
+  │ │   │ │ • Тип события *: [CPM ▼] │ Стоимость *: [10]  │  │   │ │
+  │ │   │ │ • Показов *: [100000] │ Оплачено *: [95000]   │  │   │ │
+  │ │   │ │ • Сумма * [950] │ НДС * [20] [✓ Рассчитать]  │  │   │ │
+  │ │   │ └────────────────────────────────────────────────┘  │   │ │
+  │ │   │                                                      │   │ │
+  │ │   │ [+ Добавить статистику по креативу]                 │   │ │
+  │ │   │                                                      │   │ │
+  │ │   │ [+ Добавить креатив]                                 │   │ │
+  │ │   ╰─────────────────────────────────────────────────────╯   │ │
+  │ │                                                             │ │
+  │ │   [+ Добавить распределение]                                │ │
+  │ │                                                             │ │
+  │ │   ⚠️ Расхождение: сумма распределений (1,100 ₽) ≠          │ │
+  │ │   общая сумма акта (1,200 ₽). Разница: 100 ₽               │ │
+  │ └─────────────────────────────────────────────────────────────┘ │
+  │                                                                   │
+  │ ┌─────────────────────────────────────────────────────────────┐ │
+  │ │ ▶ СТАТИСТИКА                              [12 метрик]      │ │
+  │ │                                                             │ │
+  │ │   [Таблица со статистикой креативов]                        │ │
+  │ └─────────────────────────────────────────────────────────────┘ │
+  │                                                                   │
+  ├─────────────────────────────────────────────────────────────────┤
+  │         [Отмена]  [Сохранить черновик]  [Отправить в VK ORD →] │
+  └─────────────────────────────────────────────────────────────────┘
+
+  Ключевые UX-фичи:
+
+  ✅ Автозаполнение с индикаторами:
+  - Бейдж "🔄 Авто" на автозаполненных полях
+  - Skeleton loader при загрузке данных договора
+  - Success toast при успешном заполнении
+
+  ✅ Real-time валидация:
+  - ⚠️ Алерт при несовпадении сумм распределений и общей суммы
+  - Inline ошибки на каждом поле (React Hook Form)
+  - Блокировка отправки при ошибках
+
+  ✅ Умные чекбоксы:
+  - "Рассчитать автоматически" → пересчет НДС при изменении суммы/ставки
+  - "Плановые даты = фактическим" → копирование дат из креатива
+  - "Показать все креативы" → toggle фильтра по текущему договору
+
+  ✅ Progressive disclosure:
+  - Accordion для секций (видны все заголовки сразу)
+  - Collapsible для креативов внутри распределений
+  - Компактное представление в свернутом виде
+
+  ---
+  🎯 ЭТАПЫ РЕАЛИЗАЦИИ
+
+  ---
+  ЭТАП 1: BACKEND API (КРИТИЧНЫЙ!)
+
+  1.1. Создание ActsController
+
+  Файл: C:\PROGECTS\My\AdLawyer\AdLawyerApi\src\WebApp\Controllers\ActsController.cs
+
+  Endpoints:
+
+  // CRUD операции
+  POST   /api/v1/acts                     // Создание акта (draft)
+  GET    /api/v1/acts/{actId}             // Получение деталей акта
+  PUT    /api/v1/acts/{actId}             // Обновление акта
+  DELETE /api/v1/acts/{actId}             // Удаление акта
+  GET    /api/v1/acts                     // Список актов (pagination)
+
+  // Операции с VK ORD
+  POST   /api/v1/acts/{actId}/submit      // Отправка в VK ORD
+  GET    /api/v1/acts/{actId}/status      // Статус в VK ORD
+
+  // Экспорт
+  GET    /api/v1/acts/{actId}/export/pdf  // Экспорт в PDF
+
+  // Вспомогательные
+  GET    /api/v1/acts/suggestions/number  // Генерация номера акта
+
+  Request/Response Models:
+
+  // CreateActRequest
+  {
+    "number": "123",  // optional
+    "contractId": "uuid",
+    "totalAmount": 1200,
+    "vatRate": 20,
+    "periodStart": "2025-01-01",
+    "periodEnd": "2025-01-31",
+    "issueDate": "2025-01-31",
+    "advertiserRole": "publisher",
+    "contractorRole": "advertiser",
+    "intermediaryContractId": "uuid",  // optional
+    "distributions": [
+      {
+        "contractId": "uuid",
+        "amount": 1000,
+        "vatRate": 20,
+        "creatives": [
+          {
+            "creativeId": "uuid",
+            "platformId": "uuid",
+            "actualStartDate": "2025-01-01",
+            "actualEndDate": "2025-01-31",
+            "paidEventType": "cpm",
+            "costPerEvent": 10,
+            "impressionCount": 100000,
+            "paidImpressionCount": 95000,
+            "amount": 950,
+            "vatRate": 20
+          }
+        ]
+      }
+    ]
+  }
+
+  // ActDetailsResponse
+  {
+    "id": "uuid",
+    "number": "123",
+    "status": "draft",  // draft, sent, approved, rejected, error
+    "companyId": "uuid",
+    "companyName": "ООО Компания",
+    "contractId": "uuid",
+    "contractNumber": "234",
+    "totalAmount": 1200,
+    "vatRate": 20,
+    "vatAmount": 200,
+    "amountWithoutVat": 1000,
+    "periodStart": "2025-01-01",
+    "periodEnd": "2025-01-31",
+    "issueDate": "2025-01-31",
+    "advertiserRole": "publisher",
+    "contractorRole": "advertiser",
+    "distributions": [...],
+    "statistics": [...],
+    "createdAt": "2025-01-15T10:00:00Z",
+    "updatedAt": "2025-01-15T12:00:00Z",
+    "submittedAt": null,
+    "approvedAt": null,
+    "vkOrdId": null
+  }
+
+  Validation Rules:
+
+  // Broken Rules
+  - ACT_INVALID_DATES: periodEnd <= periodStart
+  - ACT_AMOUNT_MISMATCH: sum(distributions.amount) != totalAmount
+  - ACT_CREATIVE_NOT_IN_CONTRACT: creative.contractId != distribution.contractId
+  - ACT_INVALID_VAT: vatRate not in [0, 10, 20]
+  - ACT_NEGATIVE_AMOUNT: amount < 0
+  - ACT_DUPLICATE_NUMBER: act number already exists for company
+
+  Priority: 🔴 КРИТИЧНО (без backend невозможна frontend-разработка)
+
+  Estimate: 2-3 дня
+
+  ---
+  1.2. Интеграция с VK ORD API
+
+  Задача: Реализовать отправку актов в VK ORD через их API
+
+  Endpoints VK ORD (предположительно):
+  - Создание акта в VK ORD
+  - Обновление статуса
+  - Получение ошибок валидации
+
+  Priority: 🟡 ВЫСОКИЙ (можно оставить заглушку на первом этапе)
+
+  Estimate: 1-2 дня
+
+  ---
+  1.3. PDF Export
+
+  Задача: Генерация PDF-документа акта
+
+  Библиотека: QuestPDF или DinkToPdf
+
+  Priority: 🟢 СРЕДНИЙ (можно добавить позже)
+
+  Estimate: 1 день
+
+  ---
+  ЭТАП 2: FRONTEND - ROUTING & PAGES
+
+  2.1. Обновить маршруты
+
+  Файл: src/routes.tsx
+
+  Добавить маршруты:
+
+  // В protectedRoutes
+  {
+    path: '/acts/create',
+    element: <ActCreatePage />
+  },
+  {
+    path: '/acts/:actId/edit',
+    element: <ActEditPage />
+  }
+
+  Priority: 🔴 КРИТИЧНО
+
+  Estimate: 30 минут
+
+  ---
+  2.2. Создать страницы ActCreatePage и ActEditPage
+
+  Файлы:
+  - src/features/acts/ActCreatePage.tsx
+  - src/features/acts/ActEditPage.tsx
+
+  Структура:
+
+  // ActCreatePage.tsx
+  export const ActCreatePage: React.FC = () => {
+    const navigate = useNavigate()
+    const location = useLocation()
+
+    // Получение contractId из разных источников
+    const contractIdFromFlow = location.state?.contractId
+    const contractIdFromQuery = new URLSearchParams(location.search).get('contractId')
+    const initialContractId = contractIdFromFlow || contractIdFromQuery
+
+    return (
+      <div className="container mx-auto py-6">
+        <div className="flex items-center gap-4 mb-6">
+          <Button variant="ghost" onClick={() => navigate('/acts')}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Акты
+          </Button>
+          <h1 className="text-2xl font-bold">Создание акта</h1>
+          <Badge>Черновик</Badge>
+        </div>
+
+        <ActFormContainer 
+          mode="create" 
+          initialContractId={initialContractId}
+        />
+      </div>
+    )
+  }
+
+  // ActEditPage.tsx
+  export const ActEditPage: React.FC = () => {
+    const { actId } = useParams()
+    const navigate = useNavigate()
+    const { data: act, isLoading } = useActDetails(actId!)
+
+    if (isLoading) return <PageLoader />
+    if (!act) return <EmptyState />
+
+    return (
+      <div className="container mx-auto py-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" onClick={() => navigate('/acts')}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Акты
+            </Button>
+            <h1 className="text-2xl font-bold">
+              Редактирование акта {act.number || '#' + act.id.slice(0, 8)}
+            </h1>
+            <StatusBadge status={act.status} />
+          </div>
+
+          <div className="flex gap-2">
+            {act.status === 'draft' && (
+              <Button variant="default" onClick={handleSubmit}>
+                Отправить в VK ORD
+              </Button>
+            )}
+          </div>
+        </div>
+
+        <ActFormContainer 
+          mode="edit" 
+          actId={actId} 
+          initialData={act}
+        />
+      </div>
+    )
+  }
+
+  Priority: 🔴 КРИТИЧНО
+
+  Estimate: 2 часа
+
+  ---
+  ЭТАП 3: FRONTEND - FORM VALIDATION LAYER
+
+  3.1. Установить зависимости
+
+  npm install react-hook-form @hookform/resolvers zod
+
+  Priority: 🔴 КРИТИЧНО
+
+  Estimate: 5 минут
+
+  ---
+  3.2. Создать Zod схему валидации
+
+  Файл: src/features/acts/schemas/actFormSchema.ts
+
+  import * as z from 'zod'
+
+  export const creativeStatisticsSchema = z.object({
+    creativeId: z.string().min(1, 'Выберите креатив'),
+    platformId: z.string().min(1, 'Выберите площадку'),
+    actualStartDate: z.date({ required_error: 'Укажите дату начала' }),
+    actualEndDate: z.date({ required_error: 'Укажите дату конца' }),
+    copyPlannedDates: z.boolean().optional(),
+    paidEventType: z.string().min(1, 'Выберите тип события'),
+    costPerEvent: z.number().positive('Стоимость должна быть положительной'),
+    impressionCount: z.number().int().min(0, 'Количество показов должно быть >= 0'),
+    paidImpressionCount: z.number().int().min(0, 'Оплаченных показов >= 0'),
+    amount: z.number().positive('Сумма должна быть положительной'),
+    vatRate: z.number().min(0).max(100, 'Ставка НДС от 0 до 100'),
+    autoCalculateVat: z.boolean().optional()
+  }).refine(data => data.actualEndDate >= data.actualStartDate, {
+    message: 'Дата конца должна быть позже даты начала',
+    path: ['actualEndDate']
+  })
+
+  export const distributionSchema = z.object({
+    contractId: z.string().min(1, 'Выберите договор'),
+    amount: z.number().positive('Сумма должна быть положительной'),
+    vatRate: z.number().min(0).max(100, 'Ставка НДС от 0 до 100'),
+    autoCalculateVat: z.boolean().optional(),
+    creatives: z.array(creativeStatisticsSchema).min(1, 'Добавьте хотя бы один креатив')
+  })
+
+  export const actFormSchema = z.object({
+    number: z.string().optional(),
+    contractId: z.string().min(1, 'Выберите договор'),
+    advertiserRole: z.enum(['advertiser', 'agency', 'publisher', 'ors'], {
+      required_error: 'Выберите роль заказчика'
+    }),
+    contractorRole: z.enum(['advertiser', 'agency', 'publisher', 'ors'], {
+      required_error: 'Выберите роль исполнителя'
+    }),
+    totalAmount: z.number().positive('Сумма должна быть положительной'),
+    vatRate: z.number().min(0).max(100, 'Ставка НДС от 0 до 100'),
+    autoCalculateVat: z.boolean().optional(),
+    periodStart: z.date({ required_error: 'Укажите дату начала периода' }),
+    periodEnd: z.date({ required_error: 'Укажите дату конца периода' }),
+    issueDate: z.date({ required_error: 'Укажите дату выставления' }),
+    intermediaryContractId: z.string().optional(),
+    distributions: z.array(distributionSchema).min(1, 'Добавьте хотя бы одно распределение')
+  })
+    .refine(data => data.periodEnd >= data.periodStart, {
+      message: 'Дата конца периода должна быть позже даты начала',
+      path: ['periodEnd']
+    })
+    .refine(data => {
+      // Проверка: сумма распределений = общая сумма
+      const distributionSum = data.distributions.reduce((sum, d) => sum + d.amount, 0)
+      return Math.abs(distributionSum - data.totalAmount) < 0.01
+    }, {
+      message: 'Сумма распределений должна равняться общей сумме акта',
+      path: ['distributions']
+    })
+
+  export type ActFormData = z.infer<typeof actFormSchema>
+
+  Priority: 🔴 КРИТИЧНО
+
+  Estimate: 1 час
+
+  ---
+  ЭТАП 4: FRONTEND - FORM COMPONENTS
+
+  4.1. Установить shadcn/ui компоненты
+
+  # Основные компоненты формы
+  npx shadcn@latest add form input label select checkbox switch
+
+  # Layout компоненты
+  npx shadcn@latest add accordion card collapsible separator
+
+  # Feedback компоненты
+  npx shadcn@latest add alert badge toast alert-dialog
+
+  # Date picker
+  npx shadcn@latest add calendar popover
+
+  # Utility
+  npx shadcn@latest add skeleton scroll-area
+
+  Priority: 🔴 КРИТИЧНО
+
+  Estimate: 10 минут
+
+  ---
+  4.2. Создать ActFormContainer
+
+  Файл: src/features/acts/components/ActFormContainer.tsx
+
+  Функционал:
+  - Управление React Hook Form
+  - Автозаполнение при выборе договора
+  - Сохранение черновика
+  - Отправка в VK ORD
+  - Unsaved changes protection
+
+  interface ActFormContainerProps {
+    mode: 'create' | 'edit'
+    actId?: string
+    initialData?: ActDetails
+    initialContractId?: string
+  }
+
+  export const ActFormContainer: React.FC<ActFormContainerProps> = ({
+    mode,
+    actId,
+    initialData,
+    initialContractId
+  }) => {
+    const navigate = useNavigate()
+    const { toast } = useToast()
+
+    // Mutations
+    const createAct = useCreateAct()
+    const updateAct = useUpdateAct()
+    const submitAct = useSubmitAct()
+
+    // Form setup
+    const form = useForm<ActFormData>({
+      resolver: zodResolver(actFormSchema),
+      defaultValues: initialData ? transformActToFormData(initialData) : getDefaultFormValues()
+    })
+
+    // Auto-fill when contract is selected
+    const contractId = form.watch('contractId')
+    const { data: contractDetails, isLoading: isLoadingContract } = useContractDetails(
+      contractId,
+      { enabled: !!contractId }
+    )
+
+    useEffect(() => {
+      if (contractDetails && !initialData) {
+        // Auto-fill logic
+        form.setValue('advertiserRole', contractDetails.advertiserRole)
+        form.setValue('contractorRole', contractDetails.contractorRole)
+        // ... other fields
+        toast({ title: 'Данные договора загружены', description: 'Поля заполнены автоматически' })
+      }
+    }, [contractDetails])
+
+    // Auto-fill from initialContractId on mount
+    useEffect(() => {
+      if (initialContractId && mode === 'create') {
+        form.setValue('contractId', initialContractId)
+      }
+    }, [initialContractId])
+
+    // Unsaved changes protection
+    const isDirty = form.formState.isDirty
+    useEffect(() => {
+      const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+        if (isDirty) {
+          e.preventDefault()
+          e.returnValue = ''
+        }
+      }
+      window.addEventListener('beforeunload', handleBeforeUnload)
+      return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+    }, [isDirty])
+
+    // Handlers
+    const onSaveDraft = async (data: ActFormData) => {
+      try {
+        if (mode === 'create') {
+          const result = await createAct.mutateAsync(data)
+          toast({ title: 'Черновик сохранен' })
+          navigate(`/acts/${result.id}/edit`, { replace: true })
+        } else {
+          await updateAct.mutateAsync({ actId: actId!, data })
+          toast({ title: 'Изменения сохранены' })
+        }
+      } catch (error) {
+        toast({ title: 'Ошибка сохранения', variant: 'destructive' })
+      }
+    }
+
+    const onSubmitToVkOrd = async (data: ActFormData) => {
+      try {
+        // Save first
+        await onSaveDraft(data)
+        // Then submit
+        await submitAct.mutateAsync(actId!)
+        toast({ title: 'Акт отправлен в VK ORD' })
+        navigate('/acts')
+      } catch (error) {
+        toast({ title: 'Ошибка отправки', variant: 'destructive' })
+      }
+    }
+
+    return (
+      <Form {...form}>
+        <form>
+          <div className="space-y-6">
+            <ActBasicDataSection 
+              form={form} 
+              isLoadingContract={isLoadingContract}
+            />
+
+            <ActDistributionsSection 
+              form={form}
+              contractId={contractId}
+            />
+
+            <ActStatisticsSection actId={actId} />
+          </div>
+
+          <ActFormActions
+            mode={mode}
+            onSaveDraft={form.handleSubmit(onSaveDraft)}
+            onSubmit={form.handleSubmit(onSubmitToVkOrd)}
+            onCancel={() => navigate('/acts')}
+            isDirty={isDirty}
+            isValid={form.formState.isValid}
+            isSaving={createAct.isPending || updateAct.isPending}
+          />
+        </form>
+      </Form>
+    )
+  }
+
+  Priority: 🔴 КРИТИЧНО
+
+  Estimate: 4 часа
+
+  ---
+  4.3. Создать ActBasicDataSection
+
+  Файл: src/features/acts/components/ActBasicDataSection.tsx
+
+  Структура: Accordion с полями основных данных
+
+  export const ActBasicDataSection: React.FC<{
+    form: UseFormReturn<ActFormData>
+    isLoadingContract: boolean
+  }> = ({ form, isLoadingContract }) => {
+    const { watch, setValue } = form
+    const totalAmount = watch('totalAmount')
+    const vatRate = watch('vatRate')
+    const autoCalculateVat = watch('autoCalculateVat')
+
+    // Auto-calculate VAT
+    const [vatAmount, amountWithoutVat] = useMemo(() => {
+      if (!autoCalculateVat || !totalAmount || vatRate === undefined) {
+        return [0, 0]
+      }
+      const vat = (totalAmount * vatRate) / (100 + vatRate)
+      const withoutVat = totalAmount - vat
+      return [vat, withoutVat]
+    }, [totalAmount, vatRate, autoCalculateVat])
+
+    return (
+      <Accordion type="single" collapsible defaultValue="basic">
+        <AccordionItem value="basic">
+          <AccordionTrigger>
+            <div className="flex items-center justify-between w-full pr-4">
+              <span className="font-medium">Основные данные акта</span>
+              <div className="flex items-center gap-2">
+                {watch('number') && <Badge variant="outline">{watch('number')}</Badge>}
+                {totalAmount > 0 && <Badge>{totalAmount.toLocaleString('ru-RU')} ₽</Badge>}
+              </div>
+            </div>
+          </AccordionTrigger>
+
+          <AccordionContent className="pt-4 space-y-4">
+            {/* Номер акта */}
+            <FormField
+              control={form.control}
+              name="number"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Номер акта (если есть)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Введите номер акта" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Договор акта */}
+            <FormField
+              control={form.control}
+              name="contractId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Договор акта *</FormLabel>
+                  <div className="relative">
+                    {isLoadingContract && (
+                      <Skeleton className="absolute inset-0 z-10" />
+                    )}
+                    <Select 
+                      onValueChange={field.onChange} 
+                      value={field.value}
+                      disabled={isLoadingContract}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Выберите договор" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {/* Contract options */}
+                      </SelectContent>
+                    </Select>
+                    {field.value && !isLoadingContract && (
+                      <Badge 
+                        variant="secondary" 
+                        className="absolute -top-2 -right-2"
+                      >
+                        <CheckCircle2 className="h-3 w-3 mr-1" />
+                        Авто
+                      </Badge>
+                    )}
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Роли */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="advertiserRole"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Роль заказчика *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Выберите роль" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="advertiser">Рекламодатель</SelectItem>
+                        <SelectItem value="agency">Агентство</SelectItem>
+                        <SelectItem value="publisher">Издатель</SelectItem>
+                        <SelectItem value="ors">ОРС</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="contractorRole"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Роль исполнителя *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Выберите роль" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="advertiser">Рекламодатель</SelectItem>
+                        <SelectItem value="agency">Агентство</SelectItem>
+                        <SelectItem value="publisher">Издатель</SelectItem>
+                        <SelectItem value="ors">ОРС</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Сумма и НДС */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <FormField
+                control={form.control}
+                name="totalAmount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Сумма с НДС, ₽ *</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        placeholder="Введите сумму"
+                        {...field}
+                        onChange={e => field.onChange(parseFloat(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="vatRate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Ставка НДС, % *</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        placeholder="0, 10 или 20"
+                        {...field}
+                        onChange={e => field.onChange(parseFloat(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="autoCalculateVat"
+                render={({ field }) => (
+                  <FormItem className="flex items-end pb-2">
+                    <FormControl>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                        <FormLabel className="font-normal">
+                          Рассчитать автоматически
+                        </FormLabel>
+                      </div>
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* VAT calculation result */}
+            {autoCalculateVat && vatAmount > 0 && (
+              <Alert>
+                <Calculator className="h-4 w-4" />
+                <AlertDescription>
+                  Сумма НДС: <strong>{vatAmount.toLocaleString('ru-RU')} ₽</strong>
+                  {' | '}
+                  Без НДС: <strong>{amountWithoutVat.toLocaleString('ru-RU')} ₽</strong>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Dates */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <DatePickerField
+                control={form.control}
+                name="periodStart"
+                label="Дата начала периода *"
+              />
+
+              <DatePickerField
+                control={form.control}
+                name="periodEnd"
+                label="Дата конца периода *"
+              />
+            </div>
+
+            <DatePickerField
+              control={form.control}
+              name="issueDate"
+              label="Дата выставления *"
+            />
+
+            {/* Intermediary contract */}
+            <FormField
+              control={form.control}
+              name="intermediaryContractId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Посреднический договор (опционально)</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Не выбран" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {/* Contract options */}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+    )
+  }
+
+  Priority: 🔴 КРИТИЧНО
+
+  Estimate: 3 часа
+
+  ---
+  4.4. Создать ActDistributionsSection
+
+  Файл: src/features/acts/components/ActDistributionsSection.tsx
+
+  Структура: Accordion → Cards для распределений → Collapsible для креативов
+
+  export const ActDistributionsSection: React.FC<{
+    form: UseFormReturn<ActFormData>
+    contractId: string
+  }> = ({ form, contractId }) => {
+    const { fields, append, remove } = useFieldArray({
+      control: form.control,
+      name: 'distributions'
+    })
+
+    const totalAmount = form.watch('totalAmount')
+    const distributions = form.watch('distributions')
+
+    // Calculate distribution sum
+    const distributionSum = useMemo(() => {
+      return distributions?.reduce((sum, d) => sum + (d.amount || 0), 0) || 0
+    }, [distributions])
+
+    const difference = totalAmount - distributionSum
+    const isMatch = Math.abs(difference) < 0.01
+
+    const addDistribution = () => {
+      append({
+        contractId: '',
+        amount: Math.max(0, totalAmount - distributionSum),
+        vatRate: form.watch('vatRate') || 20,
+        autoCalculateVat: true,
+        creatives: []
+      })
+    }
+
+    return (
+      <Accordion type="single" collapsible>
+        <AccordionItem value="distributions">
+          <AccordionTrigger>
+            <div className="flex items-center justify-between w-full pr-4">
+              <span className="font-medium">Распределение</span>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline">{fields.length} распределений</Badge>
+                <Badge variant="outline">
+                  {distributions?.reduce((sum, d) => sum + (d.creatives?.length || 0), 0) || 0} креативов
+                </Badge>
+                {!isMatch && (
+                  <Badge variant="destructive">
+                    <AlertTriangle className="h-3 w-3 mr-1" />
+                    {Math.abs(difference).toLocaleString('ru-RU')} ₽
+                  </Badge>
+                )}
+              </div>
+            </div>
+          </AccordionTrigger>
+
+          <AccordionContent className="pt-4 space-y-4">
+            {fields.map((field, distIndex) => (
+              <DistributionCard
+                key={field.id}
+                form={form}
+                distIndex={distIndex}
+                onRemove={() => remove(distIndex)}
+                contractId={contractId}
+              />
+            ))}
+
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={addDistribution}
+              className="w-full"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Добавить распределение
+            </Button>
+
+            {/* Distribution sum validation alert */}
+            {distributions && distributions.length > 0 && (
+              <Alert variant={isMatch ? 'default' : 'destructive'}>
+                {isMatch ? (
+                  <>
+                    <CheckCircle2 className="h-4 w-4" />
+                    <AlertDescription>
+                      Сумма распределений совпадает с общей суммой акта:
+                      <strong> {distributionSum.toLocaleString('ru-RU')} ₽</strong>
+                    </AlertDescription>
+                  </>
+                ) : (
+                  <>
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                      <strong>Расхождение:</strong> сумма распределений
+                      ({distributionSum.toLocaleString('ru-RU')} ₽)
+                      {difference > 0 ? ' меньше ' : ' больше '}
+                      общей суммы акта ({totalAmount.toLocaleString('ru-RU')} ₽)
+                      на <strong>{Math.abs(difference).toLocaleString('ru-RU')} ₽</strong>
+                    </AlertDescription>
+                  </>
+                )}
+              </Alert>
+            )}
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+    )
+  }
+
+  Priority: 🔴 КРИТИЧНО
+
+  Estimate: 2 часа
+
+  ---
+  4.5. Создать DistributionCard
+
+  Файл: src/features/acts/components/DistributionCard.tsx
+
+  Структура: Card с полями распределения + список креативов
+
+  export const DistributionCard: React.FC<{
+    form: UseFormReturn<ActFormData>
+    distIndex: number
+    onRemove: () => void
+    contractId: string
+  }> = ({ form, distIndex, onRemove, contractId }) => {
+    const { fields: creativeFields, append, remove } = useFieldArray({
+      control: form.control,
+      name: `distributions.${distIndex}.creatives`
+    })
+
+    const distribution = form.watch(`distributions.${distIndex}`)
+    const autoCalculateVat = distribution.autoCalculateVat
+    const amount = distribution.amount
+    const vatRate = distribution.vatRate
+
+    // Auto-calculate VAT
+    const [vatAmount, amountWithoutVat] = useMemo(() => {
+      if (!autoCalculateVat || !amount || vatRate === undefined) {
+        return [0, 0]
+      }
+      const vat = (amount * vatRate) / (100 + vatRate)
+      const withoutVat = amount - vat
+      return [vat, withoutVat]
+    }, [amount, vatRate, autoCalculateVat])
+
+    const addCreative = () => {
+      append({
+        creativeId: '',
+        platformId: '',
+        actualStartDate: new Date(),
+        actualEndDate: new Date(),
+        copyPlannedDates: false,
+        paidEventType: '',
+        costPerEvent: 0,
+        impressionCount: 0,
+        paidImpressionCount: 0,
+        amount: 0,
+        vatRate: vatRate || 20,
+        autoCalculateVat: true
+      })
+    }
+
+    return (
+      <Card className="border-l-4 border-l-primary">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-lg">
+                Распределение {distIndex + 1}
+              </CardTitle>
+              {amount > 0 && (
+                <Badge variant="outline">
+                  {amount.toLocaleString('ru-RU')} ₽
+                </Badge>
+              )}
+              <Badge variant="secondary">
+                {creativeFields.length} креативов
+              </Badge>
+            </div>
+
+            <Button 
+              type="button"
+              variant="ghost" 
+              size="sm" 
+              onClick={onRemove}
+            >
+              <X className="h-4 w-4 mr-1" />
+              Удалить
+            </Button>
+          </div>
+        </CardHeader>
+
+        <CardContent className="space-y-4">
+          {/* Contract selection */}
+          <FormField
+            control={form.control}
+            name={`distributions.${distIndex}.contractId`}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Договор с рекламодателем *</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Выберите договор" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {/* Contract options - filtered by counterparty */}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Amount and VAT */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <FormField
+              control={form.control}
+              name={`distributions.${distIndex}.amount`}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Сумма, ₽ *</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="number" 
+                      {...field}
+                      onChange={e => field.onChange(parseFloat(e.target.value))}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name={`distributions.${distIndex}.vatRate`}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>НДС, % *</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="number" 
+                      {...field}
+                      onChange={e => field.onChange(parseFloat(e.target.value))}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name={`distributions.${distIndex}.autoCalculateVat`}
+              render={({ field }) => (
+                <FormItem className="flex items-end pb-2">
+                  <FormControl>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                      <FormLabel className="font-normal text-sm">
+                        Рассчитать авто
+                      </FormLabel>
+                    </div>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </div>
+
+          {autoCalculateVat && vatAmount > 0 && (
+            <div className="text-sm text-muted-foreground">
+              НДС: {vatAmount.toLocaleString('ru-RU')} ₽ |
+              Без НДС: {amountWithoutVat.toLocaleString('ru-RU')} ₽
+            </div>
+          )}
+
+          <Separator />
+
+          {/* Creatives section */}
+          <div className="space-y-3">
+            <h4 className="text-sm font-medium">Креативы</h4>
+
+            {creativeFields.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
+                <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>Добавьте креативы для этого распределения</p>
+              </div>
+            ) : (
+              creativeFields.map((field, creativeIndex) => (
+                <CreativeItem
+                  key={field.id}
+                  form={form}
+                  distIndex={distIndex}
+                  creativeIndex={creativeIndex}
+                  onRemove={() => remove(creativeIndex)}
+                  distributionContractId={distribution.contractId}
+                />
+              ))
+            )}
+
+            <Button 
+              type="button"
+              variant="outline" 
+              size="sm" 
+              onClick={addCreative}
+              className="w-full"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Добавить креатив
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  Priority: 🔴 КРИТИЧНО
+
+  Estimate: 3 часа
+
+  ---
+  4.6. Создать CreativeItem (Collapsible)
+
+  Файл: src/features/acts/components/CreativeItem.tsx
+
+  Структура: Collapsible с полями статистики креатива
+
+  export const CreativeItem: React.FC<{
+    form: UseFormReturn<ActFormData>
+    distIndex: number
+    creativeIndex: number
+    onRemove: () => void
+    distributionContractId: string
+  }> = ({ form, distIndex, creativeIndex, onRemove, distributionContractId }) => {
+    const [isOpen, setIsOpen] = useState(false)
+    const [showAllCreatives, setShowAllCreatives] = useState(false)
+
+    const creative = form.watch(`distributions.${distIndex}.creatives.${creativeIndex}`)
+    const creativeId = creative.creativeId
+
+    // Fetch creative details for display
+    const { data: creativeDetails } = useCreativeDetails(creativeId, {
+      enabled: !!creativeId
+    })
+
+    // Fetch creatives for selection
+    const { data: availableCreatives } = useContractCreatives(
+      distributionContractId,
+      { enabled: !!distributionContractId }
+    )
+
+    // Filter creatives based on "show all" toggle
+    const creativesOptions = useMemo(() => {
+      if (!availableCreatives) return []
+      if (showAllCreatives) return availableCreatives
+      return availableCreatives.filter(c => c.contractId === distributionContractId)
+    }, [availableCreatives, distributionContractId, showAllCreatives])
+
+    // Copy planned dates when checkbox is checked
+    const copyPlannedDates = creative.copyPlannedDates
+    useEffect(() => {
+      if (copyPlannedDates && creativeDetails) {
+        form.setValue(
+          `distributions.${distIndex}.creatives.${creativeIndex}.actualStartDate`,
+          new Date(creativeDetails.plannedStartDate)
+        )
+        form.setValue(
+          `distributions.${distIndex}.creatives.${creativeIndex}.actualEndDate`,
+          new Date(creativeDetails.plannedEndDate)
+        )
+      }
+    }, [copyPlannedDates, creativeDetails])
+
+    return (
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <div className="border rounded-lg p-3 bg-muted/30">
+          <div className="flex items-center justify-between">
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="sm" className="p-0 hover:bg-transparent">
+                <div className="flex items-center gap-2">
+                  {isOpen ? (
+                    <ChevronDown className="h-4 w-4" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4" />
+                  )}
+                  <FileText className="h-4 w-4" />
+                  <span className="text-sm font-medium">
+                    {creativeDetails?.description?.slice(0, 50) || `Креатив ${creativeIndex + 1}`}
+                  </span>
+                  {creativeDetails && (
+                    <>
+                      <Badge variant="outline" className="text-xs">
+                        {creativeDetails.form}
+                      </Badge>
+                      {creative.platformId && (
+                        <Badge variant="secondary" className="text-xs">
+                          {/* Platform name */}
+                        </Badge>
+                      )}
+                    </>
+                  )}
+                </div>
+              </Button>
+            </CollapsibleTrigger>
+
+            <Button 
+              type="button"
+              variant="ghost" 
+              size="sm"
+              onClick={onRemove}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Collapsed summary */}
+          {!isOpen && creativeDetails && (
+            <div className="mt-2 text-xs text-muted-foreground ml-6">
+              {creative.actualStartDate && creative.actualEndDate && (
+                <span>
+                  {format(creative.actualStartDate, 'dd.MM.yyyy')} -
+                  {format(creative.actualEndDate, 'dd.MM.yyyy')}
+                </span>
+              )}
+              {creative.impressionCount > 0 && (
+                <span className="ml-3">
+                  • {creative.impressionCount.toLocaleString('ru-RU')} показов
+                </span>
+              )}
+              {creative.amount > 0 && (
+                <span className="ml-3">
+                  • {creative.amount.toLocaleString('ru-RU')} ₽
+                </span>
+              )}
+            </div>
+          )}
+
+          <CollapsibleContent className="mt-3 space-y-4">
+            {/* Creative selection */}
+            <FormField
+              control={form.control}
+              name={`distributions.${distIndex}.creatives.${creativeIndex}.creativeId`}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Креатив *</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Выберите креатив" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {creativesOptions.map(creative => (
+                        <SelectItem key={creative.id} value={creative.id}>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-xs">
+                              {creative.form}
+                            </Badge>
+                            <span className="text-sm">
+                              {creative.description?.slice(0, 40)}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <div className="flex items-center space-x-2 mt-2">
+                    <Switch
+                      id={`show-all-${distIndex}-${creativeIndex}`}
+                      checked={showAllCreatives}
+                      onCheckedChange={setShowAllCreatives}
+                    />
+                    <Label 
+                      htmlFor={`show-all-${distIndex}-${creativeIndex}`}
+                      className="text-xs font-normal"
+                    >
+                      Показать все креативы ({availableCreatives?.length || 0})
+                    </Label>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Platform */}
+            <FormField
+              control={form.control}
+              name={`distributions.${distIndex}.creatives.${creativeIndex}.platformId`}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Площадка *</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Выберите площадку" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {/* Platform options */}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Dates */}
+            <div className="grid grid-cols-2 gap-4">
+              <DatePickerField
+                control={form.control}
+                name={`distributions.${distIndex}.creatives.${creativeIndex}.actualStartDate`}
+                label="Фактическая дата начала *"
+              />
+
+              <DatePickerField
+                control={form.control}
+                name={`distributions.${distIndex}.creatives.${creativeIndex}.actualEndDate`}
+                label="Фактическая дата конца *"
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name={`distributions.${distIndex}.creatives.${creativeIndex}.copyPlannedDates`}
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={!creativeDetails}
+                      />
+                      <FormLabel className="font-normal text-sm">
+                        Плановые даты совпадают с фактическими
+                      </FormLabel>
+                    </div>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            {/* Event type and cost */}
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name={`distributions.${distIndex}.creatives.${creativeIndex}.paidEventType`}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Тип платного события *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Тип" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="cpm">CPM (за 1000 показов)</SelectItem>
+                        <SelectItem value="cpc">CPC (за клик)</SelectItem>
+                        <SelectItem value="cpa">CPA (за действие)</SelectItem>
+                        <SelectItem value="cpv">CPV (за просмотр)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name={`distributions.${distIndex}.creatives.${creativeIndex}.costPerEvent`}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Стоимость события, ₽ *</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        {...field}
+                        onChange={e => field.onChange(parseFloat(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Impressions */}
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name={`distributions.${distIndex}.creatives.${creativeIndex}.impressionCount`}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Количество показов *</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        {...field}
+                        onChange={e => field.onChange(parseInt(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name={`distributions.${distIndex}.creatives.${creativeIndex}.paidImpressionCount`}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Оплаченных показов *</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        {...field}
+                        onChange={e => field.onChange(parseInt(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Amount and VAT */}
+            <div className="grid grid-cols-3 gap-4">
+              <FormField
+                control={form.control}
+                name={`distributions.${distIndex}.creatives.${creativeIndex}.amount`}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Сумма, ₽ *</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        {...field}
+                        onChange={e => field.onChange(parseFloat(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name={`distributions.${distIndex}.creatives.${creativeIndex}.vatRate`}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>НДС, % *</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        {...field}
+                        onChange={e => field.onChange(parseFloat(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name={`distributions.${distIndex}.creatives.${creativeIndex}.autoCalculateVat`}
+                render={({ field }) => (
+                  <FormItem className="flex items-end pb-2">
+                    <FormControl>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                        <FormLabel className="font-normal text-xs">
+                          Рассчитать
+                        </FormLabel>
+                      </div>
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+          </CollapsibleContent>
+        </div>
+      </Collapsible>
+    )
+  }
+
+  Priority: 🔴 КРИТИЧНО
+
+  Estimate: 4 часа
+
+  ---
+  4.7. Вспомогательные компоненты
+
+  DatePickerField (src/features/acts/components/DatePickerField.tsx)
+  ActFormActions (src/features/acts/components/ActFormActions.tsx)
+  StatusBadge (src/components/ui/StatusBadge.tsx)
+
+  Priority: 🟡 ВЫСОКИЙ
+
+  Estimate: 2 часа
+
+  ---
+  ЭТАП 5: ИНТЕГРАЦИЯ С СУЩЕСТВУЮЩИМИ КОМПОНЕНТАМИ
+
+  5.1. Обновить ActsPage - добавить навигацию в создание
+
+  Файл: src/features/acts/ActsPage.tsx
+
+  Добавить:
+  - Кнопку "Создать акт" → navigate('/acts/create')
+  - Клик по договору в таблице → navigate(/acts/create?contractId=${contractId})
+  - Клик по строке акта → navigate(/acts/${actId}/edit)
+
+  Priority: 🟡 ВЫСОКИЙ
+
+  Estimate: 1 час
+
+  ---
+  5.2. Обновить ActCreationFlow
+
+  Файл: src/features/acts/components/ActCreationFlow.tsx
+
+  Изменить финальный шаг:
+  const handleContractSelected = (contract: Contract) => {
+    navigate('/acts/create', {
+      state: { contractId: contract.id }
+    })
+  }
+
+  Priority: 🟡 ВЫСОКИЙ
+
+  Estimate: 30 минут
+
+  ---
+  ЭТАП 6: ТЕСТИРОВАНИЕ И ПОЛИРОВКА
+
+  6.1. Функциональное тестирование
+
+  Тест-кейсы:
+  1. ✅ Создание акта из ActCreationFlow
+  2. ✅ Создание акта с ручным выбором договора
+  3. ✅ Создание акта из таблицы (клик по договору)
+  4. ✅ Автозаполнение полей при выборе договора
+  5. ✅ Автозаполнение креативов при выборе договора
+  6. ✅ Добавление/удаление распределений
+  7. ✅ Добавление/удаление креативов
+  8. ✅ Автоподсчет НДС
+  9. ✅ Копирование плановых дат в фактические
+  10. ✅ Валидация сумм распределений
+  11. ✅ Сохранение черновика
+  12. ✅ Редактирование существующего акта
+  13. ✅ Отправка в VK ORD
+  14. ✅ Unsaved changes warning
+
+  Priority: 🔴 КРИТИЧНО
+
+  Estimate: 1 день
+
+  ---
+  6.2. Mobile responsiveness
+
+  Проверить:
+  - Accordion на мобильных
+  - Cards распределений
+  - Форма в одну колонку
+  - Touch-friendly buttons
+
+  Priority: 🟡 ВЫСОКИЙ
+
+  Estimate: 2 часа
+
+  ---
+  6.3. Accessibility
+
+  Проверить:
+  - Keyboard navigation
+  - Screen reader support
+  - Focus management
+  - ARIA labels
+
+  Priority: 🟢 СРЕДНИЙ
+
+  Estimate: 2 часа
+
+  ---
+  ЭТАП 7: ДОПОЛНИТЕЛЬНЫЕ ФИЧИ
+
+  7.1. PDF Export
+
+  Интеграция с backend endpoint /api/v1/acts/{actId}/export/pdf
+
+  Priority: 🟢 СРЕДНИЙ
+
+  Estimate: 1 час
+
+  ---
+  7.2. History/Timeline в sidebar
+
+  Лог изменений акта (кто, когда, что изменил)
+
+  Priority: 🟢 НИЗКИЙ
+
+  Estimate: 2 часа
+
+  ---
+  7.3. Checklist в sidebar
+
+  Динамический чек-лист завершенности акта
+
+  Priority: 🟢 НИЗКИЙ
+
+  Estimate: 1 час
+
+  ---
+  📊 ИТОГОВАЯ ТАБЛИЦА ЗАДАЧ
+
+  | Этап           | Задача                  | Приоритет | Оценка  | Зависимости       |
+  |----------------|-------------------------|-----------|---------|-------------------|
+  | 1. Backend     | ActsController          | 🔴        | 2-3 дня | -                 |
+  | 1              | VK ORD integration      | 🟡        | 1-2 дня | Backend           |
+  | 1              | PDF Export              | 🟢        | 1 день  | Backend           |
+  | 2. Routing     | Routes & Pages          | 🔴        | 2 часа  | Backend           |
+  | 3. Validation  | Zod schema              | 🔴        | 1 час   | -                 |
+  | 3              | Install deps            | 🔴        | 5 мин   | -                 |
+  | 4. Forms       | Install shadcn          | 🔴        | 10 мин  | -                 |
+  | 4              | ActFormContainer        | 🔴        | 4 часа  | Zod               |
+  | 4              | ActBasicDataSection     | 🔴        | 3 часа  | Container         |
+  | 4              | ActDistributionsSection | 🔴        | 2 часа  | Container         |
+  | 4              | DistributionCard        | 🔴        | 3 часа  | Distributions     |
+  | 4              | CreativeItem            | 🔴        | 4 часа  | Distribution Card |
+  | 4              | Helper components       | 🟡        | 2 часа  | -                 |
+  | 5. Integration | ActsPage update         | 🟡        | 1 час   | Forms             |
+  | 5              | ActCreationFlow update  | 🟡        | 30 мин  | Routes            |
+  | 6. Testing     | Functional tests        | 🔴        | 1 день  | All               |
+  | 6              | Mobile                  | 🟡        | 2 часа  | Forms             |
+  | 6              | Accessibility           | 🟢        | 2 часа  | Forms             |
+  | 7. Extra       | PDF Export (FE)         | 🟢        | 1 час   | Backend           |
+  | 7              | History sidebar         | 🟢        | 2 часа  | Backend           |
+  | 7              | Checklist sidebar       | 🟢        | 1 час   | -                 |
+
+  Итого (критично + высокий): ~30 часов чистой работы (4-5 дней)
+
+  ---
+  🚀 РЕКОМЕНДУЕМАЯ ПОСЛЕДОВАТЕЛЬНОСТЬ РАБОТЫ
+
+  Неделя 1: Backend + Foundation
+
+  1. День 1-2: Backend ActsController (КРИТИЧНО!)
+  2. День 3: Routing, Zod schema, install deps
+  3. День 4: ActFormContainer + ActBasicDataSection
+  4. День 5: ActDistributionsSection + DistributionCard
+
+  Неделя 2: Forms + Integration
+
+  1. День 6: CreativeItem component
+  2. День 7: Helper components + Integration
+  3. День 8: Functional testing
+  4. День 9: Mobile + Accessibility
+  5. День 10: Polish + Extra features
+
+  ---
+  ❓ ВОПРОСЫ ДЛЯ УТОЧНЕНИЯ
+
+  1. Backend: Кто будет разрабатывать ActsController? Есть ли backend-разработчик?
+  2. VK ORD API: Есть ли документация по VK ORD API для отправки актов?
+  3. PDF: Какой шаблон PDF нужен? Есть ли дизайн?
+  4. Platforms: Откуда брать список площадок (Telegram, VK, etc.)? Есть ли справочник?
+  5. Number generation: Как генерировать номера актов? Auto-increment или ручной ввод?
+
+  ---
+  Этот план покрывает полный цикл разработки функции актов. Что скажешь? Есть вопросы или хочешь что-то уточнить/изменить?
+
+● Готово! Я создал детальный план реализации функции создания и редактирования актов.
+
+  План учитывает все твои пожелания:
+  - ✅ Отдельные страницы /acts/create и /acts/:id/edit
+  - ✅ Автозаполнение из ActCreationFlow и из таблицы
+  - ✅ Accordion с Card для распределений
+  - ✅ Только ручное добавление (без автогенерации)
+
+  Ключевые находки:
+  1. 🚨 Backend API не реализован - это критичный блокер, нужно начать с создания ActsController
+  2. 📦 UI/UX концепция готова с детальным wireframe
+  3. 🎯 Полный стек shadcn/ui компонентов для современного интерфейса
+  4. ⏱️ Оценка: ~30 часов (4-5 дней) для критичных и высокоприоритетных задач
+
+  План включает детальные примеры кода, структуру компонентов, схемы валидации и последовательность работ.
+
+  Есть вопросы по плану? Хочешь что-то уточнить или изменить?
+
+> Запиши план в файл 
+
+● Создаю файл с детальным планом:
+
+● Write(ACTS_IMPLEMENTATION_PLAN.md)
+  ⎿  Wrote 1 lines to ACTS_IMPLEMENTATION_PLAN.md         
+     # 📋 ПЛАН РЕАЛИЗАЦИИ: СОЗДАНИЕ И РЕДАКТИРОВАНИЕ АКТОВ
+     **Дата создания**: 17.10.2025
+     **Статус**: В разработке
+     **Версия**: 1.0
+     ---
+     ## 📑 СОДЕРЖАНИЕ
+
+> /export 123.txt 
+
+● Отлично! Я создал детальный план реализации функции актов в файле ACTS_IMPLEMENTATION_PLAN.md.
+
+  Что содержится в плане:
+
+  📋 Полная документация на 40+ страниц включает:
+
+  1. Критические находки - Backend API не реализован (блокер!)
+  2. Утвержденный дизайн - Визуальный wireframe интерфейса
+  3. Архитектурные решения - На основе твоих ответов
+  4. 7 этапов реализации:
+    - Backend API (2-3 дня)
+    - Routing & Pages (2 часа)
+    - Form Validation (1 час)
+    - Form Components (16 часов)
+    - Integration (1.5 часа)
+    - Testing (1 день + 4 часа)
+    - Extra features (4 часа)
+  5. Таблица задач с приоритетами и оценками
+  6. Рекомендуемая последовательность работы (2 недели)
+  7. Вопросы для уточнения - 7 критических вопросов
+  8. Примеры кода для всех ключевых компонентов
+
+  Ключевые моменты:
+
+  - ⏱️ Оценка: ~35 часов критичной работы (4-5 дней)
+  - 🚨 Блокер: Нужен Backend ActsController перед началом frontend
+  - 🎨 UX: Современный Accordion + Card + Collapsible дизайн
+  - ✅ Валидация: React Hook Form + Zod для type-safe форм
+  - 🎯 Автозаполнение: Умная подстановка данных из договоров
+
+  План готов к использованию! Следующий шаг - ответить на вопросы из раздела "Вопросы для уточнения" и начать разработку backend.
+
+
+

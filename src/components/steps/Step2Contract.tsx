@@ -1,32 +1,40 @@
 import { Button } from '../ui/button'
 import React from 'react'
-import { useApp } from '../../context/AppContext'
+import {
+  useWizardStep,
+  useWizardAdvertiser,
+  useWizardContractor,
+  useWizardContract,
+  useWizardLoadingState,
+  useWizardActions,
+  useCanNextFromStep2
+} from '../../stores/wizardStore'
 import { useContractAndCreative } from '../../hooks/useContractAndCreative'
 import { generateContractExternalId } from '../../utils'
 
 export const Step2Contract: React.FC = () => {
-  const {
-    wizardState,
-    loadingState,
-    setContractData,
-    setStep,
-    canNextFromStep2
-  } = useApp()
+  const currentStep = useWizardStep()
+  const advertiser = useWizardAdvertiser()
+  const contractor = useWizardContractor()
+  const contract = useWizardContract()
+  const loadingState = useWizardLoadingState()
+  const canNextFromStep2 = useCanNextFromStep2()
+
+  const { setStep, updateContract } = useWizardActions()
 
   const { saveContract } = useContractAndCreative()
 
   const clearStep2 = () => {
-    setContractData({
+    updateContract({
       externalId: '',
       serial: null,
       paySum: null,
-      Date: null,
-      DateEnd: null,
+      payDateEnd: null
     })
   }
 
   return (
-    <details open={wizardState.step === 2}>
+    <details open={currentStep === 2}>
       <summary>2) Договор</summary>
       <div className="vk-card" style={{ marginTop: 10 }}>
         <div style={{ display: 'grid', gap: 8 }}>
@@ -34,18 +42,14 @@ export const Step2Contract: React.FC = () => {
             Идентификатор договора
             <input
               className="vk-input"
-              value={wizardState.contractExternalId}
-              onChange={e => setContractData({
-                externalId: e.target.value,
-                paySum: wizardState.paySum,
-                payDateEnd: wizardState.payDateEnd
+              value={contract.externalId}
+              onChange={e => updateContract({
+                externalId: e.target.value
               })}
               onBlur={() => {
-                if (!wizardState.contractExternalId || !wizardState.contractExternalId.trim()) {
-                  setContractData({
-                    externalId: generateContractExternalId(new Date(), 1),
-                    paySum: wizardState.paySum,
-                    payDateEnd: wizardState.payDateEnd
+                if (!contract.externalId || !contract.externalId.trim()) {
+                  updateContract({
+                    externalId: generateContractExternalId(new Date(), 1)
                   })
                 }
               }}
@@ -55,7 +59,7 @@ export const Step2Contract: React.FC = () => {
             ИНН заказчика
             <input
               className="vk-input vk-input-inn"
-              value={wizardState.advertiserInn}
+              value={advertiser.inn}
               readOnly
             />
           </label>
@@ -63,7 +67,7 @@ export const Step2Contract: React.FC = () => {
             ИНН исполнителя
             <input
               className="vk-input vk-input-inn"
-              value={wizardState.contractorInn}
+              value={contractor.inn}
               readOnly
             />
           </label>
@@ -73,12 +77,9 @@ export const Step2Contract: React.FC = () => {
               className="vk-input"
               type="number"
               min={1}
-              value={wizardState.paySum || ''}
-              onChange={e => setContractData({
-                externalId: wizardState.contractExternalId,
-                serial: wizardState.serial,
-                paySum: Number(e.target.value) || null,
-                payDateEnd: wizardState.payDateEnd
+              value={contract.paySum || ''}
+              onChange={e => updateContract({
+                paySum: Number(e.target.value) || null
               })}
             />
           </label>
@@ -87,11 +88,8 @@ export const Step2Contract: React.FC = () => {
             <input
               className="vk-input"
               type="date"
-              value={wizardState.payDateEnd || ''}
-              onChange={e => setContractData({
-                externalId: wizardState.contractExternalId,
-                serial: wizardState.serial,
-                paySum: wizardState.paySum,
+              value={contract.payDateEnd || ''}
+              onChange={e => updateContract({
                 payDateEnd: e.target.value || null
               })}
             />

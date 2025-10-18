@@ -30,7 +30,7 @@ export const useLogin = () => {
   return useMutation({
     mutationFn: async (data: LoginRequest) => {
       const deviceId = getDeviceId()
-      const response = await http.post<AuthResponse>('/api/auth/login', {
+      const response = await http.post<AuthResponse>('/api/auth/v1/login', {
         ...data,
         deviceId
       })
@@ -58,7 +58,7 @@ export const useRegister = () => {
 
   return useMutation({
     mutationFn: async (data: RegisterRequest) => {
-      const response = await http.post<AuthResponse>('/api/auth/register', data)
+      const response = await http.post<AuthResponse>('/api/auth/v1/register', data)
       return response.data
     },
     onSuccess: (data) => {
@@ -83,7 +83,7 @@ export const useLogout = () => {
 
   return useMutation({
     mutationFn: async () => {
-      const response = await http.post<null>('/api/auth/logout')
+      const response = await http.post<null>('/api/auth/v1/logout')
       return response.data
     },
     onSuccess: () => {
@@ -113,8 +113,10 @@ export const useAutoRefresh = () => {
         console.log('useAutoRefresh: No refresh token available');
         throw new Error('No refresh token available')
       }
-      
-      const response = await http.post<AuthResponse>('/api/auth/refresh', {})
+
+      // Добавляем deviceId в refresh запрос
+      const deviceId = getDeviceId()
+      const response = await http.post<AuthResponse>('/api/auth/v1/refresh', { deviceId })
       console.log('useAutoRefresh: Refresh response received:', response.data);
       return response.data
     },
@@ -145,7 +147,7 @@ export const useUserProfile = () => {
     queryFn: async () => {
       try {
         console.log('useUserProfile: Fetching user profile');
-        const response = await http.get<UserProfileResponse>('/api/users/me')
+        const response = await http.get<UserProfileResponse>('/api/users/v1/me')
         console.log('useUserProfile: User profile response:', response.data);
         return response.data
       } catch (error) {
@@ -159,7 +161,7 @@ export const useUserProfile = () => {
 export const useUpdateUserProfile = () => {
   return useMutation({
     mutationFn: async (data: UpdateUserRequest) => {
-      const response = await http.patch<UserProfileResponse>('/api/users/me', data)
+      const response = await http.patch<UserProfileResponse>('/api/users/v1/me', data)
       return response.data
     },
     onSuccess: (data) => {

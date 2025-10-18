@@ -1,302 +1,89 @@
 import { Button } from '../ui/button'
 import React from 'react'
-import { useApp } from '../../context/AppContext'
-import { usePartyLookup, useCounterpartiesList } from '../../hooks/usePartyLookup'
-import { isValidInn, saveToLocalStorage } from '../../utils'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  useWizardStep,
+  useWizardConsent,
+  useWizardPartyHistory,
+  useWizardLoadingState,
+  useWizardActions,
+  useCanNextFromStep1
+} from '../../stores/wizardStore'
 import { PartyModal } from '../ui/PartyModal'
-import type { PartyRole, CounterpartyItem } from '../../types'
-
-const LOCAL_KEY = 'vkord-wizard-state'
-
-const ROLE_OPTIONS = [
-  { value: 'advertiser', label: 'Рекламодатель' },
-  { value: 'agency', label: 'Рекламное агентство' },
-  { value: 'ors', label: 'Оператор рекламных систем' },
-  { value: 'publisher', label: 'Издатель' }
-]
-
-const ROLE_MAP: Record<string, PartyRole[number]> = {
-  advertiser: 'advertiser',
-  'рекламодатель': 'advertiser',
-  '0': 'advertiser',
-  agency: 'agency',
-  'агентство': 'agency',
-  'рекламное агентство': 'agency',
-  '1': 'agency',
-  publisher: 'publisher',
-  'издатель': 'publisher',
-  '3': 'publisher',
-  ors: 'ors',
-  'оператор рекламных систем': 'ors',
-  'оператор рекламной системы': 'ors',
-  '2': 'ors'
-}
-
-const normalizeRoles = (roles: CounterpartyItem['roles']): PartyRole => {
-  if (!Array.isArray(roles)) {
-    return []
-  }
-
-  const normalized = new Set<PartyRole[number]>()
-
-  roles.forEach((role) => {
-    if (role === null || role === undefined) return
-
-    if (typeof role === 'number') {
-      const mapped = ROLE_MAP[String(role)]
-      if (mapped) {
-        normalized.add(mapped)
-      }
-      return
-    }
-
-    const key = role.toString().trim().toLowerCase()
-    const keyWithoutSpaces = key.replace(/\s+/g, ' ')
-    const mapped = ROLE_MAP[keyWithoutSpaces] || ROLE_MAP[key]
-    if (mapped) {
-      normalized.add(mapped)
-    }
-  })
-
-  return Array.from(normalized)
-}
+import { PartyInputSection } from '../../features/wizard/components/PartyInputSection'
+import { useStep1Logic } from '../../features/wizard/hooks/useStep1Logic'
 
 export const Step1Parties: React.FC = () => {
+  const currentStep = useWizardStep()
+  const consent = useWizardConsent()
+  const partyHistory = useWizardPartyHistory()
+  const loadingState = useWizardLoadingState()
+  const canNextFromStep1 = useCanNextFromStep1()
+  const { setConsent, setStep } = useWizardActions()
+
   const {
-    wizardState,
-    loadingState,
-    setAdvertiserInn,
-    setContractorInn,
+    advertiser,
+    contractor,
+    counterpartiesList,
+    isLoadingCounterparties,
+    modalField,
+    setModalField,
+    lookupInn,
+    handleCreateCounterparty,
+    clearStep1,
+    applyCounterpartyFromList,
+    handleInnChange,
+    recordInnToHistory,
     setAdvertiserRole,
     setContractorRole,
-    setAdvertiserInfo,
-    setContractorInfo,
-    setConsent,
-    setStep,
-    canNextFromStep1
-  } = useApp()
-
-  const { lookupInn, createCounterparty } = usePartyLookup()
-  const { data: counterpartiesList = [], isLoading: isLoadingCounterparties, isFetching: isFetchingCounterparties, refetch: refetchCounterparties } = useCounterpartiesList()
-
-  const [modalField, setModalField] = React.useState<'advertiser' | 'contractor' | null>(null)
-
-  // Обновляем список при каждом открытии модального окна
-  React.useEffect(() => {
-    if (modalField) {
-      refetchCounterparties()
-    }
-  }, [modalField, refetchCounterparties])
-
-  const clearStep1 = () => {
-    setAdvertiserInn('')
-    setContractorInn('')
-    setAdvertiserRole(['advertiser'])
-    setContractorRole(['publisher'])
-    setConsent(false)
-  }
-
-  const applyCounterpartyFromList = (kind: 'advertiser' | 'contractor', inn: string) => {
-  const hit = counterpartiesList.find((c: CounterpartyItem) => c.juridical_details?.inn === inn)
-    if (!hit) return
-
-    const displayName = hit.name
-    const type = hit.juridical_details?.type
-    const info = `${displayName} (${type === 'ip' ? 'ИП' : type === 'juridical' ? 'ЮР лицо' : type === 'physical' ? 'Физ. лицо' : type})`
-
-    if (kind === 'advertiser') {
-      setAdvertiserInn(inn)
-      setAdvertiserInfo({
-        name: displayName,
-        shortWithOpf: null,
-        info
-      })
-      const normalizedRoles = normalizeRoles(hit.roles)
-      if (normalizedRoles.length > 0) {
-        setAdvertiserRole(normalizedRoles)
-      }
-    } else {
-      setContractorInn(inn)
-      setContractorInfo({
-        name: displayName,
-        shortWithOpf: null,
-        info
-      })
-      const normalizedRoles = normalizeRoles(hit.roles)
-      if (normalizedRoles.length > 0) {
-        setContractorRole(normalizedRoles)
-      }
-    }
-  }
-
-  const recordInnToHistory = (inn: string) => {
-    if (!isValidInn(inn)) return
-    // This would be handled by the context automatically
-  }
-
-  const isAdvertiserInCounterparties = React.useMemo(() => {
-    return counterpartiesList.some((c: CounterpartyItem) => c.juridical_details?.inn === wizardState.advertiserInn)
-  }, [counterpartiesList, wizardState.advertiserInn])
-
-  const isContractorInCounterparties = React.useMemo(() => {
-    return counterpartiesList.some((c: CounterpartyItem) => c.juridical_details?.inn === wizardState.contractorInn)
-  }, [counterpartiesList, wizardState.contractorInn])
-
-  // Обновляем список контрагентов после создания
-  const handleCreateCounterparty = async (kind: 'advertiser' | 'publisher') => {
-    await createCounterparty(kind)
-    // Перезагружаем список контрагентов
-    refetchCounterparties()
-  }
+    isAdvertiserInCounterparties,
+    isContractorInCounterparties
+  } = useStep1Logic()
 
   return (
     <>
-      <details open={wizardState.step === 1}>
-      <summary>1) Контрагенты</summary>
-      <div className="vk-card" style={{ marginTop: 10 }}>
-        
-        <div className="vk-label">ИНН рекламодателя</div>
-        <div className="vk-mobile-stack">
-          <div className="vk-inline-controls">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <input
-                className="vk-input vk-input-inn"
-                value={wizardState.advertiserInn}
-                list="innHistory"
-                onChange={e => {
-                  const val = e.target.value.replace(/\D/g, '')
-                  setAdvertiserInn(val)
-                  if (counterpartiesList.some((c: CounterpartyItem) => c.juridical_details?.inn === val)) {
-                    applyCounterpartyFromList('advertiser', val)
-                  }
-                }}
-                onBlur={() => { recordInnToHistory(wizardState.advertiserInn) }}
-                autoComplete="on"
-                placeholder="10 или 12 цифр"
-                maxLength={12}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setModalField('advertiser')}
-                aria-label="Выбрать рекламодателя из списка"
-              >
-                Выбрать
-              </Button>
-            </div>
-            <Select
-              value={wizardState.advertiserRole[0]}
-              onValueChange={value => setAdvertiserRole([value as PartyRole[0]])}
-            >
-              <SelectTrigger hasError={wizardState.advertiserRole.length === 0}>
-                <SelectValue placeholder="Роль рекламодателя" />
-              </SelectTrigger>
-              <SelectContent>
-                {ROLE_OPTIONS.map(option => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+      <details open={currentStep === 1}>
+        <summary>1) Контрагенты</summary>
+        <div className="vk-card" style={{ marginTop: 10 }}>
 
-            <Button
-              disabled={!isValidInn(wizardState.advertiserInn) || loadingState['lookup-advertiser']}
-              onClick={() => lookupInn('advertiser')}
-            >
-              {loadingState['lookup-advertiser'] ? 'Поиск…' : 'Проверить'}
-            </Button>
-            <Button
-              variant="outline"
-              disabled={!isValidInn(wizardState.advertiserInn) || wizardState.advertiserRole.length === 0 || loadingState['create-advertiser']}
-              onClick={() => handleCreateCounterparty('advertiser')}
-            >
-              {loadingState['create-advertiser'] ? (isAdvertiserInCounterparties ? 'Обновление…' : 'Создание…') : (isAdvertiserInCounterparties ? 'Обновить в VK ОРД' : 'Создать в VK ОРД')}
-            </Button>
-          </div>
-          
-        </div>
-        {wizardState.advertiserInfo && (
-          <div style={{ color: 'var(--vk-muted)', marginTop: 4 }}>
-            {wizardState.advertiserInfo}
-          </div>
-        )}
+          <PartyInputSection
+            label="ИНН рекламодателя"
+            inn={advertiser.inn}
+            role={advertiser.role[0]}
+            info={advertiser.info}
+            isLoading={loadingState['lookup-advertiser']}
+            isInCounterparties={isAdvertiserInCounterparties}
+            onInnChange={(value) => handleInnChange('advertiser', value)}
+            onInnBlur={() => recordInnToHistory(advertiser.inn)}
+            onRoleChange={(role) => setAdvertiserRole([role])}
+            onSelectClick={() => setModalField('advertiser')}
+            onLookupClick={() => lookupInn('advertiser')}
+            onCreateClick={() => handleCreateCounterparty('advertiser')}
+            isCreating={loadingState['create-advertiser']}
+          />
 
-        <div style={{ height: 14 }} />
+          <div style={{ height: 14 }} />
 
-        <div className="vk-label">ИНН исполнителя</div>
-        <div className="vk-mobile-stack">
-          <div className="vk-inline-controls">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <input
-                className="vk-input vk-input-inn"
-                value={wizardState.contractorInn}
-                list="innHistory"
-                onChange={e => {
-                  const val = e.target.value.replace(/\D/g, '')
-                  setContractorInn(val)
-                  if (counterpartiesList.some((c: CounterpartyItem) => c.juridical_details?.inn === val)) {
-                    applyCounterpartyFromList('contractor', val)
-                  }
-                }}
-                onBlur={() => { recordInnToHistory(wizardState.contractorInn) }}
-                autoComplete="on"
-                placeholder="10 или 12 цифр"
-                maxLength={12}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setModalField('contractor')}
-                aria-label="Выбрать исполнителя из списка"
-              >
-                Выбрать
-              </Button>
-            </div>
-            <Select
-              value={wizardState.contractorRole[0]}
-              onValueChange={value => setContractorRole([value as PartyRole[0]])}
-            >
-              <SelectTrigger hasError={wizardState.contractorRole.length === 0}>
-                <SelectValue placeholder="Роль исполнителя" />
-              </SelectTrigger>
-              <SelectContent>
-                {ROLE_OPTIONS.map(option => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Button
-              disabled={!isValidInn(wizardState.contractorInn) || loadingState['lookup-contractor']}
-              onClick={() => lookupInn('contractor')}
-            >
-              {loadingState['lookup-contractor'] ? 'Поиск…' : 'Проверить'}
-            </Button>
-            <Button
-              variant="outline"
-              disabled={!isValidInn(wizardState.contractorInn) || wizardState.contractorRole.length === 0 || loadingState['create-contractor']}
-              onClick={() => handleCreateCounterparty('publisher')}
-            >
-              {loadingState['create-contractor'] ? (isContractorInCounterparties ? 'Обновление…' : 'Создание…') : (isContractorInCounterparties ? 'Обновить в VK ОРД' : 'Создать в VK ОРД')}
-            </Button>
-          </div>
-          
-        </div>
-        {wizardState.contractorInfo && (
-          <div style={{ color: 'var(--vk-muted)', marginTop: 4 }}>
-            {wizardState.contractorInfo}
-          </div>
-        )}
+          <PartyInputSection
+            label="ИНН исполнителя"
+            inn={contractor.inn}
+            role={contractor.role[0]}
+            info={contractor.info}
+            isLoading={loadingState['lookup-contractor']}
+            isInCounterparties={isContractorInCounterparties}
+            onInnChange={(value) => handleInnChange('contractor', value)}
+            onInnBlur={() => recordInnToHistory(contractor.inn)}
+            onRoleChange={(role) => setContractorRole([role])}
+            onSelectClick={() => setModalField('contractor')}
+            onLookupClick={() => lookupInn('contractor')}
+            onCreateClick={() => handleCreateCounterparty('publisher')}
+            isCreating={loadingState['create-contractor']}
+          />
 
         <div style={{ marginTop: 14 }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <input
               type="checkbox"
-              checked={wizardState.consent}
+              checked={consent}
               onChange={e => setConsent(e.target.checked)}
             />
             Согласен на обработку данных
@@ -306,9 +93,6 @@ export const Step1Parties: React.FC = () => {
         <div className="vk-mobile-button-row">
           <Button variant="outline" onClick={clearStep1}>
             Очистить поля
-          </Button>
-          <Button variant="outline" onClick={() => saveToLocalStorage(LOCAL_KEY, wizardState)}>
-            Сохранить шаг
           </Button>
           <Button
             disabled={!canNextFromStep1}
@@ -322,7 +106,7 @@ export const Step1Parties: React.FC = () => {
 
     {/* Shared datalist for INN suggestions */}
     <datalist id="innHistory">
-      {(wizardState.partyHistory || []).map(h => (
+      {partyHistory.map(h => (
         <option key={h.inn} value={h.inn} label={`${h.shortWithOpf || h.fullName || ''}${h.type ? ` (${h.type})` : ''}`} />
       ))}
     </datalist>
@@ -331,13 +115,13 @@ export const Step1Parties: React.FC = () => {
       open={modalField === 'advertiser'}
       title="Выбор рекламодателя"
       counterparties={counterpartiesList}
-      loading={isLoadingCounterparties || isFetchingCounterparties}
+      loading={isLoadingCounterparties}
       onSelect={(inn) => { applyCounterpartyFromList('advertiser', inn); setModalField(null) }}
       onClose={() => setModalField(null)}
         onEnterManually={(value) => {
           const inn = (value || '').replace(/\D/g, '')
           if (inn) {
-            setAdvertiserInn(inn)
+            handleInnChange('advertiser', inn)
           }
           setModalField(null)
         }}
@@ -346,13 +130,13 @@ export const Step1Parties: React.FC = () => {
       open={modalField === 'contractor'}
       title="Выбор исполнителя"
       counterparties={counterpartiesList}
-      loading={isLoadingCounterparties || isFetchingCounterparties}
+      loading={isLoadingCounterparties}
       onSelect={(inn) => { applyCounterpartyFromList('contractor', inn); setModalField(null) }}
       onClose={() => setModalField(null)}
         onEnterManually={(value) => {
           const inn = (value || '').replace(/\D/g, '')
           if (inn) {
-            setContractorInn(inn)
+            handleInnChange('contractor', inn)
           }
           setModalField(null)
         }}

@@ -6,6 +6,7 @@ export type PartyRole = ('advertiser' | 'agency' | 'ors' | 'publisher')[]
 
 export interface PartyHistoryItem {
   inn: string
+  external_id?: string | null
   shortWithOpf?: string | null
   fullName?: string | null
   type?: string | null

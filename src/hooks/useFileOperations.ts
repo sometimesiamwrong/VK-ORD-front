@@ -1,15 +1,37 @@
 import { useRef } from 'react'
-import { useApp } from '../context/AppContext'
+import { useWizardStore } from '../stores/wizardStore'
+import { toast } from 'sonner'
 import { saveToLocalStorage } from '../utils'
 
 const LOCAL_KEY = 'vkord-wizard-state'
 
 export const useFileOperations = () => {
-  const { wizardState, setMessage } = useApp()
+  const wizardState = useWizardStore()
   const fileRef = useRef<HTMLInputElement | null>(null)
 
   const exportJson = () => {
-    const blob = new Blob([JSON.stringify(wizardState, null, 2)], { type: 'application/json' })
+    // Export only the data fields, not actions
+    const dataToExport = {
+      currentStep: wizardState.currentStep,
+      consent: wizardState.consent,
+      advertiser: wizardState.advertiser,
+      contractor: wizardState.contractor,
+      contract: wizardState.contract,
+      creative: {
+        externalId: wizardState.creative.externalId,
+        contractExternalIds: wizardState.creative.contractExternalIds,
+        kktus: wizardState.creative.kktus,
+        format: wizardState.creative.format,
+        contentUrls: wizardState.creative.contentUrls,
+        targetAudience: wizardState.creative.targetAudience,
+        text: wizardState.creative.text,
+        name: wizardState.creative.name
+      },
+      erid: wizardState.erid,
+      partyHistory: wizardState.partyHistory
+    }
+
+    const blob = new Blob([JSON.stringify(dataToExport, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
@@ -30,18 +52,12 @@ export const useFileOperations = () => {
     reader.onload = () => {
       try {
         const parsed = JSON.parse(String(reader.result))
-        // Load the parsed state (this will be handled by the context)
-        Object.keys(parsed).forEach(key => {
-          if (key in wizardState) {
-            // This is a simplified approach - in a real app you'd dispatch actions
-            // For now, we'll just update localStorage and reload
-            saveToLocalStorage(LOCAL_KEY, parsed)
-            window.location.reload()
-          }
-        })
-        setMessage('Импорт выполнен', 'success')
+        // Save to localStorage - Zustand persist middleware will handle loading
+        saveToLocalStorage(LOCAL_KEY, parsed)
+        window.location.reload()
+        toast.success('Импорт выполнен')
       } catch {
-        setMessage('Не удалось импортировать JSON', 'error')
+        toast.error('Не удалось импортировать JSON')
       }
     }
     reader.readAsText(file)

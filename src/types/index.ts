@@ -1,3 +1,5 @@
+import type { CounterpartyItem } from './business'
+
 // API types
 export type T = {
     success: boolean
@@ -481,9 +483,12 @@ export interface ContractDto {
 
 export interface GetContractDetailsResponse extends CacheResponse {
     contract: ContractDto
+    parties: CounterpartyItem[]
     creatives: CreativeDto[]
-    totalCreatives: number
-    returnedCreatives: number
+    additionalContracts?: ContractDto[]
+    totalCreatives?: number
+    returnedCreatives?: number
+    syncStatus?: string
 }
 
 export interface CreativeDto {
@@ -641,5 +646,9 @@ export * from './credentials'
 export * from './business'
 export * from './wizard'
 export * from './acts'
+
+// Re-export from organized structure (Phase 4 refactoring)
+export * from './enums'
+export * from './common'
 
 

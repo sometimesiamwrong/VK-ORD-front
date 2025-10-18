@@ -1,5 +1,6 @@
 import path from "path"
 import tailwindcss from "@tailwindcss/vite"
+import react from "@vitejs/plugin-react"
 import { defineConfig } from "vite"
 
 export default defineConfig(({ command, mode }) => {
@@ -8,7 +9,17 @@ export default defineConfig(({ command, mode }) => {
     const apiBaseUrl = mode === 'production' ? CLOUD_API : ''  // В dev режиме используем proxy
 
     return {
-        plugins: [tailwindcss()],
+        plugins: [
+            react({
+                // Настройки Fast Refresh для React 19
+                fastRefresh: true,
+                babel: {
+                    // Добавляем babel плагины если нужно
+                    plugins: []
+                }
+            }),
+            tailwindcss()
+        ],
         resolve: {
             alias: {
                 "@": path.resolve(__dirname, "./src"),

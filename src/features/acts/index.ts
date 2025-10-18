@@ -1,4 +1,5 @@
 export { ActsPage } from './ActsPage'
+export { ActFormPage } from './ActFormPage'
 export { PartyLookup } from './components/PartyLookup'
 export { ActListPanel } from './components/ActListPanel'
 export { ActEditor } from './components/ActEditor'

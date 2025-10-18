@@ -12,8 +12,8 @@ export class MediaService {
   static async uploadMedia(file: File): Promise<string> {
     const formData = new FormData()
     formData.append('file', file)
-    
-    const response = await http.post<string>('/api/media/upload', formData, {
+
+    const response = await http.post<string>('/api/media/v1/upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
@@ -25,7 +25,7 @@ export class MediaService {
    * Получить информацию о медиа файле
    */
   static async getMediaInfo(externalId: string): Promise<VkOrdMediaInfoResponse> {
-    const response = await http.get<VkOrdMediaInfoResponse>(`/api/media/${externalId}`)
+    const response = await http.get<VkOrdMediaInfoResponse>(`/api/media/v1/${externalId}`)
     return response.data
   }
 
@@ -33,7 +33,7 @@ export class MediaService {
    * Получить список медиа файлов
    */
   static async getMediaList(params?: PageRequest): Promise<GetMediaListResponse> {
-    const response = await http.get<GetMediaListResponse>('/api/media/page', {
+    const response = await http.get<GetMediaListResponse>('/api/media/v1/page', {
       params
     })
     return response.data

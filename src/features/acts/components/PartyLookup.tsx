@@ -35,12 +35,12 @@ export const PartyLookup: React.FC<PartyLookupProps> = ({
   return (
     <Paper sx={{ p: 3 }}>
       <Typography variant="h6" gutterBottom>
-        Поиск компании
+        Поиск контрагента
       </Typography>
 
             <Autocomplete
               options={companies}
-              getOptionLabel={(option) => `${option.name} (ИНН: ${option.juridicalDetails?.inn || ''})`}
+              getOptionLabel={(option) => `${option.name} (ИНН: ${option.juridical_details?.inn || ''})`}
               value={selectedCompany}
               onChange={(_, newValue) => onCompanySelect(newValue)}
               loading={isLoadingCompanies || companySearchLoading}
@@ -74,7 +74,7 @@ export const PartyLookup: React.FC<PartyLookupProps> = ({
                   <Box>
                     <Typography variant="body1">{option.name}</Typography>
                     <Typography variant="body2" color="text.secondary">
-                      ИНН: {option.juridicalDetails?.inn || ''}
+                      ИНН: {option.juridical_details?.inn || ''}
                     </Typography>
                   </Box>
                 </li>
@@ -91,15 +91,15 @@ export const PartyLookup: React.FC<PartyLookupProps> = ({
               {selectedCompany.name}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              ИНН: {selectedCompany.juridicalDetails?.inn || ''}
+              ИНН: {selectedCompany.juridical_details?.inn || ''}
             </Typography>
-            {selectedCompany.juridicalDetails?.kpp && (
+            {selectedCompany.juridical_details?.kpp && (
               <Typography variant="body2" color="text.secondary">
-                КПП: {selectedCompany.juridicalDetails.kpp}
+                КПП: {selectedCompany.juridical_details.kpp}
               </Typography>
             )}
             <Typography variant="body2" color="text.secondary">
-              Тип: {selectedCompany.juridicalDetails?.type === 1 ? 'ИП' : selectedCompany.juridicalDetails?.type === 2 ? 'ЮР лицо' : 'Неизвестно'}
+              Тип: {selectedCompany.juridical_details?.type === 'ip' ? 'ИП' : selectedCompany.juridical_details?.type === 'juridical' ? 'ЮР лицо' : selectedCompany.juridical_details?.type === 'physical' ? 'Физ. лицо' : 'Неизвестно'}
             </Typography>
           </CardContent>
         </Card>

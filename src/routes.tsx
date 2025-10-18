@@ -1,5 +1,5 @@
 import { Toaster } from "@/components/ui/sonner"
-import React, { useEffect } from 'react'
+import React, { useEffect, Suspense } from 'react'
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
@@ -8,6 +8,8 @@ import CssBaseline from '@mui/material/CssBaseline'
 
 import { queryClient } from './api/queryClient'
 import { useAuth, useAutoRefresh } from './auth/hooks'
+import { ErrorBoundary } from './components/ErrorBoundary'
+import { PageLoader } from './components/PageLoader'
 import { LoginPage } from './features/auth/LoginPage'
 import { RegisterPage } from './features/auth/RegisterPage'
 import { DashboardPage } from './features/dashboard/DashboardPage'
@@ -19,7 +21,7 @@ import { CreativesPage } from './features/creatives/CreativesPage'
 import { MediaPage } from './features/media/MediaPage'
 import { WizardPage } from './features/wizard/WizardPage'
 import { PartiesPage } from './features/parties/PartiesPage'
-import { ActsPage } from './features/acts/ActsPage';
+import { ActsPage, ActFormPage } from './features/acts';
 
 // Auth guard component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -74,121 +76,145 @@ export const AppRouter: React.FC = () => {
       <CssBaseline />
       <Toaster />
       <QueryClientProvider client={queryClient}>
-        <HashRouter>
-          <Routes>
-            {/* Public routes */}
-            <Route
-              path="/login"
-              element={
-                <PublicRoute>
-                  <LoginPage />
-                </PublicRoute>
-              }
-            />
-            <Route
-              path="/register"
-              element={
-                <PublicRoute>
-                  <RegisterPage />
-                </PublicRoute>
-              }
-            />
+        <ErrorBoundary>
+          <HashRouter>
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
+              {/* Public routes */}
+              <Route
+                path="/login"
+                element={
+                  <PublicRoute>
+                    <LoginPage />
+                  </PublicRoute>
+                }
+              />
+              <Route
+                path="/register"
+                element={
+                  <PublicRoute>
+                    <RegisterPage />
+                  </PublicRoute>
+                }
+              />
 
-            {/* Protected routes */}
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <DashboardPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/profile"
-              element={
-                <ProtectedRoute>
-                  <DashboardLayout>
-                    <ProfilePage />
-                  </DashboardLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/credentials"
-              element={
-                <ProtectedRoute>
-                  <DashboardLayout>
-                    <CredentialsPage />
-                  </DashboardLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/contracts"
-              element={
-                <ProtectedRoute>
-                  <DashboardLayout>
-                    <ContractsPage />
-                  </DashboardLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/creatives"
-              element={
-                <ProtectedRoute>
-                  <DashboardLayout>
-                    <CreativesPage />
-                  </DashboardLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/media"
-              element={
-                <ProtectedRoute>
-                  <DashboardLayout>
-                    <MediaPage />
-                  </DashboardLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/wizard"
-              element={
-                <ProtectedRoute>
-                  <DashboardLayout>
-                    <WizardPage />
-                  </DashboardLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/parties"
-              element={
-                <ProtectedRoute>
-                  <DashboardLayout>
-                    <PartiesPage />
-                  </DashboardLayout>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/acts"
-              element={
-                <ProtectedRoute>
-                  <DashboardLayout>
-                    <ActsPage />
-                  </DashboardLayout>
-                </ProtectedRoute>
-              }
-            />
+              {/* Protected routes */}
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <DashboardPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <ProfilePage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/credentials"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <CredentialsPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/contracts"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <ContractsPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/creatives"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <CreativesPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/media"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <MediaPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/wizard"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <WizardPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/parties"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <PartiesPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/acts"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <ActsPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/acts/new"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <ActFormPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/acts/:actId/edit"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <ActFormPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Default redirect */}
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
-        </HashRouter>
+              {/* Default redirect */}
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+              </Routes>
+            </Suspense>
+          </HashRouter>
+        </ErrorBoundary>
         <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>
     </ThemeProvider>

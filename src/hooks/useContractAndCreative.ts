@@ -1,143 +1,155 @@
 import { useCallback } from 'react'
-import http from '../api/http'
-import { useApp } from '../context/AppContext'
+import { toast } from 'sonner'
+import {
+  useWizardAdvertiser,
+  useWizardContractor,
+  useWizardContract,
+  useWizardCreative,
+  useWizardActions
+} from '../stores/wizardStore'
+import WizardService from '../services/wizard'
 import { generateContractExternalId, getCookie } from '../utils'
-import type { CreateContractRequest, CreateCreativeRequest, VkOrdCreativeV3RequestResponse, GetKktyByTextResponseLegacy } from '../types'
+import type { CreateContractRequest, CreateCreativeRequest } from '../types'
 
 export const useContractAndCreative = () => {
+  const advertiser = useWizardAdvertiser()
+  const contractor = useWizardContractor()
+  const contract = useWizardContract()
+  const creative = useWizardCreative()
   const {
-    wizardState,
-    setContractData,
-    setCreativeData,
+    updateContract,
+    updateCreative,
     setErid,
     setStep,
-    setLoading,
-    setMessage
-  } = useApp()
+    setLoading
+  } = useWizardActions()
 
   const saveContract = useCallback(async () => {
     // Ensure contractExternalId is present
-    let contractExternalId = wizardState.contractExternalId
+    let contractExternalId = contract.externalId
     if (!contractExternalId || !contractExternalId.trim()) {
       contractExternalId = generateContractExternalId(new Date(), 1)
-      setContractData({ externalId: contractExternalId, paySum: wizardState.paySum, payDateEnd: wizardState.payDateEnd })
+      updateContract({ externalId: contractExternalId })
     }
 
     // Get credential ID from cookie
     const apiCredentialPublicId = getCookie('vkord-credential-id')
     if (!apiCredentialPublicId) {
-      setMessage('Не выбран токен VK API', 'error')
+      toast.error('Не выбран токен VK API')
+      return
+    }
+
+    // Validate that both parties have external_id
+    if (!advertiser.external_id) {
+      toast.error('Не найден external_id рекламодателя. Пожалуйста, создайте контрагента заново.')
+      return
+    }
+    if (!contractor.external_id) {
+      toast.error('Не найден external_id подрядчика. Пожалуйста, создайте контрагента заново.')
       return
     }
 
     const payload: CreateContractRequest = {
       apiCredentialPublicId,
       externalId: contractExternalId,
-      clientExternalId: wizardState.advertiserInn,
-      contractorExternalId: wizardState.contractorInn,
-      serial: wizardState.serial || undefined,
-      paySum: wizardState.paySum || 0,
-      payDateEnd: wizardState.payDateEnd || undefined
+      clientExternalId: advertiser.external_id,
+      contractorExternalId: contractor.external_id,
+      serial: contract.serial || undefined,
+      paySum: contract.paySum || 0,
+      payDateEnd: contract.payDateEnd || undefined
     }
 
     setLoading('contract', true)
     try {
-      await http.post('/api/client/create_contract', payload)
-      // Contract creation doesn't return data in new API
-      setMessage('Договор успешно создан', 'success')
-      setContractData({
-        externalId: contractExternalId,
-        paySum: wizardState.paySum,
-        payDateEnd: wizardState.payDateEnd
+      await WizardService.createContract(payload)
+      toast.success('Договор успешно создан')
+      updateContract({
+        externalId: contractExternalId
       })
-      setCreativeData({ contractExternalIds: [contractExternalId] })
+      updateCreative({ contractExternalIds: [contractExternalId] })
     } catch (e: any) {
-      setMessage(`Ошибка создания договора: ${e?.message || e}`, 'error')
+      toast.error(`Ошибка создания договора: ${e?.message || e}`)
     } finally {
       setLoading('contract', false)
     }
-  }, [wizardState, setContractData, setCreativeData, setLoading, setMessage])
+  }, [contract, advertiser.external_id, contractor.external_id, updateContract, updateCreative, setLoading])
 
   const createCreative = useCallback(async () => {
     // Get credential ID from cookie
     const apiCredentialPublicId = getCookie('vkord-credential-id')
     if (!apiCredentialPublicId) {
-      setMessage('Не выбран токен VK API', 'error')
+      toast.error('Не выбран токен VK API')
       return
     }
 
     const payload: CreateCreativeRequest = {
       apiCredentialPublicId,
-      externalId: wizardState.creativeExternalId,
-      contractExternalIds: wizardState.contractExternalIds.length ? wizardState.contractExternalIds : [wizardState.contractExternalId],
-      kktus: wizardState.kktus ? (Array.isArray(wizardState.kktus) ? wizardState.kktus : [wizardState.kktus]) : [],
-      type: wizardState.format,
-      targetUrls: wizardState.contentUrls.length ? wizardState.contentUrls : undefined,
-      targetAudience: wizardState.targetAudience || undefined,
-      texts: wizardState.text ? [wizardState.text] : undefined,
-      name: wizardState.name || undefined,
-      mediaExternalIds: wizardState.mediaExternalIds?.length ? wizardState.mediaExternalIds : undefined,
+      externalId: creative.externalId,
+      contractExternalIds: creative.contractExternalIds.length ? creative.contractExternalIds : [contract.externalId],
+      kktus: creative.kktus ? (Array.isArray(creative.kktus) ? creative.kktus : [creative.kktus]) : [],
+      type: creative.format,
+      targetUrls: creative.contentUrls && creative.contentUrls.length ? creative.contentUrls : undefined,
+      targetAudience: creative.targetAudience || undefined,
+      texts: creative.text ? [creative.text] : undefined,
+      name: creative.name || undefined,
+      mediaExternalIds: creative.mediaExternalIds?.length ? creative.mediaExternalIds : undefined,
       payType: 0 // Default to CPM
     }
 
     setLoading('creative', true)
     try {
-      const response = await http.post<VkOrdCreativeV3RequestResponse>('/api/client/create_creative', payload)
-      const creativeData = response.data
+      const creativeData = await WizardService.createCreative(payload)
 
-      // Предполагаем успех, если данные получены
       if (creativeData?.erid) {
-        setMessage('Креатив успешно создан', 'success')
+        toast.success('Креатив успешно создан')
         setErid(creativeData.erid)
         setStep(4)
       } else {
-        setMessage('Ошибка создания креатива', 'error')
+        toast.error('Ошибка создания креатива')
       }
     } catch (e: any) {
-      setMessage(`Ошибка создания креатива: ${e?.message || e}`, 'error')
+      toast.error(`Ошибка создания креатива: ${e?.message || e}`)
     } finally {
       setLoading('creative', false)
     }
-  }, [wizardState, setErid, setStep, setLoading, setMessage])
+  }, [creative, contract.externalId, setErid, setStep, setLoading])
 
   const guessKktyByText = useCallback(async () => {
-    const text = wizardState.text?.trim() || ''
+    const text = creative.text?.trim() || ''
     if (!text) {
-      setMessage('Введите текст для подбора ККТУ', 'info')
+      toast.info('Введите текст для подбора ККТУ')
       return
     }
 
     setLoading('ai-kkty', true)
     try {
-      const response = await http.post<GetKktyByTextResponseLegacy>('/api/ai/get-kkty_by-text', { text })
-      const aiData = response.data
+      const aiData = await WizardService.getKktuSuggestions({ text })
 
-      // Предполагаем успех, если данные получены
       if (aiData) {
-        setMessage('ККТУ подобраны', 'success')
+        toast.success('ККТУ подобраны')
       } else {
-        setMessage('Ошибка подбора ККТУ', 'error')
+        toast.error('Ошибка подбора ККТУ')
         return []
       }
 
       const list = aiData?.kkty || []
 
-      if (list.length && (!wizardState.kktus || wizardState.kktus.length === 0)) {
+      if (list.length && (!creative.kktus || creative.kktus.length === 0)) {
         // Set first found code if kktus is not selected yet
         const firstCode = list[0].code
         if (firstCode) {
-          setCreativeData({ kktus: [firstCode] })
+          updateCreative({ kktus: [firstCode] })
         }
       }
 
       return list
     } catch (e: any) {
-      setMessage(`Ошибка подбора ККТУ: ${e?.message || e}`, 'error')
+      toast.error(`Ошибка подбора ККТУ: ${e?.message || e}`)
       return []
     } finally {
       setLoading('ai-kkty', false)
     }
-  }, [wizardState.text, wizardState.kktus, setCreativeData, setLoading, setMessage])
+  }, [creative.text, creative.kktus, updateCreative, setLoading])
 
   return { saveContract, createCreative, guessKktyByText }
 }

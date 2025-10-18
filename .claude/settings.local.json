@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cat:*)",
+      "Bash(find:*)",
+      "Bash(tree:*)",
+      "Bash(npm run build:*)",
+      "Bash(npx shadcn@latest add:*)",
+      "Bash(npx storybook@latest init --yes)",
+      "Bash(npm run build-storybook:*)",
+      "Bash(timeout 120 npm run build-storybook:*)",
+      "Bash(npm install:*)",
+      "Read(//c/PROGECTS/My/AdLawyer/AdLawyerApi//**)",
+      "Read(//c/PROGECTS/My/AdLawyer/AdLawyerApi/**)",
+      "mcp__shadcn__list_components",
+      "Bash(xargs ls:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

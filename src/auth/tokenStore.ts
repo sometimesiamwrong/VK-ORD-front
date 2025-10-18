@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { persist, createJSONStorage } from 'zustand/middleware'
 import { setCookie, getCookie, deleteCookie } from '../utils/cookies'
 
 // Cookie names
@@ -14,35 +14,44 @@ interface TokenState {
   clearTokens: () => void
 }
 
-// Store for tokens
-export const useTokenStore = create<TokenState>((set) => ({
-  accessToken: null,
-  
-  // Access token хранится в памяти
-  setAccessToken: (token) => set({ accessToken: token }),
-  
-  // Refresh token хранится в куках
-  setRefreshToken: (token) => {
-    if (token) {
-      setCookie(REFRESH_TOKEN_COOKIE, token, {
-        expires: REFRESH_TOKEN_EXPIRY_DAYS,
-        secure: true,
-        sameSite: 'Strict',
-      })
-    } else {
-      deleteCookie(REFRESH_TOKEN_COOKIE)
+// Store for tokens - accessToken хранится в sessionStorage для сохранения при HMR
+export const useTokenStore = create<TokenState>()(
+  persist(
+    (set) => ({
+      accessToken: null,
+
+      // Access token хранится в sessionStorage (для HMR, но очищается при закрытии вкладки)
+      setAccessToken: (token) => set({ accessToken: token }),
+
+      // Refresh token хранится в куках
+      setRefreshToken: (token) => {
+        if (token) {
+          setCookie(REFRESH_TOKEN_COOKIE, token, {
+            expires: REFRESH_TOKEN_EXPIRY_DAYS,
+            secure: true,
+            sameSite: 'Strict',
+          })
+        } else {
+          deleteCookie(REFRESH_TOKEN_COOKIE)
+        }
+      },
+
+      getRefreshToken: () => {
+        return getCookie(REFRESH_TOKEN_COOKIE)
+      },
+
+      clearTokens: () => {
+        set({ accessToken: null })
+        deleteCookie(REFRESH_TOKEN_COOKIE)
+      },
+    }),
+    {
+      name: 'token-storage',
+      storage: createJSONStorage(() => sessionStorage),
+      partialize: (state) => ({ accessToken: state.accessToken }),
     }
-  },
-  
-  getRefreshToken: () => {
-    return getCookie(REFRESH_TOKEN_COOKIE)
-  },
-  
-  clearTokens: () => {
-    set({ accessToken: null })
-    deleteCookie(REFRESH_TOKEN_COOKIE)
-  },
-}))
+  )
+)
 
 // Device ID store (persisted in localStorage)
 interface DeviceState {
@@ -79,6 +88,13 @@ export const useEnvironmentStore = create<EnvironmentState>()(
     }
   )
 )
+
+// HMR: Сохраняем состояние при горячей замене модуля
+if (import.meta.hot) {
+  import.meta.hot.accept(() => {
+    console.log('🔥 HMR: tokenStore module updated, state preserved')
+  })
+}
 
 
 

@@ -90,7 +90,7 @@ export const ActListPanel: React.FC<ActListPanelProps> = ({
     <Paper sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h6">
-          Акты {selectedCompany ? `компании "${selectedCompany.name}"` : ''}
+          Акты {selectedCompany ? `контрагентов "${selectedCompany.name}"` : ''}
         </Typography>
         <Button
           onClick={onCreateAct}
@@ -167,12 +167,12 @@ export const ActListPanel: React.FC<ActListPanelProps> = ({
           </>
         ) : (
           <Alert severity="info">
-            У этой компании пока нет актов. Создайте первый акт.
+            У этого контрагента пока нет актов. Создайте первый акт.
           </Alert>
         )
       ) : (
         <Alert severity="info">
-          Выберите компанию для просмотра актов.
+          Выберите контрагента для просмотра актов.
         </Alert>
       )}
     </Paper>

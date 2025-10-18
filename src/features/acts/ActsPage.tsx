@@ -5,6 +5,7 @@ import {
 } from '@mui/material'
 import { Button } from '@/components/ui/button'
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useActs, useParties, usePartiesSearch, useActDetails, useContractsByParty, useContractCreatives } from './hooks'
 import { PartyLookup } from './components/PartyLookup'
 import { ActListPanel } from './components/ActListPanel'
@@ -15,6 +16,7 @@ import { toast } from 'sonner'
 import type { CounterpartyItem, ActSummary, ContractDto } from '../../types'
 
 export const ActsPage: React.FC = () => {
+  const navigate = useNavigate()
   const [selectedParty, setSelectedParty] = useState<CounterpartyItem | null>(null)
   const [selectedActId, setSelectedActId] = useState<string | null>(null)
   const [selectedContractId, setSelectedContractId] = useState<string>('')
@@ -27,12 +29,12 @@ export const ActsPage: React.FC = () => {
   const { data: parties = [], isLoading: isLoadingParties } = useParties()
   const partiesSearchMutation = usePartiesSearch()
   const { data: actsData, isLoading: isLoadingActs, error: actsError } = useActs({
-    companyId: selectedParty?.juridicalDetails?.inn || '',
+    externalId: selectedParty?.external_id || '',
     page,
     limit: rowsPerPage
   })
   const { data: selectedAct, isLoading: isLoadingActDetails } = useActDetails(selectedActId || '')
-  const { data: contractsData } = useContractsByParty(selectedParty?.juridicalDetails?.inn || '')
+  const { data: contractsData } = useContractsByParty(selectedParty?.external_id || '')
   const { data: contractCreativesData } = useContractCreatives(selectedContractId)
 
   const acts = actsData?.acts || []
@@ -69,12 +71,16 @@ export const ActsPage: React.FC = () => {
     setSelectedActId(null) // Убираем выбранный акт при создании нового
   }
 
-  const handleActCreateFromFlow = (firstParty: CounterpartyItem, secondParty: CounterpartyItem, contract: ContractDto) => {
-    setSelectedParty(firstParty)
-    setSelectedContractId(contract.externalId || '')
-    setIsCreatingNewAct(true)
-    setShowCreationFlow(false)
-    toast.success(`Акт создан для ${firstParty.name} и ${secondParty.name}`)
+  const handleActCreateFromFlow = (client: CounterpartyItem, contractor: CounterpartyItem, contract: ContractDto) => {
+    // Переходим на полную форму создания акта с полными данными через state
+    navigate('/acts/new', {
+      state: {
+        client,
+        contractor,
+        contract
+      }
+    })
+    toast.success(`Переход к созданию акта: ${client.name} ↔ ${contractor.name}`)
   }
 
   const handleCancelCreationFlow = () => {
@@ -154,18 +160,18 @@ export const ActsPage: React.FC = () => {
               isCreatingNew={isCreatingNewAct}
               contracts={contracts}
               creatives={creatives}
-              onSave={() => console.log('Save act')}
-              onSubmit={() => console.log('Submit act')}
-              onExport={() => console.log('Export act')}
-              onDelete={() => console.log('Delete act')}
               onCancel={handleCancelCreateAct}
               onContractSelect={handleContractSelect}
+              onSave={() => toast.info('Используйте страницу редактирования акта')}
+              onSubmit={() => toast.info('Используйте страницу редактирования акта')}
+              onExport={() => toast.info('Экспорт пока недоступен')}
+              onDelete={() => toast.info('Используйте страницу редактирования акта')}
             />
           </Box>
           <ActHintsSidebar
             act={selectedAct || null}
-            onCreateRelatedAct={() => console.log('Create related act')}
-            onCopyClientDetails={() => console.log('Copy client details')}
+            onCreateRelatedAct={() => toast.info('Используйте кнопку "Создать акт" выше')}
+            onCopyClientDetails={() => toast.info('Копирование пока недоступно')}
           />
         </Box>
       )}

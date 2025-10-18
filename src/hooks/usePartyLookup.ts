@@ -1,10 +1,18 @@
 import { useCallback } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import http from '../api/http'
-import { useApp } from '../context/AppContext'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
+import {
+  useWizardAdvertiser,
+  useWizardContractor,
+  useWizardActions
+} from '../stores/wizardStore'
 import CounterpartiesService from '../services/counterparties'
+import WizardService from '../services/wizard'
+import { queryKeys, invalidateQueries } from '../api/queryKeys'
+import { createQueryOptions, createMutationWithInvalidation } from '../api/queryOptions'
+import { getErrorMessage } from '../api/errorHandler'
 import { isValidInn, getPartyDisplayName, getPartyShortWithOpf } from '../utils'
-import type { DaDataPartyShortResponse, CounterpartyDto, CounterpartyItem } from '../types'
+import type { CounterpartyDto, CounterpartyItem } from '../types'
 
 // Функция преобразования CounterpartyDto в CounterpartyItem
 const transformCounterpartyDto = (dto: CounterpartyDto): CounterpartyItem => {
@@ -32,211 +40,155 @@ const transformCounterpartyDto = (dto: CounterpartyDto): CounterpartyItem => {
   }
 }
 
-const extractErrorMessage = (error: unknown, fallback: string): string => {
-  if (!error) return fallback
-
-  if (typeof error === 'string') {
-    return error.trim() || fallback
-  }
-
-  // Axios error shape
-  const axiosCandidate = error as {
-    message?: string | null
-    response?: {
-      data?: unknown
-      status?: number
-    }
-  }
-
-  // 1) Broken rules array from interceptor
-  const brokenRulesCandidate = error as {
-    brokenRules?: Array<{ message?: string | null }>
-  }
-  if (Array.isArray(brokenRulesCandidate?.brokenRules) && brokenRulesCandidate.brokenRules.length > 0) {
-    const combinedBrokenRules = brokenRulesCandidate.brokenRules
-      .map(rule => {
-        if (typeof rule?.message === 'string') {
-          return rule.message.trim()
-        } else if (rule?.message != null) {
-          return String(rule.message).trim()
-        } else {
-          return 'Неизвестная ошибка валидации'
-        }
-      })
-      .filter(Boolean)
-      .join('\n')
-
-    if (combinedBrokenRules) {
-      return combinedBrokenRules
-    }
-  }
-
-  // 2) Backend might send { message: string }
-  if (typeof axiosCandidate?.response?.data === 'object' && axiosCandidate.response.data !== null) {
-    const dataObj = axiosCandidate.response.data as { message?: string | null; errorMessage?: string | null }
-    const payloadMessage = dataObj.message || dataObj.errorMessage
-    if (typeof payloadMessage === 'string' && payloadMessage.trim()) {
-      return payloadMessage.trim()
-    }
-  }
-
-  // 3) Response data is an array of messages (raw broken rules bypassing interceptor)
-  if (Array.isArray(axiosCandidate?.response?.data)) {
-    const arrayMessage = (axiosCandidate.response.data as Array<{ Message?: string | null; message?: string | null }>)
-      .map((item) => (item?.Message || item?.message || '').trim())
-      .filter(Boolean)
-      .join('\n')
-    if (arrayMessage) {
-      return arrayMessage
-    }
-  }
-
-  if (typeof axiosCandidate?.response?.data === 'string' && axiosCandidate.response.data.trim()) {
-    return axiosCandidate.response.data.trim()
-  }
-
-  // 4) Top-level message from error object
-  if (typeof axiosCandidate?.message === 'string' && axiosCandidate.message.trim()) {
-    return axiosCandidate.message.trim()
-  }
-
-  return fallback
-}
-
 export const usePartyLookup = () => {
+  const queryClient = useQueryClient()
+  const advertiser = useWizardAdvertiser()
+  const contractor = useWizardContractor()
   const {
-    wizardState,
     setAdvertiserInfo,
     setContractorInfo,
     addToPartyHistory,
-    setLoading,
-    setMessage
-  } = useApp()
+    setLoading
+  } = useWizardActions()
 
+  // Mutation for party lookup
+  const partyLookupMutation = useMutation({
+    mutationFn: async ({ inn }: { kind: 'advertiser' | 'contractor'; inn: string }) => {
+      return await WizardService.lookupParty({ inn })
+    },
+    onMutate: ({ kind }) => {
+      setLoading(`lookup-${kind}`, true)
+    },
+    onSuccess: (data, { kind, inn }) => {
+      const display = getPartyDisplayName(data.name)
+      const shortWithOpf = getPartyShortWithOpf(data.name)
+      const t = data.type || ''
+      const info = display ? `${display}${t ? ` (${t})` : ''}` : null
+
+      const infoData = { name: display || null, shortWithOpf: shortWithOpf || null, info }
+
+      if (kind === 'advertiser') {
+        setAdvertiserInfo(infoData)
+      } else {
+        setContractorInfo(infoData)
+      }
+
+      // Add to history
+      addToPartyHistory({
+        inn,
+        shortWithOpf: shortWithOpf || display || null,
+        fullName: display || null,
+        type: (t as string) || null,
+        timestamp: Date.now()
+      })
+
+      toast.success('Поиск выполнен успешно')
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Ошибка поиска контрагента'))
+    },
+    onSettled: (_, __, { kind }) => {
+      setLoading(`lookup-${kind}`, false)
+    }
+  })
+
+  // Mutation for creating counterparty
+  const createCounterpartyMutation = useMutation(
+    createMutationWithInvalidation(queryClient, {
+      mutationFn: async ({ inn, types }: { inn: string; types: any }) => {
+        await CounterpartiesService.create({ inn, types })
+        // After creation, fetch the counterparty to get external_id
+        const response = await CounterpartiesService.getByInn({ inn })
+        return response
+      },
+      successMessage: 'Контрагент успешно создан',
+      errorMessage: 'Не удалось создать контрагента',
+      invalidateKeys: invalidateQueries.afterCounterpartyMutation(),
+      onMutate: ({ inn }) => {
+        const kind = inn === advertiser.inn ? 'advertiser' : 'contractor'
+        setLoading(`create-${kind}`, true)
+      },
+      onSuccess: (data, { inn }) => {
+        // Set external_id after successful creation
+        if (data && data.counterparties && data.counterparties.length > 0) {
+          const counterparty = data.counterparties[0]
+          const transformedCounterparty = transformCounterpartyDto(counterparty)
+          const kind = inn === advertiser.inn ? 'advertiser' : 'contractor'
+          
+          if (kind === 'advertiser') {
+            setAdvertiserInfo({ external_id: transformedCounterparty.external_id })
+          } else {
+            setContractorInfo({ external_id: transformedCounterparty.external_id })
+          }
+        }
+      },
+      onSettled: (_, __, { inn }) => {
+        const kind = inn === advertiser.inn ? 'advertiser' : 'contractor'
+        setLoading(`create-${kind}`, false)
+      }
+    })
+  )
+
+  // Wrapper functions for backward compatibility
   const lookupInn = useCallback(async (kind: 'advertiser' | 'contractor') => {
-    const inn = kind === 'advertiser' ? wizardState.advertiserInn : wizardState.contractorInn
+    const inn = kind === 'advertiser' ? advertiser.inn : contractor.inn
 
     if (!isValidInn(inn)) {
-      setMessage('ИНН должен содержать 10 или 12 цифр', 'error')
+      toast.error('ИНН должен содержать 10 или 12 цифр')
       return
     }
 
-    setLoading(`lookup-${kind}`, true)
-    try {
-      const response = await http.post<DaDataPartyShortResponse>('/api/client/party', { inn })
-      const partyData = response.data
-
-      // Предполагаем успех, если данные получены
-      if (partyData) {
-        setMessage('Поиск выполнен успешно', 'success')
-      } else {
-        setMessage('Ошибка поиска', 'error')
-        return
-      }
-
-      if (partyData) {
-        const display = getPartyDisplayName(partyData.name)
-        const shortWithOpf = getPartyShortWithOpf(partyData.name)
-        const t = partyData.type || ''
-        const info = display ? `${display}${t ? ` (${t})` : ''}` : null
-
-        const infoData = { name: display || null, shortWithOpf: shortWithOpf || null, info }
-
-        if (kind === 'advertiser') {
-          setAdvertiserInfo(infoData)
-        } else {
-          setContractorInfo(infoData)
-        }
-
-        // Add to history
-        addToPartyHistory({
-          inn,
-          shortWithOpf: shortWithOpf || display || null,
-          fullName: display || null,
-          type: (t as string) || null,
-          timestamp: Date.now()
-        })
-      }
-    } catch (error) {
-      setMessage(extractErrorMessage(error, 'Ошибка поиска контрагента'), 'error')
-    } finally {
-      setLoading(`lookup-${kind}`, false)
-    }
-  }, [wizardState, setAdvertiserInfo, setContractorInfo, addToPartyHistory, setLoading, setMessage])
+    await partyLookupMutation.mutateAsync({ kind, inn })
+  }, [advertiser.inn, contractor.inn, partyLookupMutation])
 
   const createCounterparty = useCallback(async (kind: 'advertiser' | 'publisher') => {
-    const inn = kind === 'advertiser' ? wizardState.advertiserInn : wizardState.contractorInn
-    const role = kind === 'advertiser' ? wizardState.advertiserRole : wizardState.contractorRole
+    const inn = kind === 'advertiser' ? advertiser.inn : contractor.inn
+    const role = kind === 'advertiser' ? advertiser.role : contractor.role
 
     if (!isValidInn(inn)) {
-      setMessage('ИНН должен содержать 10 или 12 цифр', 'error')
+      toast.error('ИНН должен содержать 10 или 12 цифр')
       return
     }
 
     if (role.length === 0) {
-      setMessage('Необходимо выбрать роль контрагента', 'error')
+      toast.error('Необходимо выбрать роль контрагента')
       return
     }
 
-    setLoading(`create-${kind}`, true)
-    try {
-      await http.post<unknown>('/api/client/set-counterparty', { inn, types: role })
-      // Предполагаем успех, если нет ошибки
-      setMessage('Контрагент успешно создан', 'success')
-    } catch (error) {
-      setMessage(extractErrorMessage(error, 'Не удалось создать контрагента'), 'error')
-    } finally {
-      setLoading(`create-${kind}`, false)
-    }
-  }, [wizardState, setLoading, setMessage])
+    await createCounterpartyMutation.mutateAsync({ inn, types: role })
+  }, [advertiser.inn, advertiser.role, contractor.inn, contractor.role, createCounterpartyMutation])
 
   return { lookupInn, createCounterparty }
 }
 
-// Hook для получения списка сохраненных контрагентов
+/**
+ * Hook for fetching counterparties list with proper caching
+ */
 export const useCounterpartiesList = (params?: { limit?: number; offset?: number }) => {
-  return useQuery({
-    queryKey: ['counterparties', 'list', params],
-    queryFn: async () => {
-      try {
-        // Provide default pagination parameters
+  return useQuery(
+    createQueryOptions({
+      queryKey: queryKeys.counterparties.list(params),
+      queryFn: async () => {
         const defaultParams = {
           limit: 100,
           offset: 0,
           ...params
         }
-        console.log('Fetching counterparties with params:', defaultParams)
-        const response = await CounterpartiesService.getCounterpartiesList(defaultParams)
-        console.log('Counterparties response:', response)
-        console.log('Counterparties response.data:', response.data)
-        
-        // Проверяем структуру ответа и извлекаем массив контрагентов
-        let counterpartiesArray: CounterpartyDto[];
+
+        const response = await CounterpartiesService.getList(defaultParams)
+
+        // Handle response structure (may contain $values wrapper from .NET serialization)
+        let counterpartiesArray: CounterpartyDto[]
         if (response.data && typeof response.data === 'object' && '$values' in response.data) {
-          // Если структура содержит $values, используем его
-          counterpartiesArray = (response.data as any).$values;
+          counterpartiesArray = (response.data as any).$values
         } else {
-          // Иначе используем response.data как массив
-          counterpartiesArray = response.data;
+          counterpartiesArray = response.data
         }
-        
-        console.log('Counterparties array:', counterpartiesArray)
-        console.log('Counterparties array length:', counterpartiesArray.length)
-        if (counterpartiesArray.length > 0) {
-          console.log('First counterparty DTO:', counterpartiesArray[0])
-          console.log('Transformed first counterparty:', transformCounterpartyDto(counterpartiesArray[0]))
-        }
-        const transformed = counterpartiesArray.map(transformCounterpartyDto)
-        console.log('Transformed counterparties:', transformed)
-        return transformed
-      } catch (error: any) {
-        console.error('Error fetching counterparties:', error)
-        console.error('Error response:', error.response?.data)
-        console.error('Error status:', error.response?.status)
-        return []
-      }
-    },
-    staleTime: 30000, // 30 seconds
-    retry: 1
-  })
+
+        return counterpartiesArray.map(transformCounterpartyDto)
+      },
+      staleTime: 30 * 1000, // 30 seconds
+      retry: 1
+    })
+  )
 }

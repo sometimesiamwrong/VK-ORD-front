@@ -1,13 +1,19 @@
 import { Button } from '../ui/button'
-import React, { useState } from 'react'
-import { useApp } from '../../context/AppContext'
-import { useContractAndCreative } from '../../hooks/useContractAndCreative'
+import React from 'react'
+import {
+  useWizardStep,
+  useWizardContract,
+  useWizardLoadingState,
+  useWizardActions,
+  useCanSubmitCreative
+} from '../../stores/wizardStore'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { TagSelector } from '../ui/TagSelector'
 import { FileUploader } from '../ui/FileUploader'
-import { nowTimestampString } from '../../utils'
 import { VkOrdCreativeForm } from '../../types'
-import type { AiKktyItem } from '../../types'
+import { useStep3Logic } from '../../features/wizard/hooks/useStep3Logic'
+import { UrlTagList } from '../../features/wizard/components/UrlTagList'
+import { KktyHintsPanel } from '../../features/wizard/components/KktyHintsPanel'
 
 const FORMAT_OPTIONS = [
   { value: VkOrdCreativeForm.Banner.toString(), label: 'Баннер' },
@@ -26,90 +32,32 @@ const FORMAT_OPTIONS = [
   { value: VkOrdCreativeForm.BannerHtml5.toString(), label: 'HTML5 баннер' }
 ]
 
-const parseList = (input: string): string[] => {
-  return input
-    .split(/[\n,;]+/)
-    .map(s => s.trim())
-    .filter(Boolean)
-}
-
 export const Step3Creative: React.FC = () => {
+  const currentStep = useWizardStep()
+  const contract = useWizardContract()
+  const loadingState = useWizardLoadingState()
+  const canSubmitCreative = useCanSubmitCreative()
+  const { setStep } = useWizardActions()
+
   const {
-    wizardState,
-    loadingState,
-    setCreativeData,
-    setStep,
-    canSubmitCreative
-  } = useApp()
-
-  const { createCreative, guessKktyByText } = useContractAndCreative()
-  const [kktyHints, setKktyHints] = useState<AiKktyItem[]>([])
-  const [contentUrlDraft, setContentUrlDraft] = useState('')
-
-  const clearStep3 = () => {
-    setCreativeData({
-      creativeExternalId: nowTimestampString(),
-      contractExternalIds: [],
-      kktus: [],
-      format: VkOrdCreativeForm.Banner,
-      contentUrls: [],
-      targetAudience: null,
-      text: null,
-      name: null,
-      mediaFiles: []
-    })
-    setKktyHints([])
-  }
-
-  const handleGuessKkty = async () => {
-    const hints = await guessKktyByText()
-    if (hints) {
-      setKktyHints(hints)
-    }
-  }
-
-  const isLikelyUrl = (value: string) => {
-    const v = value.trim()
-    if (!v) return false
-    try {
-      const u = new URL(v)
-      return u.protocol === 'http:' || u.protocol === 'https:'
-    } catch {
-      return false
-    }
-  }
-
-  const addUrls = (values: string[]) => {
-    const normalized = values
-      .map(v => v.trim())
-      .filter(Boolean)
-      .filter(isLikelyUrl)
-    if (normalized.length === 0) return
-    const existing = wizardState.contentUrls || []
-    const merged = Array.from(new Set([...existing, ...normalized]))
-    setCreativeData({
-      ...wizardState,
-      contentUrls: merged
-    })
-  }
-
-  const addFromDraft = () => {
-    if (!contentUrlDraft.trim()) return
-    const parts = parseList(contentUrlDraft)
-    addUrls(parts)
-    setContentUrlDraft('')
-  }
-
-  const removeUrlAt = (index: number) => {
-    const next = (wizardState.contentUrls || []).filter((_, i) => i !== index)
-    setCreativeData({
-      ...wizardState,
-      contentUrls: next
-    })
-  }
+    creative,
+    kktyHints,
+    contentUrlDraft,
+    setContentUrlDraft,
+    updateCreative,
+    setCreativeMediaFiles,
+    createCreative,
+    clearStep3,
+    handleGuessKkty,
+    addFromDraft,
+    removeUrlAt,
+    handleUrlPaste,
+    handleUrlKeyDown,
+    parseList
+  } = useStep3Logic()
 
   return (
-    <details open={wizardState.step === 3}>
+    <details open={currentStep === 3}>
       <summary>3) Креатив</summary>
       <div className="vk-card" style={{ marginTop: 10 }}>
         <div style={{ display: 'grid', gap: 8 }}>
@@ -117,10 +65,9 @@ export const Step3Creative: React.FC = () => {
             Идентификатор креатива
             <input
               className="vk-input"
-              value={wizardState.creativeExternalId}
-              onChange={e => setCreativeData({
-                ...wizardState,
-                creativeExternalId: e.target.value
+              value={creative.externalId}
+              onChange={e => updateCreative({
+                externalId: e.target.value
               })}
             />
           </label>
@@ -128,20 +75,18 @@ export const Step3Creative: React.FC = () => {
             Идентификатор договора
             <input
               className="vk-input"
-              value={wizardState.contractExternalIds.join(',')}
-              onChange={e => setCreativeData({
-                ...wizardState,
+              value={creative.contractExternalIds.join(',')}
+              onChange={e => updateCreative({
                 contractExternalIds: parseList(e.target.value)
               })}
-              placeholder={wizardState.contractExternalId}
+              placeholder={contract.externalId}
             />
           </label>
           <label>
             Формат
             <Select
-              value={wizardState.format?.toString() || VkOrdCreativeForm.Banner.toString()}
-              onValueChange={value => setCreativeData({
-                ...wizardState,
+              value={creative.format?.toString() || VkOrdCreativeForm.Banner.toString()}
+              onValueChange={value => updateCreative({
                 format: parseInt(value as string) as VkOrdCreativeForm
               })}
             >
@@ -163,63 +108,22 @@ export const Step3Creative: React.FC = () => {
               className="vk-input"
               value={contentUrlDraft}
               onChange={e => setContentUrlDraft(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === 'Enter' || e.key === ',' || e.key === ';') {
-                  e.preventDefault()
-                  addFromDraft()
-                }
-              }}
+              onKeyDown={handleUrlKeyDown}
               onBlur={addFromDraft}
-              onPaste={e => {
-                const text = e.clipboardData?.getData('text') || ''
-                const list = parseList(text)
-                if (list.length > 1) {
-                  e.preventDefault()
-                  addUrls(list)
-                }
-              }}
+              onPaste={handleUrlPaste}
               placeholder="Вставьте ссылку и нажмите Enter"
             />
-            {(wizardState.contentUrls && wizardState.contentUrls.length > 0) && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
-                {wizardState.contentUrls.map((url, idx) => (
-                  <span
-                    key={url + idx}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      padding: '4px 8px',
-                      background: 'var(--vk-primary)',
-                      color: '#fff',
-                      borderRadius: 6,
-                      fontSize: 12,
-                      fontWeight: 500
-                    }}
-                    title={url}
-                  >
-                    {url}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeUrlAt(idx)}
-                      aria-label="Удалить ссылку"
-                      className="text-white hover:text-white hover:bg-white/10 h-auto w-auto p-1"
-                    >
-                      ×
-                    </Button>
-                  </span>
-                ))}
-              </div>
-            )}
+            <UrlTagList
+              urls={creative.contentUrls || []}
+              onRemove={removeUrlAt}
+            />
           </label>
           <label>
             Целевая аудитория
             <input
               className="vk-input"
-              value={wizardState.targetAudience || ''}
-              onChange={e => setCreativeData({
-                ...wizardState,
+              value={creative.targetAudience || ''}
+              onChange={e => updateCreative({
                 targetAudience: e.target.value
               })}
             />
@@ -227,10 +131,9 @@ export const Step3Creative: React.FC = () => {
           <label>
             Название креатива
             <input
-              className={`vk-input ${!wizardState.name?.trim() ? 'error' : ''}`}
-              value={wizardState.name || ''}
-              onChange={e => setCreativeData({
-                ...wizardState,
+              className={`vk-input ${!creative.name?.trim() ? 'error' : ''}`}
+              value={creative.name || ''}
+              onChange={e => updateCreative({
                 name: e.target.value
               })}
               placeholder="Введите название креатива..."
@@ -239,10 +142,9 @@ export const Step3Creative: React.FC = () => {
           <label>
             Текст
             <textarea
-              className={`vk-textarea ${!wizardState.text?.trim() ? 'error' : ''}`}
-              value={wizardState.text || ''}
-              onChange={e => setCreativeData({
-                ...wizardState,
+              className={`vk-textarea ${!creative.text?.trim() ? 'error' : ''}`}
+              value={creative.text || ''}
+              onChange={e => updateCreative({
                 text: e.target.value
               })}
               rows={4}
@@ -251,46 +153,12 @@ export const Step3Creative: React.FC = () => {
           </label>
 
           {/* AI KKTY Suggestions with relevance highlighting */}
-          {kktyHints.length > 0 && (
-            <div className="vk-card" style={{ marginTop: 6 }}>
-              <div style={{ display: 'grid', gap: 6 }}>
-                {kktyHints
-                  .slice()
-                  .sort((a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0))
-                  .map((h, idx) => {
-                    const score = typeof h.relevanceScore === 'number' ? h.relevanceScore : 0
-                    const isHigh = score >= 0.9
-                    const isMedium = !isHigh && score >= 0.6
-                    const badgeClass = isHigh
-                      ? 'vk-badge vk-badge--score-high'
-                      : isMedium
-                        ? 'vk-badge vk-badge--score-medium'
-                        : ''
-                    const badgeLabel = isHigh ? 'Главная тема' : isMedium ? 'Важная деталь' : ''
-                    return (
-                      <div key={idx} style={{ display: 'grid', gap: 2 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                          <div style={{ fontWeight: 700 }}>
-                            {h.code}: {h.fullName}
-                          </div>
-                          {badgeClass && (
-                            <span className={badgeClass} title={`relevanceScore: ${score.toFixed(2)}`}>
-                              {badgeLabel}
-                            </span>
-                          )}
-                        </div>
-                        <div style={{ color: 'var(--vk-muted)' }}>{h.reason}</div>
-                      </div>
-                    )
-                  })}
-              </div>
-            </div>
-          )}
+          <KktyHintsPanel hints={kktyHints} />
 
           <div className="vk-mobile-row" style={{ justifyContent: 'center', gap: 20 }}>
             <Button
               className="mt-2 mb-2"
-              disabled={!wizardState.text?.trim() || loadingState['ai-kkty']}
+              disabled={!creative.text?.trim() || loadingState['ai-kkty']}
               onClick={handleGuessKkty}
             >
               {loadingState['ai-kkty'] ? '✨ Подбор…' : '✨ Узнать ККТУ по тексту'}
@@ -298,19 +166,16 @@ export const Step3Creative: React.FC = () => {
           </div>
 
           <TagSelector
-            selectedCodes={wizardState.kktus && wizardState.kktus.length > 0 ? wizardState.kktus[0] : ''}
-            onChange={code => setCreativeData({
-              ...wizardState,
+            selectedCodes={creative.kktus && creative.kktus.length > 0 ? creative.kktus[0] : ''}
+            onChange={code => updateCreative({
               kktus: code ? [code] : []
             })}
-            hasError={!(wizardState.kktus && Array.isArray(wizardState.kktus) && wizardState.kktus.length > 0)}
+            hasError={!(creative.kktus && Array.isArray(creative.kktus) && creative.kktus.length > 0)}
           />
 
           <FileUploader
-            mediaFiles={wizardState.mediaFiles}
-            onChange={(files) => setCreativeData({
-              mediaFiles: files
-            })}
+            mediaFiles={creative.mediaFiles}
+            onChange={(files) => setCreativeMediaFiles(files)}
             maxFiles={10}
           />
         </div>

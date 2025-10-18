@@ -2,7 +2,7 @@ import axios from 'axios'
 import type { AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
 import camelcaseKeys from 'camelcase-keys'
 import snakecaseKeys from 'snakecase-keys'
-import { useTokenStore, useEnvironmentStore } from '../auth/tokenStore'
+import { useTokenStore, useEnvironmentStore, useDeviceStore } from '../auth/tokenStore'
 import { getCookie } from '../utils/cookies'
 import type { BrokenRule } from '../types'
 
@@ -126,7 +126,7 @@ http.interceptors.response.use(
     const originalRequest = error.config
 
     // Don't retry auth endpoints to avoid infinite loop
-    const authEndpoints = ['/api/auth/refresh', '/api/auth/login', '/api/auth/register']
+    const authEndpoints = ['/api/auth/v1/refresh', '/api/auth/v1/login', '/api/auth/v1/register']
     if (originalRequest.url && authEndpoints.some(endpoint => originalRequest.url.includes(endpoint))) {
       return Promise.reject(error)
     }
@@ -166,10 +166,11 @@ http.interceptors.response.use(
             return
           }
 
-          // Try to refresh token - НЕ отправляем refreshToken в body, только в cookies
+          // Try to refresh token - добавляем deviceId в body
+          const { deviceId } = useDeviceStore.getState()
           const refreshResponse = await axios.post<any>(
-            `${baseURL}api/auth/refresh`,
-            {}, // Пустой body - refresh token в cookies
+            `${baseURL}api/auth/v1/refresh`,
+            { device_id: deviceId }, // deviceId для валидации на backend (в snake_case)
             { withCredentials: true }
           )
 

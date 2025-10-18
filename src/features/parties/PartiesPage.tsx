@@ -20,6 +20,7 @@ import type { SelectChangeEvent } from '@mui/material'
 import { toast } from 'sonner'
 import type { DaDataPartyShortResponse } from '../../types'
 import { usePartyLookup, useSetCounterparty } from './hooks'
+import { getErrorMessage } from '../../api/errorHandler'
 
 const ROLE_OPTIONS = [
   { value: 'advertiser', label: 'Рекламодатель' },
@@ -54,8 +55,8 @@ export const PartiesPage: React.FC = () => {
             setPartyInfo(null)
           }
         },
-        onError: (error: any) => {
-          toast.error(error?.message || 'Ошибка при поиске контрагента')
+        onError: (error: unknown) => {
+          toast.error(getErrorMessage(error, 'Ошибка при поиске контрагента'))
           setPartyInfo(null)
         },
       })
@@ -79,8 +80,8 @@ export const PartiesPage: React.FC = () => {
         toast.success('Контрагент успешно создан')
         setCreateFormData({ inn: '', roles: [] })
       },
-      onError: (error: any) => {
-        toast.error(error?.message || 'Ошибка создания контрагента')
+      onError: (error: unknown) => {
+        toast.error(getErrorMessage(error, 'Ошибка создания контрагента'))
       },
     })
   }

@@ -1,35 +1,43 @@
 import { Button } from '../ui/button'
 import React from 'react'
-import { useApp } from '../../context/AppContext'
+import {
+  useWizardStep,
+  useWizardAdvertiser,
+  useWizardErid,
+  useWizardActions
+} from '../../stores/wizardStore'
 import { useFileOperations } from '../../hooks/useFileOperations'
 
 export const Step4Result: React.FC = () => {
-  const { wizardState, clearAll } = useApp()
+  const currentStep = useWizardStep()
+  const advertiser = useWizardAdvertiser()
+  const erid = useWizardErid()
+  const { clearAll } = useWizardActions()
   const { exportJson } = useFileOperations()
 
-  if (wizardState.step !== 4 || !wizardState.erid) {
+  if (currentStep !== 4 || !erid) {
     return null
   }
 
-  const advertiserShortWithOpf = wizardState.advertiserShortWithOpf || wizardState.advertiserName || ''
-  const copyText = `Реклама. ${advertiserShortWithOpf}, ИНН ${wizardState.advertiserInn || ''}, erid ${wizardState.erid || ''}`
+  const advertiserShortWithOpf = advertiser.shortWithOpf || advertiser.name || ''
+  const copyText = `Реклама. ${advertiserShortWithOpf}, ИНН ${advertiser.inn || ''}, erid ${erid || ''}`
 
   return (
     <>
       <div className="vk-card" style={{ padding: 22 }}>
         <h2>ERID</h2>
-        <div style={{ fontSize: 24, fontWeight: 700 }}>{wizardState.erid}</div>
+        <div style={{ fontSize: 24, fontWeight: 700 }}>{erid}</div>
         <div className="vk-mobile-button-row">
           <Button
             variant="outline"
-            onClick={() => navigator.clipboard.writeText(wizardState.erid || '')}
+            onClick={() => navigator.clipboard.writeText(erid || '')}
           >
             Скопировать ERID
           </Button>
           <Button
             variant="outline"
             onClick={() => {
-              const url = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(wizardState.erid || '')}`
+              const url = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(erid || '')}`
               window.open(url, '_blank')
             }}
           >

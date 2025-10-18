@@ -36,8 +36,13 @@ export const setCookie = (name: string, value: string, options: CookieOptions = 
     cookieString += `; domain=${options.domain}`
   }
 
-  // Secure (только для HTTPS)
-  if (options.secure || window.location.protocol === 'https:') {
+  // Secure (только для HTTPS, кроме localhost в development)
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  const isDevelopment = import.meta.env.DEV
+
+  if (options.secure && !isDevelopment) {
+    cookieString += '; secure'
+  } else if (window.location.protocol === 'https:' && !isLocalhost) {
     cookieString += '; secure'
   }
 

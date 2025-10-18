@@ -1,5 +1,4 @@
 import React from 'react'
-import { useApp } from '../../context/AppContext'
 import { useFileOperations } from '../../hooks/useFileOperations'
 import { CredentialSelector } from '../ui/CredentialSelector'
 import { Button } from '../ui/button'
@@ -9,22 +8,11 @@ import { Step3Creative } from '../steps/Step3Creative'
 import { Step4Result } from '../steps/Step4Result'
 
 export const Wizard: React.FC = () => {
-  const {
-    wizardState,
-    setVkApiKey,
-    setUseSandbox,
-  } = useApp()
-
   const { exportJson, importJsonClick, onImportFile, fileRef } = useFileOperations()
 
   return (
     <div className="vk-container" style={{ textAlign: 'left' }}>
-      <CredentialSelector
-        vkApiKey={wizardState.vkApiKey || null}
-        useSandbox={wizardState.useSandbox}
-        onVkApiKeyChange={setVkApiKey}
-        onUseSandboxChange={setUseSandbox}
-      />
+      <CredentialSelector />
 
       <h1>Маркировка рекламы (VK ОРД)</h1>
       <p>Шаги: Контрагенты → Договор → Креатив → ERID</p>
