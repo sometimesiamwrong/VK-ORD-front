@@ -71,24 +71,23 @@ export interface CounterpartyJuridicalDetails {
 
 export interface CounterpartyItem {
   id?: number
-  external_id?: string
+  externalId?: string
   name?: string
   roles?: string[]
-  juridical_details?: {
+  juridicalDetails?: {
     type?: string
-    model_scheme?: string
+    modelScheme?: string
     inn?: string
     kpp?: string
     phone?: string
-    foreign_epayment_method?: string
-    foreign_registration_number?: string
-    foreign_inn?: string
-    foreign_oksm_country_code?: string
+    foreignEpaymentMethod?: string
+    foreignRegistrationNumber?: string
+    foreignInn?: string
+    foreignOksmCountryCode?: string
   }
-  sync_status?: string
-  expires_at?: string
-  updated_at?: string
-  created_at?: string
+  syncStatus?: string
+  updatedAt?: string
+  createdAt?: string
 }
 
 // Legacy aliases for backward compatibility

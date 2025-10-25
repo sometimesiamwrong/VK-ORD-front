@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { WizardStep, PartyRole, PartyHistoryItem } from '../types/wizard'
+import type { WizardStep, PartyRole, PartyHistoryItem, UploadedFile } from '../types/wizard'
 import type { VkOrdCreativeForm } from '../types'
 import { generateContractExternalId, nowTimestampString } from '../utils'
 
@@ -30,7 +30,7 @@ interface CreativeState {
   targetAudience: string | null
   text: string | null
   name: string | null
-  mediaFiles: File[]
+  mediaFiles: UploadedFile[]
   mediaExternalIds?: string[]
 }
 
@@ -42,6 +42,12 @@ interface WizardStoreState {
   // Current step
   currentStep: WizardStep
   consent: boolean
+
+  // Section visibility (for details elements)
+  openSections: Record<WizardStep, boolean>
+
+  // UI state
+  showCreativeFlow: boolean
 
   // Parties (Step 1)
   advertiser: PartyState
@@ -62,12 +68,23 @@ interface WizardStoreState {
   // Loading state
   loadingState: LoadingState
 
+  // Template state
+  loadedTemplateId: number | null
+  isTemplateLoaded: boolean
+
   // Actions
   actions: {
     // Navigation
     setStep: (step: WizardStep) => void
     nextStep: () => void
     prevStep: () => void
+
+    // Section visibility
+    toggleSection: (step: WizardStep) => void
+    setSection: (step: WizardStep, open: boolean) => void
+
+    // UI state
+    setShowCreativeFlow: (show: boolean) => void
 
     // Consent
     setConsent: (consent: boolean) => void
@@ -99,7 +116,7 @@ interface WizardStoreState {
     setCreativeTargetAudience: (audience: string | null) => void
     setCreativeText: (text: string | null) => void
     setCreativeName: (name: string | null) => void
-    setCreativeMediaFiles: (files: File[]) => void
+    setCreativeMediaFiles: (files: UploadedFile[]) => void
 
     // ERID
     setErid: (erid: string | null) => void
@@ -109,6 +126,10 @@ interface WizardStoreState {
 
     // Loading state
     setLoading: (key: string, value: boolean) => void
+
+    // Template actions
+    setLoadedTemplate: (templateId: number | null) => void
+    clearLoadedTemplate: () => void
 
     // Clear actions
     clearStep: (step: WizardStep) => void
@@ -161,6 +182,8 @@ export const useWizardStore = create<WizardStoreState>()(
       // Initial state
       currentStep: 1,
       consent: false,
+      openSections: { 1: true, 2: false, 3: false, 4: false },
+      showCreativeFlow: false,
       advertiser: initialAdvertiserState,
       contractor: initialContractorState,
       contract: initialContractState,
@@ -168,13 +191,41 @@ export const useWizardStore = create<WizardStoreState>()(
       erid: null,
       partyHistory: [],
       loadingState: {},
+      loadedTemplateId: null,
+      isTemplateLoaded: false,
 
       // Actions
       actions: {
         // Navigation
-        setStep: (step) => set({ currentStep: step }),
-        nextStep: () => set((state) => ({ currentStep: Math.min(4, state.currentStep + 1) as WizardStep })),
-        prevStep: () => set((state) => ({ currentStep: Math.max(1, state.currentStep - 1) as WizardStep })),
+        setStep: (step) => set((state) => ({
+          currentStep: step,
+          openSections: { ...state.openSections, [step]: true }
+        })),
+        nextStep: () => set((state) => {
+          const nextStep = Math.min(4, state.currentStep + 1) as WizardStep
+          return {
+            currentStep: nextStep,
+            openSections: { ...state.openSections, [nextStep]: true }
+          }
+        }),
+        prevStep: () => set((state) => {
+          const prevStep = Math.max(1, state.currentStep - 1) as WizardStep
+          return {
+            currentStep: prevStep,
+            openSections: { ...state.openSections, [prevStep]: true }
+          }
+        }),
+
+        // Section visibility
+        toggleSection: (step) => set((state) => ({
+          openSections: { ...state.openSections, [step]: !state.openSections[step] }
+        })),
+        setSection: (step, open) => set((state) => ({
+          openSections: { ...state.openSections, [step]: open }
+        })),
+
+        // UI state
+        setShowCreativeFlow: (show) => set({ showCreativeFlow: show }),
 
         // Consent
         setConsent: (consent) => set({ consent }),
@@ -328,6 +379,13 @@ export const useWizardStore = create<WizardStoreState>()(
             loadingState: { ...state.loadingState, [key]: value }
           })),
 
+        // Template actions
+        setLoadedTemplate: (templateId) =>
+          set({ loadedTemplateId: templateId, isTemplateLoaded: !!templateId }),
+
+        clearLoadedTemplate: () =>
+          set({ loadedTemplateId: null, isTemplateLoaded: false }),
+
         // Clear actions
         clearStep: (step) =>
           set((state) => {
@@ -362,11 +420,15 @@ export const useWizardStore = create<WizardStoreState>()(
           set((state) => ({
             currentStep: 1,
             consent: false,
+            openSections: { 1: true, 2: false, 3: false, 4: false },
+            showCreativeFlow: false,
             advertiser: initialAdvertiserState,
             contractor: initialContractorState,
             contract: initialContractState,
             creative: initialCreativeState,
             erid: null,
+            loadedTemplateId: null,
+            isTemplateLoaded: false,
             // Keep party history
             partyHistory: state.partyHistory
           }))
@@ -378,6 +440,7 @@ export const useWizardStore = create<WizardStoreState>()(
       partialize: (state) => ({
         currentStep: state.currentStep,
         consent: state.consent,
+        openSections: state.openSections,
         advertiser: {
           inn: state.advertiser.inn,
           external_id: state.advertiser.external_id,
@@ -407,8 +470,16 @@ export const useWizardStore = create<WizardStoreState>()(
           // Don't persist mediaFiles (File objects can't be serialized)
         },
         erid: state.erid,
-        partyHistory: state.partyHistory
-      })
+        partyHistory: state.partyHistory,
+        loadedTemplateId: state.loadedTemplateId,
+        isTemplateLoaded: state.isTemplateLoaded
+      }),
+      onRehydrateStorage: () => (state) => {
+        // Ensure mediaFiles is always an array after rehydration
+        if (state && !state.creative.mediaFiles) {
+          state.creative.mediaFiles = []
+        }
+      }
     }
   )
 )
@@ -416,6 +487,8 @@ export const useWizardStore = create<WizardStoreState>()(
 // Selectors for optimized re-renders
 export const useWizardStep = () => useWizardStore((state) => state.currentStep)
 export const useWizardConsent = () => useWizardStore((state) => state.consent)
+export const useWizardOpenSections = () => useWizardStore((state) => state.openSections)
+export const useShowCreativeFlow = () => useWizardStore((state) => state.showCreativeFlow)
 export const useWizardAdvertiser = () => useWizardStore((state) => state.advertiser)
 export const useWizardContractor = () => useWizardStore((state) => state.contractor)
 export const useWizardContract = () => useWizardStore((state) => state.contract)

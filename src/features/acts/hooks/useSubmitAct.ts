@@ -2,7 +2,7 @@
  * Hook for submitting an act to VK ORD (ERIR)
  *
  * Backend: InvoicesController
- * Endpoint: POST /api/invoices/{externalId}/ready
+ * Endpoint: POST /api/invoices/v1/{externalId}/ready
  *
  * @returns Mutation for submitting acts
  */
@@ -22,11 +22,19 @@ export const useSubmitAct = () => {
         throw new Error('Не выбран токен VK API')
       }
 
+      console.log('Submitting act with ID:', actId)
+      
       // Backend endpoint is /ready, not /submit
-      const response = await http.post<ActSubmitResponse>(`/api/invoices/${actId}/ready`, {})
-      return response.data
+      // Backend returns empty object {} on success (200 OK)
+      const response = await http.post<ActSubmitResponse>(`/api/invoices/v1/${actId}/ready`, {})
+      
+      console.log('Submit act response status:', response.status)
+      console.log('Submit act response data:', response.data)
+      
+      // Return response data (may be empty object {} on success)
+      return response.data || {}
     },
-    onSuccess: (data, actId) => {
+    onSuccess: (_data, actId) => {
       // Refetch act details to get updated status
       queryClient.invalidateQueries({ queryKey: ['invoice', actId] })
       queryClient.invalidateQueries({ queryKey: ['invoices'] })

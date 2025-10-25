@@ -29,16 +29,16 @@ export const ActsPage: React.FC = () => {
   const { data: parties = [], isLoading: isLoadingParties } = useParties()
   const partiesSearchMutation = usePartiesSearch()
   const { data: actsData, isLoading: isLoadingActs, error: actsError } = useActs({
-    externalId: selectedParty?.external_id || '',
+    externalId: selectedParty?.externalId || '',
     page,
     limit: rowsPerPage
   })
   const { data: selectedAct, isLoading: isLoadingActDetails } = useActDetails(selectedActId || '')
-  const { data: contractsData } = useContractsByParty(selectedParty?.external_id || '')
+  const { data: contractsData } = useContractsByParty(selectedParty?.externalId || '')
   const { data: contractCreativesData } = useContractCreatives(selectedContractId)
 
-  const acts = actsData?.acts || []
-  const totalActs = actsData?.total || 0
+  const acts = actsData?.data || []
+  const totalActs = actsData?.totalItemsCount || 0
   const contracts = contractsData?.contracts || []
   const creatives = contractCreativesData?.creatives || []
 
@@ -62,7 +62,8 @@ export const ActsPage: React.FC = () => {
   }
 
   const handleActSelect = (act: ActSummary) => {
-    setSelectedActId(act.id)
+    // Navigate to edit page instead of showing in current page
+    navigate(`/acts/${act.externalId}/edit`)
   }
 
   const handleCreateAct = () => {

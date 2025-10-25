@@ -5,5 +5,4 @@
  */
 
 export * from './pagination'
-export * from './cache'
 export * from './errors'

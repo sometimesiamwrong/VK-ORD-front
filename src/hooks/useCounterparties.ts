@@ -10,27 +10,27 @@ import type { CounterpartyDto, CounterpartyItem } from '../types'
 
 // Функция преобразования CounterpartyDto в CounterpartyItem
 const transformCounterpartyDto = (dto: CounterpartyDto): CounterpartyItem => {
-  const juridicalDetails = dto.data.juridicalDetails || dto.data.juridical_details
+  const juridicalDetails = dto.data.juridicalDetails
   return {
     id: dto.id,
-    external_id: dto.external_id || dto.externalId,
+    externalId: dto.externalId,
     name: dto.data.name,
     roles: dto.data.roles,
-    juridical_details: juridicalDetails ? {
+    juridicalDetails: juridicalDetails ? {
       type: juridicalDetails.type,
-      model_scheme: juridicalDetails.model_scheme || juridicalDetails.modelScheme,
+      modelScheme: juridicalDetails.modelScheme,
       inn: juridicalDetails.inn,
       kpp: juridicalDetails.kpp,
       phone: juridicalDetails.phone,
-      foreign_epayment_method: juridicalDetails.foreign_epayment_method,
-      foreign_registration_number: juridicalDetails.foreign_registration_number,
-      foreign_inn: juridicalDetails.foreign_inn,
-      foreign_oksm_country_code: juridicalDetails.foreign_oksm_country_code
+      foreignEpaymentMethod: juridicalDetails.foreignEpaymentMethod,
+      foreignRegistrationNumber: juridicalDetails.foreignRegistrationNumber,
+      foreignInn: juridicalDetails.foreignInn,
+      foreignOksmCountryCode: juridicalDetails.foreignOksmCountryCode
     } : undefined,
-    sync_status: dto.sync_status || dto.syncStatus,
-    expires_at: dto.expires_at || dto.expiresAt,
-    updated_at: dto.updated_at || dto.updatedAt,
-    created_at: dto.created_at || dto.createdAt
+    syncStatus: dto.syncStatus,
+    expiresAt: dto.expiresAt,
+    updatedAt: dto.updatedAt,
+    createdAt: dto.createdAt
   }
 }
 

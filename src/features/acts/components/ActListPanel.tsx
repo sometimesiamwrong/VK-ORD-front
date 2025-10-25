@@ -45,14 +45,14 @@ interface ActListPanelProps {
 
 const getStatusChip = (status: ActStatus) => {
   const statusConfig = {
-    [ActStatus.Draft]: { label: 'Черновик', color: 'default' as const, icon: <ScheduleIcon /> },
-    [ActStatus.Sent]: { label: 'Отправлен', color: 'primary' as const, icon: <SendIcon /> },
-    [ActStatus.Error]: { label: 'Ошибка', color: 'error' as const, icon: <ErrorIcon /> },
-    [ActStatus.Approved]: { label: 'Утвержден', color: 'success' as const, icon: <CheckCircleIcon /> },
-    [ActStatus.Rejected]: { label: 'Отклонен', color: 'warning' as const, icon: <ErrorIcon /> }
+    'draft': { label: 'Черновик', color: 'default' as const, icon: <ScheduleIcon /> },
+    'sent': { label: 'Отправлен', color: 'primary' as const, icon: <SendIcon /> },
+    'error': { label: 'Ошибка', color: 'error' as const, icon: <ErrorIcon /> },
+    'approved': { label: 'Утвержден', color: 'success' as const, icon: <CheckCircleIcon /> },
+    'rejected': { label: 'Отклонен', color: 'warning' as const, icon: <ErrorIcon /> }
   }
 
-  const config = statusConfig[status]
+  const config = statusConfig[status] || statusConfig['draft']
   return (
     <Chip
       icon={config.icon}
@@ -141,10 +141,10 @@ export const ActListPanel: React.FC<ActListPanelProps> = ({
                           {act.number || '—'}
                         </Box>
                       </TableCell>
-                      <TableCell>{new Date(act.date).toLocaleDateString('ru-RU')}</TableCell>
-                      <TableCell>{act.amount.toLocaleString('ru-RU')} ₽</TableCell>
+                      <TableCell>{act.date ? new Date(act.date).toLocaleDateString('ru-RU') : '—'}</TableCell>
+                      <TableCell>{(act.amount ?? 0).toLocaleString('ru-RU')} ₽</TableCell>
                       <TableCell>{getStatusChip(act.status)}</TableCell>
-                      <TableCell>{act.contractNumber}</TableCell>
+                      <TableCell>{act.contractNumber || '—'}</TableCell>
                       <TableCell>
                         <IconButton size="small" onClick={(e) => { e.stopPropagation(); onActSelect(act) }}>
                           <EditIcon />

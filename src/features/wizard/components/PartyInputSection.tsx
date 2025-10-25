@@ -1,26 +1,19 @@
 import React from 'react'
 import { Button } from '../../../components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { isValidInn } from '../../../utils'
 import type { PartyRole } from '../../../types'
-
-const ROLE_OPTIONS = [
-  { value: 'advertiser', label: 'Рекламодатель' },
-  { value: 'agency', label: 'Рекламное агентство' },
-  { value: 'ors', label: 'Оператор рекламных систем' },
-  { value: 'publisher', label: 'Издатель' }
-]
+import { MultiRoleSelector } from './MultiRoleSelector'
 
 interface PartyInputSectionProps {
   label: string
   inn: string
-  role: PartyRole[0]
+  role: PartyRole
   info: string | null
   isLoading: boolean
   isInCounterparties: boolean
   onInnChange: (value: string) => void
   onInnBlur: () => void
-  onRoleChange: (role: PartyRole[0]) => void
+  onRoleChange: (roles: PartyRole) => void
   onSelectClick: () => void
   onLookupClick: () => void
   onCreateClick: () => void
@@ -68,21 +61,11 @@ export const PartyInputSection: React.FC<PartyInputSectionProps> = ({
             </Button>
           </div>
 
-          <Select
-            value={role}
-            onValueChange={value => onRoleChange(value as PartyRole[0])}
-          >
-            <SelectTrigger hasError={!role}>
-              <SelectValue placeholder={`Роль ${label.toLowerCase()}`} />
-            </SelectTrigger>
-            <SelectContent>
-              {ROLE_OPTIONS.map(option => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <MultiRoleSelector
+            selectedRoles={role}
+            onChange={onRoleChange}
+            hasError={!role || role.length === 0}
+          />
 
           <Button
             disabled={!isValidInn(inn) || isLoading}

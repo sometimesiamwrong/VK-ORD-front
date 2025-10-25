@@ -95,40 +95,40 @@ export const useStep1Logic = () => {
     setConsent(false)
   }, [setAdvertiserInn, setContractorInn, setAdvertiserRole, setContractorRole, setConsent])
 
-  const applyCounterpartyFromList = useCallback((kind: PartyKind, inn: string) => {
-    const hit = counterpartiesList.find((c: CounterpartyItem) => c.juridical_details?.inn === inn)
-    if (!hit) return
+  const applyCounterpartyFromList = useCallback((kind: PartyKind, party: CounterpartyItem) => {
+    if (!party) return
 
-    const displayName = hit.name
-    const type = hit.juridical_details?.type
+    const inn = party.juridicalDetails?.inn || ''
+    const displayName = party.name || 'Неизвестно'
+    const type = party.juridicalDetails?.type
     const info = `${displayName} (${type === 'ip' ? 'ИП' : type === 'juridical' ? 'ЮР лицо' : type === 'physical' ? 'Физ. лицо' : type})`
 
     if (kind === 'advertiser') {
       setAdvertiserInn(inn)
       setAdvertiserInfo({
-        external_id: hit.external_id, // ✅ Set external_id from counterparty
+        external_id: party.externalId || null,
         name: displayName,
         shortWithOpf: null,
         info
       })
-      const normalizedRoles = normalizeRoles(hit.roles)
+      const normalizedRoles = normalizeRoles(party.roles)
       if (normalizedRoles.length > 0) {
         setAdvertiserRole(normalizedRoles)
       }
     } else {
       setContractorInn(inn)
       setContractorInfo({
-        external_id: hit.external_id, // ✅ Set external_id from counterparty
+        external_id: party.externalId || null,
         name: displayName,
         shortWithOpf: null,
         info
       })
-      const normalizedRoles = normalizeRoles(hit.roles)
+      const normalizedRoles = normalizeRoles(party.roles)
       if (normalizedRoles.length > 0) {
         setContractorRole(normalizedRoles)
       }
     }
-  }, [counterpartiesList, setAdvertiserInn, setAdvertiserInfo, setAdvertiserRole, setContractorInn, setContractorInfo, setContractorRole])
+  }, [setAdvertiserInn, setAdvertiserInfo, setAdvertiserRole, setContractorInn, setContractorInfo, setContractorRole])
 
   const handleCreateCounterparty = useCallback(async (kind: 'advertiser' | 'publisher') => {
     await createCounterparty(kind)
@@ -136,11 +136,11 @@ export const useStep1Logic = () => {
   }, [createCounterparty, refetchCounterparties])
 
   const isAdvertiserInCounterparties = useMemo(() => {
-    return counterpartiesList.some((c: CounterpartyItem) => c.juridical_details?.inn === advertiser.inn)
+    return counterpartiesList.some((c: CounterpartyItem) => c.juridicalDetails?.inn === advertiser.inn)
   }, [counterpartiesList, advertiser.inn])
 
   const isContractorInCounterparties = useMemo(() => {
-    return counterpartiesList.some((c: CounterpartyItem) => c.juridical_details?.inn === contractor.inn)
+    return counterpartiesList.some((c: CounterpartyItem) => c.juridicalDetails?.inn === contractor.inn)
   }, [counterpartiesList, contractor.inn])
 
   const handleInnChange = useCallback((kind: PartyKind, value: string) => {
@@ -148,13 +148,15 @@ export const useStep1Logic = () => {
 
     if (kind === 'advertiser') {
       setAdvertiserInn(cleanValue)
-      if (counterpartiesList.some((c: CounterpartyItem) => c.juridical_details?.inn === cleanValue)) {
-        applyCounterpartyFromList('advertiser', cleanValue)
+      const foundParty = counterpartiesList.find((c: CounterpartyItem) => c.juridicalDetails?.inn === cleanValue)
+      if (foundParty) {
+        applyCounterpartyFromList('advertiser', foundParty)
       }
     } else {
       setContractorInn(cleanValue)
-      if (counterpartiesList.some((c: CounterpartyItem) => c.juridical_details?.inn === cleanValue)) {
-        applyCounterpartyFromList('contractor', cleanValue)
+      const foundParty = counterpartiesList.find((c: CounterpartyItem) => c.juridicalDetails?.inn === cleanValue)
+      if (foundParty) {
+        applyCounterpartyFromList('contractor', foundParty)
       }
     }
   }, [setAdvertiserInn, setContractorInn, counterpartiesList, applyCounterpartyFromList])

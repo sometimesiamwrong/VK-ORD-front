@@ -1,9 +1,11 @@
 export { CustomSelect } from './CustomSelect'
 export { TagSelector } from './TagSelector'
 export { CredentialSelector } from './CredentialSelector'
+export { CredentialSelectorSimple } from './CredentialSelectorSimple'
 export { FileUploader } from './FileUploader'
 export { PartySelector } from './PartySelector'
 export { PartyModal } from './PartyModal'
+export { PartyContractSelector } from './PartyContractSelector'
 export { ToastNotification } from './ToastNotification'
 export { Button } from './button'
 

@@ -77,7 +77,7 @@ export const PartyModal: React.FC<PartyModalProps> = ({
 
   const filtered = searchResults.filter((c) => {
     if (!query.trim()) return true
-    const inn = c.juridical_details?.inn || ''
+    const inn = c.juridicalDetails?.inn || ''
     const name = c.name || ''
     return inn.includes(query.trim()) || name.toLowerCase().includes(query.trim().toLowerCase())
   })
@@ -132,16 +132,16 @@ export const PartyModal: React.FC<PartyModalProps> = ({
             <div className="vk-modal__list">
               {pageItems.map((party) => (
                 <button
-                  key={`${party.juridical_details?.inn || 'unknown'}-${party.name || 'unknown'}`}
+                  key={`${party.juridicalDetails?.inn || 'unknown'}-${party.name || 'unknown'}`}
                   className="vk-modal__item"
                   onClick={() => onSelect(party)}
-                  title={`${party.name || 'Неизвестно'}\nИНН: ${party.juridical_details?.inn || 'Не указан'}\nТип: ${formatPartyType(party.juridical_details?.type)}`}
+                  title={`${party.name || 'Неизвестно'}\nИНН: ${party.juridicalDetails?.inn || 'Не указан'}\nТип: ${formatPartyType(party.juridicalDetails?.type)}`}
                 >
                   <div className="vk-modal__item-name">{party.name || 'Неизвестно'}</div>
                   <div className="vk-modal__item-meta">
-                    <span>ИНН: {party.juridical_details?.inn || 'Не указан'}</span>
+                    <span>ИНН: {party.juridicalDetails?.inn || 'Не указан'}</span>
                     <span>•</span>
-                    <span>{formatPartyType(party.juridical_details?.type)}</span>
+                    <span>{formatPartyType(party.juridicalDetails?.type)}</span>
                   </div>
                 </button>
               ))}

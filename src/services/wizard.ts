@@ -31,7 +31,7 @@ import type {
   DaDataPartyShortResponse,
   CreateContractRequest,
   CreateCreativeRequest,
-  VkOrdCreativeV3RequestResponse,
+  CreativeDto,
   GetKktyByTextResponseLegacy
 } from '../types'
 
@@ -118,12 +118,12 @@ export class WizardService {
    *   texts: ['Скидки до 50%!'],
    *   payType: 0 // CPM
    * })
-   * console.log(result.erid) // ERID-2RaXXXXXXXX
+   * console.log(result.data.erid) // ERID-2RaXXXXXXXX
    * ```
    */
-  static async createCreative(params: CreateCreativeRequest): Promise<VkOrdCreativeV3RequestResponse> {
+  static async createCreative(params: CreateCreativeRequest): Promise<CreativeDto> {
     // Backend использует POST /api/creatives/v1 для создания
-    const response = await http.post<VkOrdCreativeV3RequestResponse>('/api/creatives/v1', params)
+    const response = await http.post<CreativeDto>('/api/creatives/v1', params)
     return response.data
   }
 

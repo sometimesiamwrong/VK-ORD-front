@@ -38,6 +38,59 @@ const BROKEN_RULE_MESSAGES: Record<number, string> = {
   // Add more mappings as needed
 }
 
+// Enum field names that should be normalized to lowercase
+// This ensures consistent enum handling regardless of backend casing
+const ENUM_FIELDS = new Set([
+  'role',
+  'roles',
+  'type',
+  'payType',
+  'form',
+  'subjectType',
+  'actionType',
+  'flags',
+  'contractorRole',
+  'clientRole',
+  'personType',
+  'status'
+])
+
+/**
+ * Recursively normalize enum field values to lowercase
+ * This ensures consistent enum handling across the app regardless of backend casing
+ */
+const normalizeEnumValues = (data: any): any => {
+  if (data === null || data === undefined) {
+    return data
+  }
+
+  // Handle arrays
+  if (Array.isArray(data)) {
+    return data.map(item => normalizeEnumValues(item))
+  }
+
+  // Handle objects
+  if (typeof data === 'object') {
+    const normalized: any = {}
+    for (const [key, value] of Object.entries(data)) {
+      // Check if this field should be normalized
+      if (ENUM_FIELDS.has(key) && typeof value === 'string') {
+        normalized[key] = value.toLowerCase()
+      } else if (ENUM_FIELDS.has(key) && Array.isArray(value)) {
+        // Handle array of enum values (e.g., roles, flags)
+        normalized[key] = value.map(v => typeof v === 'string' ? v.toLowerCase() : v)
+      } else {
+        // Recursively process nested objects
+        normalized[key] = normalizeEnumValues(value)
+      }
+    }
+    return normalized
+  }
+
+  // Return primitives as-is
+  return data
+}
+
 // Function to check if response is a broken rules error
 const isBrokenRulesResponse = (response: any): boolean => {
   return (
@@ -119,6 +172,8 @@ http.interceptors.response.use(
     // Convert snake_case keys to camelCase in response data
     if (response.data && typeof response.data === 'object') {
       response.data = camelcaseKeys(response.data, { deep: true })
+      // Normalize enum values to lowercase for consistency
+      response.data = normalizeEnumValues(response.data)
     }
     return response
   },

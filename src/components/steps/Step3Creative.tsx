@@ -2,10 +2,11 @@ import { Button } from '../ui/button'
 import React from 'react'
 import {
   useWizardStep,
-  useWizardContract,
   useWizardLoadingState,
   useWizardActions,
-  useCanSubmitCreative
+  useCanSubmitCreative,
+  useWizardStore,
+  useWizardOpenSections
 } from '../../stores/wizardStore'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { TagSelector } from '../ui/TagSelector'
@@ -14,6 +15,7 @@ import { VkOrdCreativeForm } from '../../types'
 import { useStep3Logic } from '../../features/wizard/hooks/useStep3Logic'
 import { UrlTagList } from '../../features/wizard/components/UrlTagList'
 import { KktyHintsPanel } from '../../features/wizard/components/KktyHintsPanel'
+import { TemplateIndicator } from '../../features/wizard/components/TemplateIndicator'
 
 const FORMAT_OPTIONS = [
   { value: VkOrdCreativeForm.Banner.toString(), label: 'Баннер' },
@@ -34,10 +36,11 @@ const FORMAT_OPTIONS = [
 
 export const Step3Creative: React.FC = () => {
   const currentStep = useWizardStep()
-  const contract = useWizardContract()
   const loadingState = useWizardLoadingState()
   const canSubmitCreative = useCanSubmitCreative()
-  const { setStep } = useWizardActions()
+  const { isTemplateLoaded } = useWizardStore()
+  const openSections = useWizardOpenSections()
+  const { setStep, toggleSection } = useWizardActions()
 
   const {
     creative,
@@ -52,36 +55,25 @@ export const Step3Creative: React.FC = () => {
     addFromDraft,
     removeUrlAt,
     handleUrlPaste,
-    handleUrlKeyDown,
-    parseList
+    handleUrlKeyDown
   } = useStep3Logic()
 
   return (
-    <details open={currentStep === 3}>
-      <summary>3) Креатив</summary>
+    <details
+      open={openSections[3]}
+      onToggle={(e) => {
+        const isOpen = (e.target as HTMLDetailsElement).open
+        if (isOpen !== openSections[3]) {
+          toggleSection(3)
+        }
+      }}
+    >
+      <summary>
+        3) Креатив
+        {isTemplateLoaded && <TemplateIndicator />}
+      </summary>
       <div className="vk-card" style={{ marginTop: 10 }}>
         <div style={{ display: 'grid', gap: 8 }}>
-          <label>
-            Идентификатор креатива
-            <input
-              className="vk-input"
-              value={creative.externalId}
-              onChange={e => updateCreative({
-                externalId: e.target.value
-              })}
-            />
-          </label>
-          <label>
-            Идентификатор договора
-            <input
-              className="vk-input"
-              value={creative.contractExternalIds.join(',')}
-              onChange={e => updateCreative({
-                contractExternalIds: parseList(e.target.value)
-              })}
-              placeholder={contract.externalId}
-            />
-          </label>
           <label>
             Формат
             <Select

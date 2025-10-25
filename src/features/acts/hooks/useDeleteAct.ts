@@ -2,7 +2,7 @@
  * Hook for deleting an act (invoice)
  *
  * Backend: InvoicesController
- * Endpoint: DELETE /api/invoices/{externalId}
+ * Endpoint: DELETE /api/invoices/v1/{externalId}
  *
  * @returns Mutation for deleting acts
  */

@@ -6,11 +6,14 @@ import {
   useWizardPartyHistory,
   useWizardLoadingState,
   useWizardActions,
-  useCanNextFromStep1
+  useCanNextFromStep1,
+  useWizardStore,
+  useWizardOpenSections
 } from '../../stores/wizardStore'
 import { PartyModal } from '../ui/PartyModal'
 import { PartyInputSection } from '../../features/wizard/components/PartyInputSection'
 import { useStep1Logic } from '../../features/wizard/hooks/useStep1Logic'
+import { TemplateIndicator } from '../../features/wizard/components/TemplateIndicator'
 
 export const Step1Parties: React.FC = () => {
   const currentStep = useWizardStep()
@@ -18,7 +21,9 @@ export const Step1Parties: React.FC = () => {
   const partyHistory = useWizardPartyHistory()
   const loadingState = useWizardLoadingState()
   const canNextFromStep1 = useCanNextFromStep1()
-  const { setConsent, setStep } = useWizardActions()
+  const { isTemplateLoaded } = useWizardStore()
+  const openSections = useWizardOpenSections()
+  const { setConsent, setStep, toggleSection } = useWizardActions()
 
   const {
     advertiser,
@@ -41,20 +46,31 @@ export const Step1Parties: React.FC = () => {
 
   return (
     <>
-      <details open={currentStep === 1}>
-        <summary>1) Контрагенты</summary>
+      <details 
+        open={openSections[1]}
+        onToggle={(e) => {
+          const isOpen = (e.target as HTMLDetailsElement).open
+          if (isOpen !== openSections[1]) {
+            toggleSection(1)
+          }
+        }}
+      >
+        <summary>
+          1) Контрагенты
+          {isTemplateLoaded && <TemplateIndicator />}
+        </summary>
         <div className="vk-card" style={{ marginTop: 10 }}>
 
           <PartyInputSection
             label="ИНН рекламодателя"
             inn={advertiser.inn}
-            role={advertiser.role[0]}
+            role={advertiser.role}
             info={advertiser.info}
             isLoading={loadingState['lookup-advertiser']}
             isInCounterparties={isAdvertiserInCounterparties}
             onInnChange={(value) => handleInnChange('advertiser', value)}
             onInnBlur={() => recordInnToHistory(advertiser.inn)}
-            onRoleChange={(role) => setAdvertiserRole([role])}
+            onRoleChange={(roles) => setAdvertiserRole(roles)}
             onSelectClick={() => setModalField('advertiser')}
             onLookupClick={() => lookupInn('advertiser')}
             onCreateClick={() => handleCreateCounterparty('advertiser')}
@@ -66,13 +82,13 @@ export const Step1Parties: React.FC = () => {
           <PartyInputSection
             label="ИНН исполнителя"
             inn={contractor.inn}
-            role={contractor.role[0]}
+            role={contractor.role}
             info={contractor.info}
             isLoading={loadingState['lookup-contractor']}
             isInCounterparties={isContractorInCounterparties}
             onInnChange={(value) => handleInnChange('contractor', value)}
             onInnBlur={() => recordInnToHistory(contractor.inn)}
-            onRoleChange={(role) => setContractorRole([role])}
+            onRoleChange={(roles) => setContractorRole(roles)}
             onSelectClick={() => setModalField('contractor')}
             onLookupClick={() => lookupInn('contractor')}
             onCreateClick={() => handleCreateCounterparty('publisher')}
@@ -116,7 +132,12 @@ export const Step1Parties: React.FC = () => {
       title="Выбор рекламодателя"
       counterparties={counterpartiesList}
       loading={isLoadingCounterparties}
-      onSelect={(inn) => { applyCounterpartyFromList('advertiser', inn); setModalField(null) }}
+      onSelect={(party) => { 
+        if (party) {
+          applyCounterpartyFromList('advertiser', party)
+        }
+        setModalField(null) 
+      }}
       onClose={() => setModalField(null)}
         onEnterManually={(value) => {
           const inn = (value || '').replace(/\D/g, '')
@@ -131,7 +152,12 @@ export const Step1Parties: React.FC = () => {
       title="Выбор исполнителя"
       counterparties={counterpartiesList}
       loading={isLoadingCounterparties}
-      onSelect={(inn) => { applyCounterpartyFromList('contractor', inn); setModalField(null) }}
+      onSelect={(party) => { 
+        if (party) {
+          applyCounterpartyFromList('contractor', party)
+        }
+        setModalField(null) 
+      }}
       onClose={() => setModalField(null)}
         onEnterManually={(value) => {
           const inn = (value || '').replace(/\D/g, '')

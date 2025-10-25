@@ -1,29 +1,27 @@
 import React, { useState, useEffect } from 'react'
 import { useCredentials } from '../../features/credentials/hooks'
-import { useEnvironmentStore, useTokenStore } from '../../auth/tokenStore'
-import { useUserProfile } from '../../auth/hooks'
+import { useEnvironmentStore } from '../../auth/tokenStore'
 import { saveToCookie } from '../../utils'
 import { toast } from 'sonner'
 
 interface CredentialSelectorProps {
-  vkApiKey: string | null
-  useSandbox: boolean
-  onVkApiKeyChange: (key: string | null) => void
-  onUseSandboxChange: (useSandbox: boolean) => void
+  vkApiKey?: string | null
+  useSandbox?: boolean
+  onVkApiKeyChange?: (key: string | null) => void
+  onUseSandboxChange?: (useSandbox: boolean) => void
 }
 
 export const CredentialSelector: React.FC<CredentialSelectorProps> = ({
-  vkApiKey,
-  useSandbox,
+  vkApiKey = null,
+  useSandbox: useSandboxProp,
   onVkApiKeyChange,
   onUseSandboxChange,
 }) => {  
-  const { data: userProfile } = useUserProfile()
   const { data: credentials, isLoading, error } = useCredentials()
   const { environment, setEnvironment } = useEnvironmentStore()
-  const { accessToken } = useTokenStore()
 
-
+  // Use prop if provided, otherwise derive from environment store
+  const useSandbox = useSandboxProp !== undefined ? useSandboxProp : environment === 'sandbox'
 
   // Filter credentials by current environment and ensure they have valid publicId
   // Defensive: ensure credentials is an array before using array methods
@@ -67,17 +65,23 @@ export const CredentialSelector: React.FC<CredentialSelectorProps> = ({
       saveToCookie('vkord-use-sandbox', useSandbox.toString())
 
       // Update the wizard state with credential ID instead of token
-      onVkApiKeyChange(credentialId)
+      if (onVkApiKeyChange) {
+        onVkApiKeyChange(credentialId)
+      }
       toast.success('Учетные данные успешно выбраны')
     } else {
-      onVkApiKeyChange(null)
+      if (onVkApiKeyChange) {
+        onVkApiKeyChange(null)
+      }
       saveToCookie('vkord-credential-id', '')
     }
   }
 
 
   const handleEnvironmentToggle = (sandbox: boolean) => {
-    onUseSandboxChange(sandbox)
+    if (onUseSandboxChange) {
+      onUseSandboxChange(sandbox)
+    }
     setEnvironment(sandbox ? 'sandbox' : 'prod')
     setSelectedCredentialId('') // Reset selection when environment changes
   }

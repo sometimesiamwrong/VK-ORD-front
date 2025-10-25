@@ -22,10 +22,16 @@
 
 import http from '../api/http'
 import type {
+  ContractDto,
+  CounterpartyDto,
+  CounterpartyItem,
+  CreativeDto,
   GetContractDetailsResponse,
   GetCounterpartyContractsResponse,
   GetCounterpartiesByInnResponse,
-  CreateContractRequest
+  CreateContractRequest,
+  VkOrdCreativeForm,
+  VkOrdPayType
 } from '../types'
 
 export interface GetContractsListParams {
@@ -42,6 +48,191 @@ export interface GetContractsListResponse {
 export interface UpdateContractParams {
   externalId: string
   data: Partial<CreateContractRequest>
+}
+
+type ContractDetailsRawContract = Partial<ContractDto> & Record<string, any>
+type ContractDetailsRawCreative = Partial<CreativeDto> & Record<string, any>
+
+type ContractDetailsRawResponse = {
+  contract?: ContractDetailsRawContract
+  parties?: CounterpartyDto[]
+  creatives?: ContractDetailsRawCreative[]
+  additionalContracts?: ContractDetailsRawContract[]
+  totalCreatives?: number
+  returnedCreatives?: number
+  syncStatus?: string
+}
+
+const mapCounterpartyDtoToItem = (dto: CounterpartyDto): CounterpartyItem => {
+  const details = dto.data?.juridicalDetails
+
+  return {
+    id: dto.id,
+    externalId: dto.externalId,
+    name: dto.data?.name ?? '',
+    roles: dto.data?.roles ?? [],
+    juridicalDetails: details
+      ? {
+          type: details.type,
+          modelScheme: details.modelScheme,
+          inn: details.inn,
+          kpp: details.kpp,
+          phone: details.phone,
+          foreignEpaymentMethod: details.foreignEpaymentMethod,
+          foreignRegistrationNumber: details.foreignRegistrationNumber,
+          foreignInn: details.foreignInn,
+          foreignOksmCountryCode: details.foreignOksmCountryCode
+        }
+      : undefined,
+    syncStatus: dto.syncStatus,
+    updatedAt: dto.updatedAt,
+    createdAt: dto.createdAt
+  }
+}
+
+const normalizeContract = (
+  contract: ContractDetailsRawContract | undefined,
+  fallbackExternalId?: string
+): ContractDto => {
+  const raw = contract ?? {}
+  const rawData = (raw.data ?? {}) as Record<string, any>
+
+  const mergedData: ContractDto['data'] = {
+    ...rawData,
+    createDate: rawData.createDate ?? raw.createDate,
+    type: rawData.type ?? raw.type,
+    clientExternalId: rawData.clientExternalId ?? raw.clientExternalId,
+    contractorExternalId: rawData.contractorExternalId ?? raw.contractorExternalId,
+    subjectType: rawData.subjectType ?? raw.subjectType,
+    date: rawData.date ?? raw.date,
+    dateEnd: rawData.dateEnd ?? raw.dateEnd,
+    serial: rawData.serial ?? raw.serial,
+    flags: rawData.flags ?? raw.flags,
+    amount: rawData.amount ?? raw.amount,
+    hasAdditionalContracts: rawData.hasAdditionalContracts ?? raw.hasAdditionalContracts,
+    lockedFields: rawData.lockedFields ?? raw.lockedFields,
+    parentContractExternalId: rawData.parentContractExternalId ?? raw.parentContractExternalId
+  }
+
+  const externalId = raw.externalId ?? (rawData.externalId as string | undefined) ?? fallbackExternalId
+
+  return {
+    id: typeof raw.id === 'number' ? raw.id : 0,
+    externalId,
+    type: typeof raw.type === 'number' ? raw.type : undefined,
+    clientExternalId: typeof raw.clientExternalId === 'string' ? raw.clientExternalId : mergedData?.clientExternalId,
+    contractorExternalId: typeof raw.contractorExternalId === 'string' ? raw.contractorExternalId : mergedData?.contractorExternalId,
+    parentContractExternalId:
+      typeof raw.parentContractExternalId === 'string'
+        ? raw.parentContractExternalId
+        : mergedData?.parentContractExternalId,
+    amount: raw.amount ?? mergedData?.amount,
+    data: mergedData
+  }
+}
+
+const normalizeCreative = (
+  creative: ContractDetailsRawCreative,
+  fallbackContractExternalId: string
+): CreativeDto => {
+  const rawData = (creative.data ?? {}) as Record<string, any>
+
+  const mergedData: CreativeDto['data'] = {
+    ...rawData,
+    erid: rawData.erid ?? creative.erid,
+    form: rawData.form ?? creative.form,
+    name: rawData.name ?? creative.name,
+    brand: rawData.brand ?? creative.brand,
+    category: rawData.category ?? creative.category,
+    description: rawData.description ?? creative.description,
+    payType: rawData.payType ?? creative.payType,
+    targeting: rawData.targeting ?? creative.targeting,
+    targetUrls: rawData.targetUrls ?? creative.targetUrls,
+    texts: rawData.texts ?? creative.texts,
+    mediaExternalIds: rawData.mediaExternalIds ?? creative.mediaExternalIds,
+    kktus: rawData.kktus ?? creative.kktus,
+    flags: rawData.flags ?? creative.flags,
+    personExternalId: rawData.personExternalId ?? creative.personExternalId,
+    contractExternalIds: rawData.contractExternalIds ?? creative.contractExternalIds
+  }
+
+  if (!mergedData?.contractExternalIds || mergedData.contractExternalIds.length === 0) {
+    mergedData.contractExternalIds = fallbackContractExternalId ? [fallbackContractExternalId] : undefined
+  }
+
+  const asVkOrdPayType = (value: unknown): VkOrdPayType | undefined => {
+    return typeof value === 'number' ? (value as VkOrdPayType) : undefined
+  }
+
+  const asVkOrdCreativeForm = (value: unknown): VkOrdCreativeForm | undefined => {
+    return typeof value === 'number' ? (value as VkOrdCreativeForm) : undefined
+  }
+
+  const creativeContracts = Array.isArray(creative.creativeContracts)
+    ? creative.creativeContracts.map(contractLink => ({
+        ...contractLink,
+        contract: normalizeContract(
+          contractLink.contract,
+          contractLink.contract?.externalId ?? mergedData.contractExternalIds?.[0] ?? fallbackContractExternalId
+        )
+      }))
+    : []
+
+  return {
+    id: typeof creative.id === 'number' ? creative.id : undefined,
+    externalId: typeof creative.externalId === 'string' ? creative.externalId : undefined,
+    erid: typeof creative.erid === 'string' ? creative.erid : (mergedData?.erid as string | undefined),
+    personExternalId:
+      typeof creative.personExternalId === 'string'
+        ? creative.personExternalId
+        : (mergedData?.personExternalId as string | undefined),
+    name: typeof creative.name === 'string' ? creative.name : (mergedData?.name as string | undefined),
+    brand: typeof creative.brand === 'string' ? creative.brand : (mergedData?.brand as string | undefined),
+    category: typeof creative.category === 'string' ? creative.category : (mergedData?.category as string | undefined),
+    description:
+      typeof creative.description === 'string'
+        ? creative.description
+        : (mergedData?.description as string | undefined),
+    payType: asVkOrdPayType(creative.payType) ?? asVkOrdPayType(mergedData?.payType),
+    form: asVkOrdCreativeForm(creative.form) ?? asVkOrdCreativeForm(mergedData?.form),
+    targeting:
+      typeof creative.targeting === 'string'
+        ? creative.targeting
+        : (mergedData?.targeting as string | undefined),
+    status: typeof creative.status === 'string' ? creative.status : creative.syncStatus,
+    lastUpdated: creative.lastUpdated,
+    syncStatus: creative.syncStatus,
+    creativeMedia: Array.isArray(creative.creativeMedia) ? creative.creativeMedia : [],
+    creativeContracts,
+    statistics: Array.isArray(creative.statistics) ? creative.statistics : [],
+    createdAt: creative.createdAt,
+    updatedAt: creative.updatedAt,
+    data: mergedData
+  }
+}
+
+const normalizeContractDetailsResponse = (
+  payload: ContractDetailsRawResponse,
+  requestedExternalId: string
+): GetContractDetailsResponse => {
+  const normalizedContract = normalizeContract(payload.contract, requestedExternalId)
+  const parties = (payload.parties ?? []).map(mapCounterpartyDtoToItem)
+  const creatives = (payload.creatives ?? []).map(raw =>
+    normalizeCreative(raw, normalizedContract.externalId ?? requestedExternalId)
+  )
+  const additionalContracts = (payload.additionalContracts ?? []).map(raw =>
+    normalizeContract(raw, raw?.externalId ?? requestedExternalId)
+  )
+
+  return {
+    contract: normalizedContract,
+    parties,
+    creatives,
+    additionalContracts,
+    totalCreatives: payload.totalCreatives ?? creatives.length,
+    returnedCreatives: payload.returnedCreatives ?? creatives.length,
+    syncStatus: payload.syncStatus
+  }
 }
 
 /**
@@ -65,8 +256,8 @@ export class ContractsService {
    * ```
    */
   static async getDetails(externalId: string): Promise<GetContractDetailsResponse> {
-    const response = await http.get<GetContractDetailsResponse>(`/api/contracts/v1/${externalId}/details`)
-    return response.data
+    const response = await http.get<ContractDetailsRawResponse>(`/api/contracts/v1/${externalId}/details`)
+    return normalizeContractDetailsResponse(response.data, externalId)
   }
 
   /**
@@ -89,7 +280,7 @@ export class ContractsService {
     }
 
     const firstParty = firstPartyResponse.data.counterparties[0]
-    const firstPartyExternalId = firstParty.externalId || firstParty.external_id
+    const firstPartyExternalId = firstParty.externalId
 
     // Get contracts list for first party
     const firstPartyContractsResponse = await http.get<GetCounterpartyContractsResponse>(`/api/counterparties/v1/${firstPartyExternalId}/contracts`)
@@ -102,7 +293,7 @@ export class ContractsService {
     }
 
     const secondParty = secondPartyResponse.data.counterparties[0]
-    const secondPartyExternalId = secondParty.externalId || secondParty.external_id
+    const secondPartyExternalId = secondParty.externalId
 
     // Filter contracts where second party is involved
     const contractsBetween = firstPartyContracts.filter((contract: any) => {

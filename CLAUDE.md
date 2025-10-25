@@ -62,7 +62,7 @@ src/
 │   ├── creatives/          # Creative management
 │   ├── media/              # Media file management
 │   ├── parties/            # Counterparty management
-│   ├── acts/               # Act creation and management
+│   ├── invoices/               # Act creation and management
 │   └── wizard/             # Wizard flow for contract creation
 ├── hooks/                  # Custom React hooks
 ├── services/               # API service classes (contracts, counterparties, etc.)
@@ -296,3 +296,36 @@ This project includes MCP (Model Context Protocol) server for AI integration:
 - **Component Registry MCP**: For browsing and adding shadcn/ui components
 
 Configuration is in `.cursor/mcp.json`.
+
+## Agent System
+
+This project uses a system of **specialized agents** to enhance development quality and consistency. Agents are automatically invoked when tasks fall within their domain of expertise.
+
+### Available Agents
+
+Located in `.claude/agents/`:
+
+- **ui-ux-reviewer** (sonnet) - Reviews UI/UX changes before implementation, ensures Material UI and shadcn/ui best practices, checks accessibility
+- **backend-inspector** (haiku) - Investigates backend API structure and implementation details, analyzes ASP.NET Core controllers and models
+- **feature-architect** (sonnet) - Designs new features in feature-based architecture, plans component structure and integration points
+- **api-integrator** (haiku) - Creates API services and React Query hooks, manages cache invalidation and error handling
+- **state-manager** (haiku) - Manages Zustand stores and client state, optimizes re-renders, handles persistence strategies
+- **testing-specialist** (haiku) - Writes tests and Storybook stories, creates unit/integration/E2E tests, ensures accessibility compliance
+
+### When to Use Agents
+
+**Proactive Usage**: The base agent should automatically launch specialized agents when planning changes in their domain. For example:
+- Planning UI changes → launch ui-ux-reviewer
+- Investigating API issues → launch backend-inspector
+- Adding new feature → launch feature-architect
+- Creating API hooks → launch api-integrator
+- Managing state → launch state-manager
+- Writing tests → launch testing-specialist
+
+### Agent Documentation
+
+See `agents.md` for comprehensive documentation (in Russian), including:
+- Detailed agent responsibilities
+- Usage scenarios and examples
+- Interaction patterns between agents
+- Extension guidelines

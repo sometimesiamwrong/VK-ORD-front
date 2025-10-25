@@ -64,14 +64,14 @@ function a11yProps(index: number) {
 
 const getStatusChip = (status: ActStatus) => {
   const statusConfig = {
-    [ActStatus.Draft]: { label: 'Черновик', color: 'default' as const, icon: <ScheduleIcon /> },
-    [ActStatus.Sent]: { label: 'Отправлен', color: 'primary' as const, icon: <SendIcon /> },
-    [ActStatus.Error]: { label: 'Ошибка', color: 'error' as const, icon: <ErrorIcon /> },
-    [ActStatus.Approved]: { label: 'Утвержден', color: 'success' as const, icon: <CheckCircleIcon /> },
-    [ActStatus.Rejected]: { label: 'Отклонен', color: 'warning' as const, icon: <ErrorIcon /> }
+    'draft': { label: 'Черновик', color: 'default' as const, icon: <ScheduleIcon /> },
+    'sent': { label: 'Отправлен', color: 'primary' as const, icon: <SendIcon /> },
+    'error': { label: 'Ошибка', color: 'error' as const, icon: <ErrorIcon /> },
+    'approved': { label: 'Утвержден', color: 'success' as const, icon: <CheckCircleIcon /> },
+    'rejected': { label: 'Отклонен', color: 'warning' as const, icon: <ErrorIcon /> }
   }
 
-  const config = statusConfig[status]
+  const config = statusConfig[status] || statusConfig['draft']
   return (
     <Chip
       icon={config.icon}

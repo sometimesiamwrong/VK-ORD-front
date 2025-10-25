@@ -9,25 +9,6 @@ export type T = {
     code?: string
 }
 
-// Cache Response Base Class
-export interface CacheResponse {
-    source: DataSource
-    retrievedAt: string
-    cacheExpiresAt?: string
-    cacheCreatedAt?: string
-    cacheVersion?: number
-    dataHash?: string
-    cacheStatistics?: CacheStatistics
-}
-
-export interface CacheStatistics {
-    executionTimeMs: number
-    cacheHit: boolean
-    dataSizeBytes: number
-    recordCount: number
-    metrics?: Record<string, any>
-}
-
 export const DataSource = {
     Cache: 0,
     Api: 1,
@@ -211,22 +192,22 @@ export interface ContractResponse {
 }
 
 export interface VkOrdContract {
-    create_date?: string | null
+    createDate?: string | null
     type?: VkOrdContractType
-    client_external_id?: string | null
-    contractor_external_id?: string | null
-    action_type?: VkOrdActionType
-    subject_type?: VkOrdSubjectType
+    clientExternalId?: string | null
+    contractorExternalId?: string | null
+    actionType?: VkOrdActionType
+    subjectType?: VkOrdSubjectType
     date?: string | null
-    date_end?: string | null
+    dateEnd?: string | null
     serial?: string | null
     flags?: VkOrdContractFlag[] | null
-    parent_contract_external_id?: string | null
+    parentContractExternalId?: string | null
     amount?: string | null
-    has_additional_contracts?: boolean
+    hasAdditionalContracts?: boolean
     cid?: string | null
     externalId?: string | null
-    locked_fields?: any[] | null
+    lockedFields?: any[] | null
 }
 
 // Creative types
@@ -255,19 +236,19 @@ export interface VkOrdCreativeV3RequestResponse {
 
 export interface VkOrdCreativeV3Response {
     erid?: string | null
-    person_external_id?: string | null
-    contract_external_ids?: string[] | null
+    personExternalId?: string | null
+    contractExternalIds?: string[] | null
     kktus?: string[] | null
     name?: string | null
     brand?: string | null
     category?: string | null
     description?: string | null
-    pay_type?: VkOrdPayType
+    payType?: VkOrdPayType
     form?: VkOrdCreativeForm
     targeting?: string | null
-    target_urls?: string[] | null
+    targetUrls?: string[] | null
     texts?: string[] | null
-    media_external_ids?: string[] | null
+    mediaExternalIds?: string[] | null
     flags?: VkOrdCreativeFlag[] | null
 }
 
@@ -316,37 +297,36 @@ export interface GetCounterpartyResponse {
 
 export interface VkOrdPersonResponse {
     name?: string | null
-    rs_url?: string | null
+    rsUrl?: string | null
     roles?: VkOrdPersonRoles[] | null
-    juridical_details?: VkOrdPersonJuridicalDetails | null
+    juridicalDetails?: VkOrdPersonJuridicalDetails | null
 }
 
 export interface VkOrdPersonJuridicalDetails {
     type?: VkOrdPersonType
-    model_scheme?: string | null
+    modelScheme?: string | null
     inn?: string | null
     kpp?: string | null
     phone?: string | null
-    foreign_epayment_method?: string | null
-    foreign_registration_number?: string | null
-    foreign_inn?: string | null
-    foreign_oksm_country_code?: string | null
+    foreignEpaymentMethod?: string | null
+    foreignRegistrationNumber?: string | null
+    foreignInn?: string | null
+    foreignOksmCountryCode?: string | null
 }
 
 // Media types
 export interface VkOrdMediaInfoResponse {
     filename?: string | null
     sha256?: string | null
-    create_date?: string | null
+    createDate?: string | null
     size?: number
-    content_type?: string | null
+    contentType?: string | null
     description?: string | null
 }
 
 export interface VkOrdMediaInfoListResponseDto {
     media?: VkOrdMediaInfoResponse[] | null
     totalCount?: number
-    total_items_count?: number
     limit?: number
 }
 
@@ -424,13 +404,11 @@ export interface ActStatisticsItem {
     dateEndPlanned: string
     dateStartActual: string
     dateEndActual: string
-    cachedAt: string
-    expiresAt: string
     lastUpdated: string
     syncStatus: string
 }
 
-export interface GetActStatisticsResponse extends CacheResponse {
+export interface GetActStatisticsResponse {
     statistics: ActStatisticsItem[]
     totalCount: number
     returnedCount: number
@@ -438,24 +416,19 @@ export interface GetActStatisticsResponse extends CacheResponse {
     totalShows: number
 }
 
-// Contract types (extended)
+// Contract DTO - supports both camelCase (after conversion) and snake_case (raw API)
+// API returns snake_case, http.ts interceptor converts to camelCase automatically
 export interface ContractDto {
     id: number
     externalId?: string
-    external_id?: string
     type?: VkOrdContractType
     clientExternalId?: string
     contractorExternalId?: string
     parentContractExternalId?: string
     amount?: number | string
-    cachedAt?: string
-    expiresAt?: string
-    expires_at?: string
     lastUpdated?: string
     syncStatus?: string
-    sync_status?: string
     data?: {
-        // camelCase (используется в ответах API)
         createDate?: string
         type?: string
         clientExternalId?: string
@@ -469,19 +442,12 @@ export interface ContractDto {
         hasAdditionalContracts?: boolean
         lockedFields?: any[]
         parentContractExternalId?: string
-        // snake_case (legacy/fallback)
-        create_date?: string
-        client_external_id?: string
-        contractor_external_id?: string
-        subject_type?: string
-        date_end?: string
-        has_additional_contracts?: boolean
-        locked_fields?: any[]
-        parent_contract_external_id?: string
     }
 }
 
-export interface GetContractDetailsResponse extends CacheResponse {
+// API Response: Contract details with nested parties, creatives, and additional contracts
+// Note: API always returns snake_case, but http interceptor auto-converts to camelCase
+export interface GetContractDetailsResponse {
     contract: ContractDto
     parties: CounterpartyItem[]
     creatives: CreativeDto[]
@@ -491,93 +457,94 @@ export interface GetContractDetailsResponse extends CacheResponse {
     syncStatus?: string
 }
 
+// Creative DTO - supports both flattened and wrapped responses the API may return
+// API returns snake_case, http.ts interceptor converts to camelCase automatically
 export interface CreativeDto {
-    id: number
-    externalId: string
-    erid: string
-    personExternalId: string
-    name: string
-    brand: string
-    category: string
-    description: string
-    payType: VkOrdPayType
-    form: VkOrdCreativeForm
-    targeting: string
-    status: string
-    cachedAt: string
-    expiresAt: string
-    lastUpdated: string
-    syncStatus: string
+    // Support both flattened and wrapped responses the API may return
+    id?: number
+    externalId?: string
+    erid?: string
+    personExternalId?: string
+    name?: string
+    brand?: string
+    category?: string
+    description?: string
+    payType?: VkOrdPayType
+    form?: VkOrdCreativeForm
+    targeting?: string
+    status?: string
+    lastUpdated?: string
+    syncStatus?: string
+
+    // When the API returns a wrapper with `data` and metadata
+    data?: {
+        erid?: string
+        form?: VkOrdCreativeForm | number
+        name?: string
+        brand?: string
+        category?: string
+        description?: string
+        payType?: string | number
+        targeting?: string
+        targetUrls?: string[]
+        texts?: string[]
+        mediaExternalIds?: string[]
+        kktus?: string[]
+        flags?: string[]
+        personExternalId?: string
+        contractExternalIds?: string[]
+    }
+
+    // Optional metadata the details endpoint may include
+    creativeMedia?: any[]
+    creativeContracts?: any[]
+    statistics?: any[]
+    jsonData?: string
+    dataHash?: string
+    version?: number
+    createdAt?: string
+    updatedAt?: string
 }
 
 
 // Counterparty types (extended)
 export interface CounterpartyDto {
     id: number
-    logical_account_id?: number
-    logicalAccountId?: number
-    external_id?: string
     externalId?: string
-    updated_at?: string
     updatedAt?: string
-    created_at?: string
     createdAt?: string
-    version: number
-    json_data?: string
-    jsonData?: string
-    data_hash?: string
-    dataHash?: string
-    is_deleted?: boolean
-    isDeleted?: boolean
-    expires_at?: string
-    expiresAt?: string
-    sync_status?: string
     syncStatus?: string
-    contract_parties?: any[]
     contractParties?: any[]
     data: {
         name: string
         roles: string[]
-        juridical_details?: {
-            type: string
-            model_scheme?: string
-            modelScheme?: string
-            inn: string
-            kpp?: string
-            phone?: string
-            foreign_epayment_method?: string
-            foreign_registration_number?: string
-            foreign_inn?: string
-            foreign_oksm_country_code?: string
-        }
         juridicalDetails?: {
             type: string
-            model_scheme?: string
             modelScheme?: string
             inn: string
             kpp?: string
             phone?: string
-            foreign_epayment_method?: string
-            foreign_registration_number?: string
-            foreign_inn?: string
-            foreign_oksm_country_code?: string
+            foreignEpaymentMethod?: string
+            foreignRegistrationNumber?: string
+            foreignInn?: string
+            foreignOksmCountryCode?: string
         }
     }
 }
 
-export interface GetCounterpartiesByInnResponse extends CacheResponse {
+export interface GetCounterpartiesByInnResponse {
     counterparties: CounterpartyDto[]
     totalCount: number
     returnedCount: number
 }
 
-export interface GetCounterpartyContractsResponse extends CacheResponse {
+export interface GetCounterpartyContractsResponse {
     contracts: ContractDto[]
     totalCount: number
     returnedCount: number
 }
 
-export interface GetRelatedCounterpartiesResponse extends CacheResponse {
+export interface GetRelatedCounterpartiesResponse {
     relatedCounterparties: CounterpartyDto[]
     totalCount: number
     returnedCount: number
@@ -588,10 +555,10 @@ export interface MediaUploadRequest {
     file: File
 }
 
-export interface GetMediaListResponse extends CacheResponse {
+export interface GetMediaListResponse {
     media: VkOrdMediaInfoResponse[]
     totalCount: number
-    total_items_count: number
+    totalItemsCount: number
     limit: number
 }
 
@@ -646,6 +613,7 @@ export * from './credentials'
 export * from './business'
 export * from './wizard'
 export * from './acts'
+export * from './flowTemplates'
 
 // Re-export from organized structure (Phase 4 refactoring)
 export * from './enums'

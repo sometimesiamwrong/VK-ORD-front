@@ -1,22 +1,22 @@
 // Act management types
 
 export const ActStatus = {
-  Draft: 'draft',
-  Sent: 'sent',
-  Error: 'error',
-  Approved: 'approved',
-  Rejected: 'rejected'
+  draft: 'draft',
+  sent: 'sent',
+  error: 'error',
+  approved: 'approved',
+  rejected: 'rejected'
 } as const
 
 export type ActStatus = typeof ActStatus[keyof typeof ActStatus]
 
 // Matches backend VkOrdApiClientRole enum
 export const ActRole = {
-  Advertiser: 'advertiser',
-  Agency: 'agency',
-  Ors: 'ors',
-  Publisher: 'publisher',
-  Mediator: 'mediator'
+  advertiser: 'advertiser',
+  agency: 'agency',
+  ors: 'ors',
+  publisher: 'publisher',
+  mediator: 'mediator'
 } as const
 
 export type ActRole = typeof ActRole[keyof typeof ActRole]
@@ -44,7 +44,21 @@ export interface ActSummary {
   updatedAt: string
 }
 
-// Invoice Amount structure (matches backend VkOrdInvoiceAmount and VkOrdInvoiceItemAmount)
+// VK ORD API v3 Amount Element structure (for services and commission)
+export interface InvoiceV3AmountElement {
+  excludingVat: string  // excluding_vat in API
+  vatRate: string       // vat_rate in API
+  vat: string          // vat in API
+  includingVat: string // including_vat in API
+}
+
+// VK ORD API v3 Amount structure (matches InvoiceV3Amount from API)
+export interface InvoiceV3Amount {
+  services: InvoiceV3AmountElement
+  commission?: InvoiceV3AmountElement | null
+}
+
+// Invoice Amount structure (for internal form usage)
 export interface InvoiceAmount {
   excludingVat: number  // without VAT
   vatRate: number       // VAT percentage
@@ -54,14 +68,14 @@ export interface InvoiceAmount {
 
 // Creative reference in distribution item (matches VkOrdInvoiceItemCreative)
 export interface InvoiceItemCreative {
-  erid: string
-  externalId?: string
+  erid?: string
+  creativeExternalId?: string
 }
 
 // Distribution item (matches backend VkOrdInvoiceV3Item)
 export interface ActDistribution {
   contractExternalId: string  // Renamed from contractId to match backend
-  amount: InvoiceAmount       // Changed to structured amount
+  amount: InvoiceV3AmountElement       // Flat amount structure for items
   creatives?: InvoiceItemCreative[]  // Changed from creativeIds array
 }
 
@@ -133,7 +147,7 @@ export interface CreateActRequest {
   serial?: string                        // Optional - act number
   dateStart: string                      // Required - period start (YYYY-MM-DD)
   dateEnd: string                        // Required - period end (YYYY-MM-DD)
-  amount: InvoiceAmount                  // Required - act amount structure
+  amount: InvoiceV3Amount                  // Required - act amount structure
   clientRole: ActRole                    // Required - client role in main contract
   contractorRole: ActRole                // Required - contractor role in main contract
   items?: ActDistribution[]              // Optional - distribution items (was "distributions")
@@ -141,7 +155,7 @@ export interface CreateActRequest {
 }
 
 export interface UpdateActRequest extends CreateActRequest {
-  // Same as Create - backend uses same endpoint PUT /api/invoices/{externalId}
+  // Same as Create - backend uses same endpoint PUT /api/invoices/v1/{externalId}
 }
 
 export interface ActsListRequest {
@@ -153,10 +167,74 @@ export interface ActsListRequest {
   limit?: number
 }
 
+// Backend entity structure (after camelCase conversion from snake_case by Axios interceptor)
+export interface ActBackendEntity {
+  id: number
+  externalId: string
+  contractExternalId: string
+  logicalAccountId: number
+  data: {
+    createDate?: string
+    contractExternalId: string
+    date: string
+    serial?: string
+    dateStart: string
+    dateEnd: string
+    amount: {
+      services: {
+        excludingVat: string
+        vatRate: string
+        vat: string
+        includingVat: string
+      }
+      commission?: {
+        excludingVat: string
+        vatRate: string
+        vat: string
+        includingVat: string
+      } | null
+    }
+    status: string  // "Draft", "Sent", "Error", "Approved", "Rejected"
+    clientRole: string
+    contractorRole: string
+    items?: Array<{
+      contractExternalId: string
+      amount: {
+        excludingVat: string
+        vatRate: string
+        vat: string
+        includingVat: string
+      }
+      creatives?: Array<{
+        creativeExternalId?: string
+        erid?: string
+      }>
+    }>
+  }
+  syncStatus: string
+  isDraft: boolean
+  createdAt: string
+  updatedAt: string
+  expiresAt: string
+  version: number
+  jsonData?: string
+  dataHash?: string
+  isDeleted: boolean
+}
+
+// Backend response structure (after camelCase conversion)
+export interface ActsListBackendResponse {
+  data: ActBackendEntity[]      // Backend uses "data" not "acts"
+  totalItemsCount: number       // Backend uses "total_items_count"
+  totalCount: number            // Backend uses "total_count"
+  limit: number
+}
+
+// Frontend-friendly response structure (mapped from backend)
 export interface ActsListResponse {
-  acts: ActSummary[]
-  total: number
-  page: number
+  data: ActSummary[]            // Mapped from ActBackendEntity[]
+  totalItemsCount: number
+  totalCount: number
   limit: number
 }
 
@@ -175,8 +253,9 @@ export interface ActValidationError {
   code?: string
 }
 
+// Backend returns empty object {} on success (200 OK), or object with errors on failure
 export interface ActSubmitResponse {
-  success: boolean
+  success?: boolean         // Optional - not returned by backend on success
   actId?: string
   errors?: ActValidationError[]
   message?: string

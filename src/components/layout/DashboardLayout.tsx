@@ -36,6 +36,7 @@ import {
 } from '@mui/icons-material'
 import { useLogout } from '../../auth/hooks'
 import { useEnvironmentStore } from '../../auth/tokenStore'
+import { CredentialSelectorSimple } from '../ui/CredentialSelectorSimple'
 
 const drawerWidth = 240
 
@@ -149,6 +150,11 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             VK ORD Личный Кабинет
           </Typography>
+
+          {/* Credential Selector in Top Bar */}
+          <Box sx={{ mr: 2, display: { xs: 'none', md: 'flex' } }}>
+            <CredentialSelectorSimple />
+          </Box>
 
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <IconButton

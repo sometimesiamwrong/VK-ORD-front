@@ -1,19 +1,38 @@
 import { Button } from '../ui/button'
-import React from 'react'
+import React, { useState } from 'react'
 import {
   useWizardStep,
   useWizardAdvertiser,
+  useWizardContractor,
+  useWizardContract,
+  useWizardCreative,
   useWizardErid,
-  useWizardActions
+  useWizardActions,
+  useWizardStore
 } from '../../stores/wizardStore'
 import { useFileOperations } from '../../hooks/useFileOperations'
+import { TemplateSaver } from '../../features/wizard/components/TemplateSaver'
+import { mapWizardStateToTemplate } from '../../features/wizard/utils/wizardToTemplate'
 
 export const Step4Result: React.FC = () => {
   const currentStep = useWizardStep()
   const advertiser = useWizardAdvertiser()
+  const contractor = useWizardContractor()
+  const contract = useWizardContract()
+  const creative = useWizardCreative()
   const erid = useWizardErid()
+  const { loadedTemplateId } = useWizardStore()
   const { clearAll } = useWizardActions()
   const { exportJson } = useFileOperations()
+
+  const [saverOpen, setSaverOpen] = useState(false)
+
+  const templateData = mapWizardStateToTemplate({
+    advertiser,
+    contractor,
+    contract,
+    creative
+  })
 
   if (currentStep !== 4 || !erid) {
     return null
@@ -49,11 +68,15 @@ export const Step4Result: React.FC = () => {
           <Button variant="secondary" onClick={exportJson}>
             Экспорт JSON
           </Button>
+          <Button variant="outline"  className="border-gray-700 hover:bg-gray-50" onClick={() => setSaverOpen(true)}>
+            💾 Сохранить шаблон
+          </Button>
           <Button
-            variant="destructive"
+            variant="outline"
+            className="border-red-700 bg-red-100 hover:bg-gray-50"
             onClick={clearAll}
           >
-            Начать сначала
+            🔄 Сбросить
           </Button>
         </div>
       </div>
@@ -68,6 +91,13 @@ export const Step4Result: React.FC = () => {
           </Button>
         </div>
       </div>
+
+      <TemplateSaver
+        open={saverOpen}
+        onClose={() => setSaverOpen(false)}
+        templateData={templateData}
+        existingTemplateId={loadedTemplateId}
+      />
     </>
   )
 }

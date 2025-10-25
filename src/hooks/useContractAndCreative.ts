@@ -45,7 +45,7 @@ export const useContractAndCreative = () => {
       return
     }
     if (!contractor.external_id) {
-      toast.error('Не найден external_id подрядчика. Пожалуйста, создайте контрагента заново.')
+      toast.error('Не найден external_id исполнителя. Пожалуйста, создайте контрагента заново.')
       return
     }
 
@@ -82,6 +82,11 @@ export const useContractAndCreative = () => {
       return
     }
 
+    // Extract media external IDs from uploaded files
+    const mediaExternalIds = creative.mediaFiles?.length 
+      ? creative.mediaFiles.map(file => file.externalId)
+      : undefined
+
     const payload: CreateCreativeRequest = {
       apiCredentialPublicId,
       externalId: creative.externalId,
@@ -92,7 +97,7 @@ export const useContractAndCreative = () => {
       targetAudience: creative.targetAudience || undefined,
       texts: creative.text ? [creative.text] : undefined,
       name: creative.name || undefined,
-      mediaExternalIds: creative.mediaExternalIds?.length ? creative.mediaExternalIds : undefined,
+      mediaExternalIds: mediaExternalIds,
       payType: 0 // Default to CPM
     }
 
@@ -100,12 +105,15 @@ export const useContractAndCreative = () => {
     try {
       const creativeData = await WizardService.createCreative(payload)
 
-      if (creativeData?.erid) {
+      // Extract ERID from response - can be in data.erid or erid
+      const erid = creativeData?.data?.erid || creativeData?.erid
+
+      if (erid) {
         toast.success('Креатив успешно создан')
-        setErid(creativeData.erid)
+        setErid(erid)
         setStep(4)
       } else {
-        toast.error('Ошибка создания креатива')
+        toast.error('Ошибка: ERID не получен от сервера')
       }
     } catch (e: any) {
       toast.error(`Ошибка создания креатива: ${e?.message || e}`)

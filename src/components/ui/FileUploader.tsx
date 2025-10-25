@@ -36,7 +36,7 @@ const FilePreview: React.FC<{ file: UploadedFile }> = ({ file }) => {
       <img
         src={file.preview}
         alt={file.fileName}
-        className="h-8 w-8 rounded-md border object-cover"
+        className="h-20 w-20 rounded-md border object-cover"
       />
     )
   }
@@ -51,14 +51,14 @@ const FilePreview: React.FC<{ file: UploadedFile }> = ({ file }) => {
   }
 
   return (
-    <span className="text-2xl">
+    <span className="text-4xl">
       {getFileIcon()}
     </span>
   )
 }
 
 export const FileUploader: React.FC<FileUploaderProps> = ({
-  mediaFiles,
+  mediaFiles = [],
   onChange,
   maxFiles = 10
 }) => {
@@ -81,7 +81,7 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
       const formData = new FormData()
       formData.append('file', file)
 
-      const response = await http.post<string>('/api/media/upload', formData, {
+      const response = await http.post<string>('/api/media/v1/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },

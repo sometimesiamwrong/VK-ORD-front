@@ -32,7 +32,7 @@ export const MediaPage: React.FC = () => {
       const formData = new FormData()
       formData.append('file', file)
 
-      const response = await http.post<MediaUploadResponse>('/api/media/upload', formData, {
+      const response = await http.post<MediaUploadResponse>('/api/media/v1/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -58,7 +58,7 @@ export const MediaPage: React.FC = () => {
   // View media mutation
   const viewMutation = useMutation({
     mutationFn: async (externalId: string) => {
-      const response = await http.get<MediaDetails>(`/api/media/${externalId}`)
+      const response = await http.get<MediaDetails>(`/api/media/v1/${externalId}`)
       return response.data
     },
     onSuccess: (data) => {
@@ -71,7 +71,7 @@ export const MediaPage: React.FC = () => {
   // Delete media mutation
   const deleteMutation = useMutation({
     mutationFn: async (externalId: string) => {
-      const response = await http.delete<null>(`/api/media/${externalId}`)
+      const response = await http.delete<null>(`/api/media/v1/${externalId}`)
       return response.data
     },
     onSuccess: () => {

@@ -4,6 +4,13 @@ export type WizardStep = 1 | 2 | 3 | 4
 
 export type PartyRole = ('advertiser' | 'agency' | 'ors' | 'publisher')[]
 
+export interface UploadedFile {
+  externalId: string
+  fileName: string
+  url: string
+  preview?: string
+}
+
 export interface PartyHistoryItem {
   inn: string
   external_id?: string | null

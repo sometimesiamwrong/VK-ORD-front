@@ -13,7 +13,16 @@
       "Read(//c/PROGECTS/My/AdLawyer/AdLawyerApi//**)",
       "Read(//c/PROGECTS/My/AdLawyer/AdLawyerApi/**)",
       "mcp__shadcn__list_components",
-      "Bash(xargs ls:*)"
+      "Bash(xargs ls:*)",
+      "mcp__chrome-devtools__new_page",
+      "mcp__chrome-devtools__list_pages",
+      "mcp__chrome-devtools__navigate_page",
+      "mcp__chrome-devtools__take_snapshot",
+      "mcp__chrome-devtools__click",
+      "mcp__chrome-devtools__take_screenshot",
+      "mcp__chrome-devtools__list_console_messages",
+      "Bash(pkill -f \"vite\")",
+      "Bash(npx tsc --noEmit --project tsconfig.json)"
     ],
     "deny": [],
     "ask": []

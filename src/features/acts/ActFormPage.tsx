@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useForm, Controller, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useQueries } from '@tanstack/react-query'
+import type { ActDetails, InvoiceAmount } from '@/types'
 import {
   Box,
   Typography,
@@ -41,11 +43,75 @@ import {
   useCreateAct,
   useSubmitAct,
   useDeleteAct,
+  useActDetails,
 } from './hooks'
+import { useContractDetailsQuery } from '@/hooks/useContracts'
 import { ActRole } from '@/types'
 import type { CreateActRequest, ContractDto } from '@/types'
+import ContractsService from '@/services/contracts'
 import { actFormSchema, getDefaultActFormValues, type ActFormData } from './schemas/actFormSchema'
 import { mapFormDataToBackend } from './utils/formToBackendMapper'
+
+// Helper function to map ActDetails to ActFormData
+const mapActDetailsToFormData = (actDetails: ActDetails): Partial<ActFormData> => {
+  return {
+    externalId: actDetails.externalId || '',
+    serial: actDetails.number || '',
+    contractExternalId: actDetails.contractId || '',
+    orderContractExternalId: null,
+    date: actDetails.issueDate || new Date().toISOString().split('T')[0],
+    dateStart: actDetails.periodStart || '',
+    dateEnd: actDetails.periodEnd || '',
+    amount: {
+      includingVat: actDetails.totalAmount || 0,
+      vatRate: actDetails.vatRate || 20,
+      vat: actDetails.vatAmount || 0,
+      excludingVat: actDetails.amountWithoutVat || 0,
+    },
+    clientRole: actDetails.advertiserRole || ActRole.advertiser,
+    contractorRole: actDetails.contractorRole || ActRole.publisher,
+    items: (actDetails.distributions || []).map(dist => ({
+      contractExternalId: dist.contractExternalId || '',
+      amount: {
+        includingVat: parseFloat(dist.amount?.includingVat || '0'),
+        vatRate: parseFloat(dist.amount?.vatRate || '20'),
+        vat: parseFloat(dist.amount?.vat || '0'),
+        excludingVat: parseFloat(dist.amount?.excludingVat || '0'),
+      },
+      creatives: dist.creatives || [],
+    })),
+    status: actDetails.status || 'draft',
+    autoCalculate: false,  // Disable auto-calc when loading existing data
+    statistics: actDetails.statistics || [],
+  }
+}
+
+// Helper function to safely get amount values from V3 or legacy format
+const getAmountValue = (amount: any, field: 'includingVat' | 'vatRate' | 'vat' | 'excludingVat'): number => {
+  // V3 format with services object
+  if (amount?.services) {
+    const services = amount.services as any
+    switch (field) {
+      case 'includingVat':
+        return Number(services.includingVat || services.including_vat || 0)
+      case 'vatRate':
+        return Number(services.vatRate || services.vat_rate || 20)
+      case 'vat':
+        return Number(services.vat || 0)
+      case 'excludingVat':
+        return Number(services.excludingVat || services.excluding_vat || 0)
+    }
+  }
+  
+  // Legacy format or form format with direct fields
+  if (amount) {
+    const value = amount[field] ?? amount[field.replace(/([A-Z])/g, '_$1').toLowerCase()] ?? 0
+    return Number(value)
+  }
+  
+  // Default values
+  return field === 'vatRate' ? 20 : 0
+}
 
 interface TabPanelProps {
   children?: React.ReactNode
@@ -84,15 +150,15 @@ export const ActFormPage: React.FC = () => {
   // Determine roles from contract
   const getInitialRoles = () => {
     if (!contractFromState || !clientFromState || !contractorFromState) {
-      return { clientRole: ActRole.Advertiser, contractorRole: ActRole.Publisher }
+      return { clientRole: ActRole.advertiser, contractorRole: ActRole.publisher }
     }
 
-    const contractClientId = contractFromState.data?.clientExternalId || contractFromState.data?.client_external_id
-    const isDirect = contractClientId === clientFromState.external_id
+    const contractClientId = contractFromState.data?.clientExternalId
+    const isDirect = contractClientId === clientFromState.externalId
 
     return {
-      clientRole: isDirect ? ActRole.Advertiser : ActRole.Publisher,
-      contractorRole: isDirect ? ActRole.Publisher : ActRole.Advertiser
+      clientRole: isDirect ? ActRole.advertiser : ActRole.publisher,
+      contractorRole: isDirect ? ActRole.publisher : ActRole.advertiser
     }
   }
 
@@ -101,21 +167,26 @@ export const ActFormPage: React.FC = () => {
   // React Hook Form setup
   const {
     control,
-    handleSubmit: handleFormSubmit,
     watch,
     setValue,
+    reset,
+    trigger,
+    getValues,
+    formState: { errors: formErrors },
   } = useForm<ActFormData>({
     resolver: zodResolver(actFormSchema) as any,
     defaultValues: {
       ...getDefaultActFormValues(),
-      contractExternalId: contractFromState?.externalId || contractFromState?.external_id || '',
+      contractExternalId: contractFromState?.externalId || '',
       clientRole: initialRoles.clientRole,
       contractorRole: initialRoles.contractorRole,
       amount: contractFromState?.amount ? {
-        includingVat: Number(contractFromState.amount),
-        vatRate: 20,
-        vat: Number(contractFromState.amount) * 0.2,
-        excludingVat: Number(contractFromState.amount) * 0.8,
+        services: {
+          includingVat: String(contractFromState.amount),
+          vatRate: '20',
+          vat: String(Number(contractFromState.amount) * 0.2),
+          excludingVat: String(Number(contractFromState.amount) * 0.8),
+        }
       } : getDefaultActFormValues().amount,
     },
     mode: 'onChange',
@@ -143,14 +214,27 @@ export const ActFormPage: React.FC = () => {
 
   // Watch form values
   const contractExternalId = watch('contractExternalId')
-  const amount = watch('amount')
+  const amount = watch('amount') ?? {
+    includingVat: 0,
+    vatRate: 20,
+    vat: 0,
+    excludingVat: 0,
+  }
   const autoCalculate = watch('autoCalculate')
   const items = watch('items') || []
 
   // API hooks
-  const effectivePartyId = clientFromState?.external_id || ''
+  const effectivePartyId = clientFromState?.externalId || ''
   const { data: contractsData } = useContractsByParty(effectivePartyId)
   const { data: creativesData } = useContractCreatives(contractExternalId)
+  const { data: actDetails, isLoading: isLoadingActDetails } = useActDetails(actId || '')
+
+  // Load contract details when editing (from actDetails.contractId)
+  const contractIdFromAct = actDetails?.contractId || ''
+  const { data: contractFromAct, isLoading: isLoadingContract } = useContractDetailsQuery(
+    contractIdFromAct,
+    isEditMode && !!contractIdFromAct
+  )
 
   // Mutations
   const createActMutation = useCreateAct()
@@ -160,20 +244,85 @@ export const ActFormPage: React.FC = () => {
   const contracts = contractsData?.contracts || []
   const creatives = creativesData?.creatives || []
 
-  // Add contract from state to contracts list if not already there
-  const allContracts = React.useMemo(() => {
-    if (contractFromState && !contracts.find(c =>
-      (c.externalId || c.external_id) === (contractFromState.externalId || contractFromState.external_id)
-    )) {
-      return [contractFromState, ...contracts]
-    }
-    return contracts
-  }, [contractFromState, contracts])
+  // Get unique contract IDs from items for loading creatives
+  const itemContractIds = useMemo(() => {
+    const ids = items.map(item => item.contractExternalId).filter(Boolean)
+    return [...new Set(ids)] // Remove duplicates
+  }, [items])
 
-  // Pre-select contract from state on mount
+  // Load creatives for each contract in items
+  const itemCreativesQueries = useQueries({
+    queries: itemContractIds.map(contractId => ({
+      queryKey: ['contracts', 'details', contractId],
+      queryFn: () => ContractsService.getDetails(contractId),
+      enabled: !!contractId,
+      staleTime: 5 * 60 * 1000,
+    })),
+  })
+
+  // Create a map of creatives by contract ID
+  const creativesByContract = useMemo(() => {
+    const map = new Map<string, any[]>()
+
+    // Add creatives from main contract
+    if (contractExternalId && creatives) {
+      map.set(contractExternalId, creatives)
+    }
+
+    // Add creatives from item contracts
+    itemContractIds.forEach((contractId, index) => {
+      const query = itemCreativesQueries[index]
+      if (query?.data?.creatives) {
+        map.set(contractId, query.data.creatives)
+      }
+    })
+
+    return map
+  }, [contractExternalId, creatives, itemContractIds, itemCreativesQueries])
+
+  // Add contract from state and from act to contracts list if not already there
+  const allContracts = React.useMemo(() => {
+    const contractsList = [...contracts]
+
+    // Add contract from navigation state if not in list
+    if (contractFromState && !contractsList.find(c => c.externalId === contractFromState.externalId)) {
+      contractsList.unshift(contractFromState)
+    }
+
+    // Add contract from loaded act if not in list
+    if (contractFromAct && !contractsList.find(c => c.externalId === contractFromAct.externalId)) {
+      contractsList.unshift(contractFromAct)
+    }
+
+    return contractsList
+  }, [contractFromState, contractFromAct, contracts])
+
+  // Load act data in edit mode
+  useEffect(() => {
+    if (isEditMode && actDetails && !isLoadingContract) {
+      console.log('Loading act details:', actDetails)
+
+      const formData = mapActDetailsToFormData(actDetails)
+      console.log('Mapped form data:', formData)
+
+      // Reset form with all values from loaded act
+      reset(formData as ActFormData, {
+        keepDefaultValues: false,
+      })
+
+      toast.success('Данные акта загружены')
+    }
+  }, [isEditMode, actDetails, isLoadingContract, reset])
+
+  // Get selected contract object from contractExternalId
+  const selectedContract = useMemo(() => {
+    return allContracts.find(c => c.externalId === contractExternalId) || null
+  }, [allContracts, contractExternalId])
+
+  // Pre-select contract from state on mount (only for create mode)
   useEffect(() => {
     if (contractFromState && !isEditMode) {
-      const contractId = contractFromState.externalId || contractFromState.external_id || ''
+      const contractId = contractFromState.externalId || ''
       if (contractId && watch('contractExternalId') !== contractId) {
         setValue('contractExternalId', contractId, { shouldValidate: true })
       }
@@ -182,13 +331,15 @@ export const ActFormPage: React.FC = () => {
 
   // Auto-calculate VAT amounts
   useEffect(() => {
-    if (autoCalculate && amount.includingVat > 0) {
-      const vat = amount.includingVat * (amount.vatRate / 100)
-      const excludingVat = amount.includingVat - vat
+    const includingVat = getAmountValue(amount, 'includingVat')
+    const vatRate = getAmountValue(amount, 'vatRate')
+    if (autoCalculate && includingVat > 0) {
+      const vat = includingVat * (vatRate / 100)
+      const excludingVat = includingVat - vat
       setValue('amount.vat', Number(vat.toFixed(2)), { shouldValidate: false })
       setValue('amount.excludingVat', Number(excludingVat.toFixed(2)), { shouldValidate: false })
     }
-  }, [amount.includingVat, amount.vatRate, autoCalculate, setValue])
+  }, [amount, autoCalculate, setValue])
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue)
@@ -196,9 +347,20 @@ export const ActFormPage: React.FC = () => {
 
   const handleContractChange = (contract: ContractDto | null) => {
     if (contract) {
-      setValue('contractExternalId', contract.externalId || contract.external_id || '', { shouldValidate: true })
+      setValue('contractExternalId', contract.externalId || '', { shouldValidate: true })
       if (!isEditMode && contract.amount) {
         setValue('amount.includingVat', Number(contract.amount), { shouldValidate: true })
+      }
+      
+      // Auto-set roles based on contract and client/contractor info
+      if (clientFromState && contractorFromState) {
+        const contractClientId = contract.data?.clientExternalId
+        const isDirect = contractClientId === clientFromState.externalId
+
+        // If client is the direct client in the contract, client is advertiser
+        setValue('clientRole', isDirect ? ActRole.advertiser : ActRole.publisher, { shouldValidate: true })
+        // If client is the direct client, contractor is publisher
+        setValue('contractorRole', isDirect ? ActRole.publisher : ActRole.advertiser, { shouldValidate: true })
       }
     }
   }
@@ -209,7 +371,7 @@ export const ActFormPage: React.FC = () => {
       contractExternalId: '',
       amount: {
         excludingVat: 0,
-        vatRate: amount.vatRate,
+        vatRate: getAmountValue(amount, 'vatRate'),
         vat: 0,
         includingVat: 0,
       },
@@ -250,55 +412,140 @@ export const ActFormPage: React.FC = () => {
     removeStatistic(index)
   }
 
-  const handleSaveDraft = handleFormSubmit(async (formData) => {
+  const handleSaveDraft = async () => {
+    console.log('handleSaveDraft clicked!')
+    
+    // Validate form first
+    const isValid = await trigger()
+    console.log('Form validation result:', isValid)
+    console.log('Form errors:', formErrors)
+    
+    if (!isValid) {
+      toast.error('Пожалуйста, исправьте ошибки в форме')
+      // Show first error
+      const firstError = Object.values(formErrors)[0]
+      if (firstError && 'message' in firstError) {
+        toast.error(String(firstError.message))
+      }
+      return
+    }
+    
+    const formData = getValues()
+    console.log('Form data:', formData)
+    
     try {
       toast.info('Сохранение черновика...')
       const externalId = actId || `act_${Date.now()}_${Math.random().toString(36).substring(7)}`
+      
+      console.log('Saving draft with formData:', formData)
+      
       const payload: CreateActRequest = mapFormDataToBackend(formData as unknown as ActFormData, externalId)
+      
+      console.log('Mapped payload:', payload)
 
       const result = await createActMutation.mutateAsync(payload)
+
+      console.log('Save result:', result)
 
       toast.success(isEditMode ? 'Черновик обновлен' : 'Черновик создан')
 
       if (!isEditMode && result?.id) {
         navigate(`/acts/${result.id}/edit`)
+      } else if (!isEditMode && result?.externalId) {
+        // Fallback to externalId if id is not available
+        console.warn('No id returned, using externalId:', result.externalId)
+        navigate(`/acts/${result.externalId}/edit`)
       }
     } catch (error: any) {
-      toast.error(error?.message || 'Ошибка при сохранении')
       console.error('Save draft error:', error)
+      const errorMessage = error?.response?.data?.message || error?.message || 'Ошибка при сохранении'
+      toast.error(errorMessage)
+      
+      // Show validation errors if available
+      if (error?.response?.data?.errors) {
+        error.response.data.errors.forEach((err: any) => {
+          toast.error(`${err.field}: ${err.message}`)
+        })
+      }
     }
-  })
+  }
 
-  const handleSubmitToVkOrd = handleFormSubmit(async (formData) => {
+  const handleSubmitToVkOrd = async () => {
+    console.log('handleSubmitToVkOrd clicked!')
+    
+    // Validate form first
+    const isValid = await trigger()
+    console.log('Form validation result:', isValid)
+    console.log('Form errors:', formErrors)
+    
+    if (!isValid) {
+      toast.error('Пожалуйста, исправьте ошибки в форме')
+      // Show first error
+      const firstError = Object.values(formErrors)[0]
+      if (firstError && 'message' in firstError) {
+        toast.error(String(firstError.message))
+      }
+      return
+    }
+    
+    const formData = getValues()
+    console.log('Form data:', formData)
+    
     try {
       toast.info('Отправка акта в VK ORD...')
       const externalId = actId || `act_${Date.now()}_${Math.random().toString(36).substring(7)}`
+
+      console.log('Submitting to VK ORD with formData:', formData)
 
       const payload: CreateActRequest = {
         ...mapFormDataToBackend(formData as unknown as ActFormData, externalId),
         status: 'sent',
       }
 
+      console.log('Submit payload:', payload)
+
       const result = await createActMutation.mutateAsync(payload)
 
-      if (!result?.id) {
-        throw new Error('Не удалось создать/обновить акт')
+      console.log('Create result before submit:', result)
+
+      // Use externalId for submission (required by /ready endpoint)
+      // Backend returns ActBackendEntity with both id (number) and externalId (string)
+      // The /ready endpoint expects externalId in the URL
+      const actIdForSubmit = result?.externalId || externalId
+      
+      if (!actIdForSubmit) {
+        throw new Error('Не удалось создать/обновить акт - отсутствует externalId')
       }
 
-      const submitResult = await submitActMutation.mutateAsync(result.id)
+      console.log('Submitting act with externalId:', actIdForSubmit)
 
-      if (submitResult?.success) {
+      const submitResult = await submitActMutation.mutateAsync(actIdForSubmit)
+
+      console.log('Submit result:', submitResult)
+
+      // Backend returns empty object {} with 200 on success, or object with errors on failure
+      // Check for errors first, if no errors - consider it success
+      const errors = submitResult?.errors || []
+      if (errors.length > 0) {
+        errors.forEach(err => toast.error(`${err.field}: ${err.message}`))
+      } else {
+        // No errors means success (even if success field is undefined)
         toast.success('Акт успешно отправлен в VK ORD')
         navigate('/acts')
-      } else {
-        const errors = submitResult?.errors || []
-        errors.forEach(err => toast.error(`${err.field}: ${err.message}`))
       }
     } catch (error: any) {
-      toast.error(error?.message || 'Ошибка при отправке')
       console.error('Submit error:', error)
+      const errorMessage = error?.response?.data?.message || error?.message || 'Ошибка при отправке'
+      toast.error(errorMessage)
+      
+      // Show validation errors if available
+      if (error?.response?.data?.errors) {
+        error.response.data.errors.forEach((err: any) => {
+          toast.error(`${err.field}: ${err.message}`)
+        })
+      }
     }
-  })
+  }
 
   const handleDelete = async () => {
     if (!actId || !confirm('Вы уверены, что хотите удалить этот акт?')) return
@@ -313,8 +560,19 @@ export const ActFormPage: React.FC = () => {
     }
   }
 
-  const itemsTotal = items.reduce((sum, item) => sum + item.amount.includingVat, 0)
-  const itemsMismatch = Math.abs(itemsTotal - amount.includingVat) > 1
+  const itemsTotal = items.reduce((sum, item) => sum + getAmountValue(item.amount, 'includingVat'), 0)
+  const itemsMismatch = Math.abs(itemsTotal - getAmountValue(amount, 'includingVat')) > 1
+
+  // Show loading state in edit mode
+  if (isEditMode && (isLoadingActDetails || isLoadingContract)) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+        <Typography>
+          {isLoadingActDetails ? 'Загрузка данных акта...' : 'Загрузка договора...'}
+        </Typography>
+      </Box>
+    )
+  }
 
   return (
     <Box>
@@ -357,7 +615,7 @@ export const ActFormPage: React.FC = () => {
                 <Typography variant="caption" color="text.secondary">Клиент (Заказчик)</Typography>
                 <Typography variant="body2" fontWeight="medium">{clientFromState.name}</Typography>
                 <Typography variant="caption" color="text.secondary">
-                  ИНН: {clientFromState.juridical_details?.inn || clientFromState.external_id}
+                  ИНН: {clientFromState.juridicalDetails?.inn || clientFromState.externalId}
                 </Typography>
               </Box>
             )}
@@ -369,7 +627,7 @@ export const ActFormPage: React.FC = () => {
                 <Typography variant="caption" color="text.secondary">Подрядчик (Исполнитель)</Typography>
                 <Typography variant="body2" fontWeight="medium">{contractorFromState.name}</Typography>
                 <Typography variant="caption" color="text.secondary">
-                  ИНН: {contractorFromState.juridical_details?.inn || contractorFromState.external_id}
+                  ИНН: {contractorFromState.juridicalDetails?.inn || contractorFromState.externalId}
                 </Typography>
               </Box>
             )}
@@ -377,7 +635,7 @@ export const ActFormPage: React.FC = () => {
               <Box sx={{ ml: 'auto' }}>
                 <Typography variant="caption" color="text.secondary">Договор</Typography>
                 <Typography variant="body2" fontWeight="medium">
-                  {contractFromState.data?.serial || contractFromState.externalId || contractFromState.external_id}
+                  {contractFromState.data?.serial || contractFromState.externalId || 'Без номера'}
                 </Typography>
                 {contractFromState.amount && (
                   <Typography variant="caption" color="text.secondary">
@@ -395,15 +653,15 @@ export const ActFormPage: React.FC = () => {
         <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 3 }}>
           <Box>
             <Typography variant="body2" color="text.secondary">Сумма с НДС</Typography>
-            <Typography variant="h6">{amount.includingVat.toLocaleString()} ₽</Typography>
+            <Typography variant="h6">{getAmountValue(amount, 'includingVat').toLocaleString()} ₽</Typography>
           </Box>
           <Box>
-            <Typography variant="body2" color="text.secondary">НДС ({amount.vatRate}%)</Typography>
-            <Typography variant="h6">{amount.vat.toLocaleString()} ₽</Typography>
+            <Typography variant="body2" color="text.secondary">НДС ({getAmountValue(amount, 'vatRate')}%)</Typography>
+            <Typography variant="h6">{getAmountValue(amount, 'vat').toLocaleString()} ₽</Typography>
           </Box>
           <Box>
             <Typography variant="body2" color="text.secondary">Без НДС</Typography>
-            <Typography variant="h6">{amount.excludingVat.toLocaleString()} ₽</Typography>
+            <Typography variant="h6">{getAmountValue(amount, 'excludingVat').toLocaleString()} ₽</Typography>
           </Box>
           <Box>
             <Controller
@@ -460,9 +718,16 @@ export const ActFormPage: React.FC = () => {
                   render={({ field, fieldState }) => (
                     <Autocomplete
                       options={allContracts}
-                      value={allContracts.find(c => (c.externalId || c.external_id) === field.value) || null}
+                      value={selectedContract}
                       onChange={(_, value) => handleContractChange(value)}
-                      getOptionLabel={(option) => `${option.externalId || option.external_id || 'Без номера'} - ${(option.amount || 0).toLocaleString()} ₽`}
+                      getOptionLabel={(option) => {
+                        const serial = option.data?.serial
+                        const amountLabel = option.amount ? ` - ${Number(option.amount).toLocaleString()} ₽` : ''
+                        return `${serial || option.externalId || 'Без номера'}${amountLabel}`
+                      }}
+                      isOptionEqualToValue={(option, value) => {
+                        return option.externalId === value?.externalId
+                      }}
                       renderInput={(params) => (
                         <TextField
                           {...params}
@@ -600,31 +865,69 @@ export const ActFormPage: React.FC = () => {
                 <Controller
                   name="clientRole"
                   control={control}
-                  render={({ field, fieldState }) => (
-                    <FormControl fullWidth error={!!fieldState.error}>
-                      <InputLabel>Роль клиента</InputLabel>
-                      <Select {...field} label="Роль клиента">
-                        <MenuItem value={ActRole.Advertiser}>Рекламодатель</MenuItem>
-                        <MenuItem value={ActRole.Agency}>Агентство</MenuItem>
-                        <MenuItem value={ActRole.Publisher}>Издатель</MenuItem>
-                        <MenuItem value={ActRole.Mediator}>Посредник</MenuItem>
-                      </Select>
-                    </FormControl>
-                  )}
+                  render={({ field, fieldState }) => {
+                    // Get available roles for client from clientFromState, normalize to lowercase
+                    const clientRoles = (clientFromState?.roles || []).map((r: string) => r.toLowerCase())
+                    console.log(clientFromState?.roles)
+                    return (
+                      <FormControl fullWidth error={!!fieldState.error}>
+                        <InputLabel>Роль клиента</InputLabel>
+                        <Select {...field} label="Роль клиента">
+                          {clientRoles.includes(ActRole.advertiser) && (
+                            <MenuItem value={ActRole.advertiser}>Рекламодатель</MenuItem>
+                          )}
+                          {clientRoles.includes(ActRole.agency) && (
+                            <MenuItem value={ActRole.agency}>Агентство</MenuItem>
+                          )}
+                          {clientRoles.includes(ActRole.publisher) && (
+                            <MenuItem value={ActRole.publisher}>Издатель</MenuItem>
+                          )}
+                          {clientRoles.includes(ActRole.mediator) && (
+                            <MenuItem value={ActRole.mediator}>Посредник</MenuItem>
+                          )}
+                        </Select>
+                        {fieldState.error && (
+                          <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+                            {fieldState.error.message}
+                          </Typography>
+                        )}
+                      </FormControl>
+                    )
+                  }}
                 />
 
                 <Controller
                   name="contractorRole"
                   control={control}
-                  render={({ field, fieldState }) => (
-                    <FormControl fullWidth error={!!fieldState.error}>
-                      <InputLabel>Роль подрядчика</InputLabel>
-                      <Select {...field} label="Роль подрядчика">
-                        <MenuItem value={ActRole.Advertiser}>Рекламодатель</MenuItem>
-                        <MenuItem value={ActRole.Mediator}>Посредник</MenuItem>
-                      </Select>
-                    </FormControl>
-                  )}
+                  render={({ field, fieldState }) => {
+                    // Get available roles for contractor from contractorFromState, normalize to lowercase
+                    const contractorRoles = (contractorFromState?.roles || []).map((r: string) => r.toLowerCase())
+
+                    return (
+                      <FormControl fullWidth error={!!fieldState.error}>
+                        <InputLabel>Роль исполнителя</InputLabel>
+                        <Select {...field} label="Роль исполнителя">
+                          {contractorRoles.includes(ActRole.advertiser) && (
+                            <MenuItem value={ActRole.advertiser}>Рекламодатель</MenuItem>
+                          )}
+                          {contractorRoles.includes(ActRole.agency) && (
+                            <MenuItem value={ActRole.agency}>Агентство</MenuItem>
+                          )}
+                          {contractorRoles.includes(ActRole.publisher) && (
+                            <MenuItem value={ActRole.publisher}>Издатель</MenuItem>
+                          )}
+                          {contractorRoles.includes(ActRole.mediator) && (
+                            <MenuItem value={ActRole.mediator}>Посредник</MenuItem>
+                          )}
+                        </Select>
+                        {fieldState.error && (
+                          <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+                            {fieldState.error.message}
+                          </Typography>
+                        )}
+                      </FormControl>
+                    )
+                  }}
                 />
               </Box>
             </Box>
@@ -668,23 +971,32 @@ export const ActFormPage: React.FC = () => {
                     <Controller
                       name={`items.${index}.contractExternalId`}
                       control={control}
-                      render={({ field: controllerField, fieldState }) => (
-                        <Autocomplete
-                          options={allContracts}
-                          value={allContracts.find(c => (c.externalId || c.external_id) === controllerField.value) || null}
-                          onChange={(_, value) => controllerField.onChange(value?.externalId || value?.external_id || '')}
-                          getOptionLabel={(option) => option.externalId || option.external_id || 'Без номера'}
-                          renderInput={(params) => (
-                            <TextField
-                              {...params}
-                              label="Договор"
-                              size="small"
-                              error={!!fieldState.error}
-                              helperText={fieldState.error?.message}
-                            />
-                          )}
-                        />
-                      )}
+                      render={({ field: controllerField, fieldState }) => {
+                        const itemContractValue = allContracts.find(c => c.externalId === controllerField.value) || null
+                        return (
+                          <Autocomplete
+                            options={allContracts}
+                            value={itemContractValue}
+                            onChange={(_, value) => controllerField.onChange(value?.externalId || '')}
+                            getOptionLabel={(option) => {
+                              const serial = option.data?.serial
+                              return serial || option.externalId || 'Без номера'
+                            }}
+                            isOptionEqualToValue={(option, value) => {
+                              return option.externalId === value?.externalId
+                            }}
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                label="Договор"
+                                size="small"
+                                error={!!fieldState.error}
+                                helperText={fieldState.error?.message}
+                              />
+                            )}
+                          />
+                        )
+                      }}
                     />
 
                     <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2 }}>
@@ -754,36 +1066,77 @@ export const ActFormPage: React.FC = () => {
                     <Controller
                       name={`items.${index}.creatives`}
                       control={control}
-                      render={({ field: controllerField }) => (
-                        <Autocomplete
-                          multiple
-                          options={creatives}
-                          value={creatives.filter(c =>
-                            controllerField.value?.some((creative: any) => creative.erid === c.erid)
-                          )}
-                          onChange={(_, value) => controllerField.onChange(value.map(v => ({
-                            erid: v.erid || '',
-                            externalId: v.externalId,
-                          })))}
-                          getOptionLabel={(option) => option.erid || option.externalId || String(option.id)}
-                          renderInput={(params) => (
-                            <TextField {...params} label="Креативы" size="small" />
-                          )}
-                          renderTags={(value, getTagProps) =>
-                            value.map((option, tagIndex) => {
-                              const { key, ...tagProps } = getTagProps({ index: tagIndex }) as any
-                              return (
-                                <Chip
-                                  key={key}
-                                  label={option.erid || option.externalId || String(option.id)}
-                                  {...tagProps}
-                                  size="small"
-                                />
-                              )
-                            })
-                          }
-                        />
-                      )}
+                      render={({ field: controllerField }) => {
+                        const currentItem = items[index]
+                        const itemContractId = currentItem?.contractExternalId || ''
+                        const itemCreatives = creativesByContract.get(itemContractId) || []
+
+                        return (
+                          <Autocomplete
+                            multiple
+                            options={itemCreatives}
+                            value={controllerField.value || []}
+                            onChange={(_, value) => {
+                              controllerField.onChange(value.map(v => ({
+                                erid: v.erid || v.data?.erid || '',
+                                creativeExternalId: v.externalId || v.data?.externalId || '',
+                              })))
+                            }}
+                            getOptionLabel={(option) => {
+                              if (typeof option === 'string') return option
+                              // creatives returned from API may be wrapped in `data` or top-level
+                              const erid = option.erid || option.data?.erid
+                              const externalId = option.externalId || option.data?.externalId
+                              const name = option.name || option.data?.name
+
+                              // Priority: name with ERID > name with externalId > ERID > externalId > "Неизвестный креатив"
+                              if (name && erid) return `${name} (${erid})`
+                              if (name && externalId) return `${name} (ID: ${externalId})`
+                              if (erid) return erid
+                              if (externalId) return `ID: ${externalId}`
+                              return 'Неизвестный креатив'
+                            }}
+                            isOptionEqualToValue={(option, value) => {
+                              if (!option || !value) return false
+                              // Compare by externalId if available, fallback to erid
+                              const optionId = option.externalId || option.data?.externalId || option.erid || option.data?.erid
+                              const valueId = value.creativeExternalId || value.externalId || value.data?.externalId || value.erid || value.data?.erid
+                              return optionId === valueId
+                            }}
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                label="Креативы"
+                                size="small"
+                                helperText={!itemContractId ? 'Сначала выберите договор' : undefined}
+                              />
+                            )}
+                            renderTags={(value, getTagProps) =>
+                              value.map((option, tagIndex) => {
+                                const { key, ...tagProps } = getTagProps({ index: tagIndex }) as any
+                                const erid = option.erid || option.data?.erid
+                                const externalId = option.creativeExternalId || option.externalId || option.data?.externalId
+                                const name = option.name || option.data?.name
+
+                                let label = 'Неизвестный креатив'
+                                if (erid) label = erid
+                                else if (externalId) label = `ID: ${externalId}`
+                                if (name) label = `${name} (${erid || externalId || '?'})`
+
+                                return (
+                                  <Chip
+                                    key={key}
+                                    label={label}
+                                    {...tagProps}
+                                    size="small"
+                                  />
+                                )
+                              })
+                            }
+                            disabled={!itemContractId}
+                          />
+                        )
+                      }}
                     />
                   </Box>
                 </CardContent>

@@ -64,7 +64,7 @@ src/
 │   ├── creatives/          # Creative management
 │   ├── media/              # Media file management
 │   ├── parties/            # Counterparty management
-│   ├── acts/               # Act creation and management
+│   ├── invoices/               # Act creation and management
 │   └── wizard/             # Wizard flow for contract creation
 ├── hooks/                  # Custom React hooks
 ├── services/               # API service classes (contracts, counterparties, etc.)

@@ -135,7 +135,7 @@ export const ContractsPage: React.FC = () => {
                 value={formData.contractorExternalId}
                 onChange={handleChange('contractorExternalId')}
                 required
-                helperText="ID подрядчика"
+                helperText="ID исполнителя"
               />
               <TextField
                 fullWidth

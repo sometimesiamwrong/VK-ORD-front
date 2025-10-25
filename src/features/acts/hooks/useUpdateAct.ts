@@ -2,7 +2,7 @@
  * Hook for updating an existing act (invoice)
  *
  * Backend: InvoicesController
- * Endpoint: PUT /api/invoices/{externalId}
+ * Endpoint: PUT /api/invoices/v1/{externalId}
  *
  * @returns Mutation for updating acts
  */
@@ -17,8 +17,8 @@ export const useUpdateAct = () => {
   return useMutation({
     mutationFn: async (data: UpdateActRequest) => {
       // Backend uses externalId in URL, same endpoint as create
-      const externalId = data.externalId || data.id
-      const response = await http.put<ActDetails>(`/api/invoices/${externalId}`, data)
+      const externalId = data.externalId;
+      const response = await http.put<ActDetails>(`/api/invoices/v1/${externalId}`, data)
       return response.data
     },
     onSuccess: (data) => {

@@ -128,6 +128,29 @@ npx shadcn@latest add @vk/vk-party-selector
 "Добавь button из shadcn/ui"
 ```
 
+## 🤖 Система агентов
+
+Проект использует систему **специализированных агентов** для повышения качества разработки. Каждый агент — это эксперт в своей области, который автоматически подключается при выполнении задач.
+
+### Доступные агенты
+
+- **🎨 ui-ux-reviewer** - Проверка UI/UX изменений перед реализацией (Material UI, shadcn/ui, accessibility)
+- **🔍 backend-inspector** - Исследование backend API структуры и implementation details (ASP.NET Core)
+- **🏗️ feature-architect** - Проектирование новых фич в feature-based архитектуре
+- **🔌 api-integrator** - Создание API services и React Query hooks
+- **📦 state-manager** - Управление Zustand stores и client state
+- **🧪 testing-specialist** - Написание тестов (Vitest, Storybook, Playwright)
+
+### Пример использования в Cursor
+
+```
+"Используй ui-ux-reviewer для проверки этой формы"
+"Запусти backend-inspector чтобы изучить contracts API"
+"Нужна новая фича campaigns - используй feature-architect"
+```
+
+**Подробнее**: См. полную документацию в `agents.md`
+
 #### Структура реестра
 
 Каждый компонент имеет отдельный JSON файл в `registry/` со схемой:
