@@ -99,6 +99,9 @@ export function loadFromCookie(key: string): string | null {
 // Экспорт новых утилит для работы с куками
 export * from './cookies'
 
+// Экспорт трансформеров для работы с DTO
+export * from './transformers'
+
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 

@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
 import CounterpartiesService from '../services/counterparties'
+import { transformCounterpartyDto } from '../utils/transformers'
 import type {
   GetCounterpartiesByInnParams,
   GetCounterpartyContractsParams,
@@ -7,32 +8,6 @@ import type {
   GetCounterpartiesListParams
 } from '../services/counterparties'
 import type { CounterpartyDto, CounterpartyItem } from '../types'
-
-// Функция преобразования CounterpartyDto в CounterpartyItem
-const transformCounterpartyDto = (dto: CounterpartyDto): CounterpartyItem => {
-  const juridicalDetails = dto.data.juridicalDetails
-  return {
-    id: dto.id,
-    externalId: dto.externalId,
-    name: dto.data.name,
-    roles: dto.data.roles,
-    juridicalDetails: juridicalDetails ? {
-      type: juridicalDetails.type,
-      modelScheme: juridicalDetails.modelScheme,
-      inn: juridicalDetails.inn,
-      kpp: juridicalDetails.kpp,
-      phone: juridicalDetails.phone,
-      foreignEpaymentMethod: juridicalDetails.foreignEpaymentMethod,
-      foreignRegistrationNumber: juridicalDetails.foreignRegistrationNumber,
-      foreignInn: juridicalDetails.foreignInn,
-      foreignOksmCountryCode: juridicalDetails.foreignOksmCountryCode
-    } : undefined,
-    syncStatus: dto.syncStatus,
-    expiresAt: dto.expiresAt,
-    updatedAt: dto.updatedAt,
-    createdAt: dto.createdAt
-  }
-}
 
 export const useCounterpartiesByInn = () => {
   return useMutation({
