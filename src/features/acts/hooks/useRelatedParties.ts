@@ -6,26 +6,17 @@
  */
 
 import { useRelatedCounterpartiesQuery } from '../../../hooks/useCounterparties'
-import type { CounterpartyItem } from '../../../types'
+import { transformCounterpartyDtoArray } from '../../../utils/transformers'
 
 export const useRelatedParties = (partyExternalId: string) => {
   const query = useRelatedCounterpartiesQuery({
     externalId: partyExternalId
   }, !!partyExternalId)
 
-  // Transform CounterpartyDto to CounterpartyItem format
+  // Transform CounterpartyDto array to CounterpartyItem array
   const transformedData = query.data ? {
     ...query.data,
-    relatedCounterparties: query.data.relatedCounterparties.map((dto): CounterpartyItem => ({
-      external_id: dto.external_id || dto.externalId,
-      name: dto.data.name,
-      roles: dto.data.roles,
-      juridical_details: dto.data.juridical_details || dto.data.juridicalDetails ? {
-        inn: (dto.data.juridical_details || dto.data.juridicalDetails)!.inn,
-        kpp: (dto.data.juridical_details || dto.data.juridicalDetails)!.kpp,
-        type: (dto.data.juridical_details || dto.data.juridicalDetails)!.type || 'juridical'
-      } : undefined
-    }))
+    relatedCounterparties: transformCounterpartyDtoArray(query.data.relatedCounterparties)
   } : undefined
 
   return {
