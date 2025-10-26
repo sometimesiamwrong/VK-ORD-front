@@ -8,6 +8,7 @@
 import type { TemplateEnrichedData } from '../../../types/flowTemplates'
 import type { PartyRole } from '../../../types/wizard'
 import { VkOrdCreativeForm } from '../../../types'
+import { ActRole } from '../../../types/acts'
 
 /**
  * Convert string enum value to numeric enum value
@@ -24,6 +25,100 @@ const parseCreativeForm = (form: string | number | undefined): number => {
   ) as keyof typeof VkOrdCreativeForm | undefined
   
   return enumKey ? VkOrdCreativeForm[enumKey] : 0
+}
+
+/**
+ * Map backend role enum (number or string) to ActRole value
+ * Backend enum: 0=Advertiser, 1=Agency, 2=ORS, 3=Publisher
+ */
+const normalizeRoleValue = (roleValue: any): PartyRole[number] | null => {
+  if (roleValue === null || roleValue === undefined) {
+    return null
+  }
+
+  const numberRoleMap: Record<number, PartyRole[number]> = {
+    0: ActRole.advertiser,
+    1: ActRole.agency,
+    2: ActRole.ors,
+    3: ActRole.publisher
+  }
+
+  if (typeof roleValue === 'number') {
+    return numberRoleMap[roleValue] || null
+  }
+
+  if (typeof roleValue === 'string') {
+    const normalized = roleValue.trim().toLowerCase()
+    
+    const validRoles = [
+      ActRole.advertiser,
+      ActRole.agency,
+      ActRole.ors,
+      ActRole.publisher
+    ] as const
+
+    const found = validRoles.find(r => r.toLowerCase() === normalized)
+    if (found) {
+      return found as PartyRole[number]
+    }
+
+    const russianMap: Record<string, PartyRole[number]> = {
+      'рекламодатель': ActRole.advertiser,
+      'агентство': ActRole.agency,
+      'рекламное агентство': ActRole.agency,
+      'издатель': ActRole.publisher,
+      'оператор рекламных систем': ActRole.ors,
+      'оператор рекламной системы': ActRole.ors
+    }
+
+    const key = normalized.replace(/\s+/g, ' ')
+    return russianMap[key] || null
+  }
+
+  return null
+}
+
+/**
+ * Normalize roles from backend format to wizard format
+ * Backend returns roles as numbers: 0=Advertiser, 1=Agency, 2=ORS, 3=Publisher
+ * Frontend uses strings: 'advertiser', 'agency', 'ors', 'publisher'
+ */
+const normalizeRoles = (roles: any[] | undefined): PartyRole => {
+  if (!Array.isArray(roles) || roles.length === 0) {
+    return []
+  }
+
+  const normalized = new Set<PartyRole[number]>()
+
+  roles.forEach((role) => {
+    const mapped = normalizeRoleValue(role)
+    if (mapped) {
+      normalized.add(mapped)
+    }
+  })
+
+  return Array.from(normalized)
+}
+
+/**
+ * Select appropriate role for party based on context
+ * For advertiser: prefer 'advertiser' role
+ * For contractor: prefer 'publisher' role
+ */
+const selectRoleForParty = (roles: any[] | undefined, preferredRole: 'advertiser' | 'publisher'): PartyRole => {
+  const normalized = normalizeRoles(roles)
+  
+  if (normalized.length === 0) {
+    return [preferredRole]
+  }
+
+  // If preferred role is in the list, use it
+  if (normalized.includes(preferredRole)) {
+    return [preferredRole]
+  }
+
+  // Otherwise, return all roles
+  return normalized
 }
 
 export interface MappedWizardState {
@@ -80,7 +175,7 @@ export const mapTemplateToWizardState = (template: TemplateEnrichedData): Mapped
       name: client.data?.name || null,
       shortWithOpf: null, // Not available in CounterpartyDto
       info: null, // Not available in CounterpartyDto
-      role: (client.data?.roles?.[0] ? [client.data.roles[0]] : ['advertiser']) as PartyRole
+      role: selectRoleForParty(client.data?.roles, 'advertiser')
     },
 
     // Step 1: Contractor (Publisher) - ALL fields
@@ -90,7 +185,7 @@ export const mapTemplateToWizardState = (template: TemplateEnrichedData): Mapped
       name: contractor.data?.name || null,
       shortWithOpf: null, // Not available in CounterpartyDto
       info: null, // Not available in CounterpartyDto
-      role: (contractor.data?.roles?.[0] ? [contractor.data.roles[0]] : ['publisher']) as PartyRole
+      role: selectRoleForParty(contractor.data?.roles, 'publisher')
     },
 
     // Step 2: Contract - ALL fields
