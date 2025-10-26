@@ -8,6 +8,7 @@
 import type { TemplateEnrichedData } from '../../../types/flowTemplates'
 import type { PartyRole } from '../../../types/wizard'
 import { VkOrdCreativeForm } from '../../../types'
+import { ActRole } from '../../../types/acts'
 
 /**
  * Convert string enum value to numeric enum value
@@ -27,6 +28,57 @@ const parseCreativeForm = (form: string | number | undefined): number => {
 }
 
 /**
+ * Map backend role enum (number or string) to ActRole value
+ * Backend enum: 0=Advertiser, 1=Agency, 2=ORS, 3=Publisher
+ */
+const normalizeRoleValue = (roleValue: any): PartyRole[number] | null => {
+  if (roleValue === null || roleValue === undefined) {
+    return null
+  }
+
+  const numberRoleMap: Record<number, PartyRole[number]> = {
+    0: ActRole.advertiser,
+    1: ActRole.agency,
+    2: ActRole.ors,
+    3: ActRole.publisher
+  }
+
+  if (typeof roleValue === 'number') {
+    return numberRoleMap[roleValue] || null
+  }
+
+  if (typeof roleValue === 'string') {
+    const normalized = roleValue.trim().toLowerCase()
+    
+    const validRoles = [
+      ActRole.advertiser,
+      ActRole.agency,
+      ActRole.ors,
+      ActRole.publisher
+    ] as const
+
+    const found = validRoles.find(r => r.toLowerCase() === normalized)
+    if (found) {
+      return found as PartyRole[number]
+    }
+
+    const russianMap: Record<string, PartyRole[number]> = {
+      'рекламодатель': ActRole.advertiser,
+      'агентство': ActRole.agency,
+      'рекламное агентство': ActRole.agency,
+      'издатель': ActRole.publisher,
+      'оператор рекламных систем': ActRole.ors,
+      'оператор рекламной системы': ActRole.ors
+    }
+
+    const key = normalized.replace(/\s+/g, ' ')
+    return russianMap[key] || null
+  }
+
+  return null
+}
+
+/**
  * Normalize roles from backend format to wizard format
  * Backend returns roles as numbers: 0=Advertiser, 1=Agency, 2=ORS, 3=Publisher
  * Frontend uses strings: 'advertiser', 'agency', 'ors', 'publisher'
@@ -36,43 +88,12 @@ const normalizeRoles = (roles: any[] | undefined): PartyRole => {
     return []
   }
 
-  const numberRoleMap: Record<number, PartyRole[number]> = {
-    0: 'advertiser',
-    1: 'agency',
-    2: 'ors',
-    3: 'publisher'
-  }
-
-  const stringRoleMap: Record<string, PartyRole[number]> = {
-    advertiser: 'advertiser',
-    'рекламодатель': 'advertiser',
-    agency: 'agency',
-    'агентство': 'agency',
-    'рекламное агентство': 'agency',
-    publisher: 'publisher',
-    'издатель': 'publisher',
-    ors: 'ors',
-    'оператор рекламных систем': 'ors',
-    'оператор рекламной системы': 'ors'
-  }
-
   const normalized = new Set<PartyRole[number]>()
 
   roles.forEach((role) => {
-    if (typeof role === 'number') {
-      const mapped = numberRoleMap[role]
-      if (mapped) {
-        normalized.add(mapped)
-      }
-      return
-    }
-
-    if (typeof role === 'string') {
-      const key = role.trim().toLowerCase().replace(/\s+/g, ' ')
-      const mapped = stringRoleMap[key]
-      if (mapped) {
-        normalized.add(mapped)
-      }
+    const mapped = normalizeRoleValue(role)
+    if (mapped) {
+      normalized.add(mapped)
     }
   })
 
