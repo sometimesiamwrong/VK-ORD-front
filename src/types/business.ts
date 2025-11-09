@@ -87,6 +87,10 @@ export interface CounterpartyItem {
   syncStatus?: string
   updatedAt?: string
   createdAt?: string
+  
+  // Статистические данные (опционально, для списков актов и компаний)
+  actCount?: number
+  lastActDate?: string
 }
 
 // Legacy aliases for backward compatibility

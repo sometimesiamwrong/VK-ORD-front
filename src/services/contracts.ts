@@ -21,6 +21,7 @@
  */
 
 import http from '../api/http'
+import { transformCounterpartyDto } from '../utils/transformers'
 import type {
   ContractDto,
   CounterpartyDto,
@@ -61,33 +62,6 @@ type ContractDetailsRawResponse = {
   totalCreatives?: number
   returnedCreatives?: number
   syncStatus?: string
-}
-
-const mapCounterpartyDtoToItem = (dto: CounterpartyDto): CounterpartyItem => {
-  const details = dto.data?.juridicalDetails
-
-  return {
-    id: dto.id,
-    externalId: dto.externalId,
-    name: dto.data?.name ?? '',
-    roles: dto.data?.roles ?? [],
-    juridicalDetails: details
-      ? {
-          type: details.type,
-          modelScheme: details.modelScheme,
-          inn: details.inn,
-          kpp: details.kpp,
-          phone: details.phone,
-          foreignEpaymentMethod: details.foreignEpaymentMethod,
-          foreignRegistrationNumber: details.foreignRegistrationNumber,
-          foreignInn: details.foreignInn,
-          foreignOksmCountryCode: details.foreignOksmCountryCode
-        }
-      : undefined,
-    syncStatus: dto.syncStatus,
-    updatedAt: dto.updatedAt,
-    createdAt: dto.createdAt
-  }
 }
 
 const normalizeContract = (
@@ -216,7 +190,7 @@ const normalizeContractDetailsResponse = (
   requestedExternalId: string
 ): GetContractDetailsResponse => {
   const normalizedContract = normalizeContract(payload.contract, requestedExternalId)
-  const parties = (payload.parties ?? []).map(mapCounterpartyDtoToItem)
+  const parties = (payload.parties ?? []).map(transformCounterpartyDto)
   const creatives = (payload.creatives ?? []).map(raw =>
     normalizeCreative(raw, normalizedContract.externalId ?? requestedExternalId)
   )

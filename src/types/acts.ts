@@ -21,14 +21,8 @@ export const ActRole = {
 
 export type ActRole = typeof ActRole[keyof typeof ActRole]
 
-export interface Company {
-  id: string
-  name: string
-  inn: string
-  kpp?: string
-  actCount?: number
-  lastActDate?: string
-}
+// DEPRECATED: Use CounterpartyItem from '../types/business' instead
+// Company type removed - CounterpartyItem now includes actCount and lastActDate fields
 
 export interface ActSummary {
   id: string

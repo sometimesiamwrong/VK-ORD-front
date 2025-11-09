@@ -12,32 +12,8 @@ import { queryKeys, invalidateQueries } from '../api/queryKeys'
 import { createQueryOptions, createMutationWithInvalidation } from '../api/queryOptions'
 import { getErrorMessage } from '../api/errorHandler'
 import { isValidInn, getPartyDisplayName, getPartyShortWithOpf } from '../utils'
+import { transformCounterpartyDto } from '../utils/transformers'
 import type { CounterpartyDto, CounterpartyItem } from '../types'
-
-// Функция преобразования CounterpartyDto в CounterpartyItem
-const transformCounterpartyDto = (dto: CounterpartyDto): CounterpartyItem => {
-  const juridicalDetails = dto.data.juridicalDetails
-  return {
-    id: dto.id,
-    externalId: dto.externalId,
-    name: dto.data.name,
-    roles: dto.data.roles,
-    juridicalDetails: juridicalDetails ? {
-      type: juridicalDetails.type,
-      modelScheme: juridicalDetails.modelScheme,
-      inn: juridicalDetails.inn,
-      kpp: juridicalDetails.kpp,
-      phone: juridicalDetails.phone,
-      foreignEpaymentMethod: juridicalDetails.foreignEpaymentMethod,
-      foreignRegistrationNumber: juridicalDetails.foreignRegistrationNumber,
-      foreignInn: juridicalDetails.foreignInn,
-      foreignOksmCountryCode: juridicalDetails.foreignOksmCountryCode
-    } : undefined,
-    syncStatus: dto.syncStatus,
-    updatedAt: dto.updatedAt,
-    createdAt: dto.createdAt
-  }
-}
 
 export const usePartyLookup = () => {
   const queryClient = useQueryClient()
