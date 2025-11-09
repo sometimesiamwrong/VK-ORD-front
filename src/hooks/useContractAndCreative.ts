@@ -94,7 +94,6 @@ export const useContractAndCreative = () => {
       kktus: creative.kktus ? (Array.isArray(creative.kktus) ? creative.kktus : [creative.kktus]) : [],
       type: creative.format,
       targetUrls: creative.contentUrls && creative.contentUrls.length ? creative.contentUrls : undefined,
-      targetAudience: creative.targetAudience || undefined,
       texts: creative.text ? [creative.text] : undefined,
       name: creative.name || undefined,
       mediaExternalIds: mediaExternalIds,
@@ -109,14 +108,16 @@ export const useContractAndCreative = () => {
       const erid = creativeData?.data?.erid || creativeData?.erid
 
       if (erid) {
-        toast.success('Креатив успешно создан')
+        // Показываем разные сообщения для создания и обновления
+        const isUpdate = !!setErid
+        toast.success(isUpdate ? 'Креатив успешно обновлён' : 'Креатив успешно создан')
         setErid(erid)
         setStep(4)
       } else {
         toast.error('Ошибка: ERID не получен от сервера')
       }
     } catch (e: any) {
-      toast.error(`Ошибка создания креатива: ${e?.message || e}`)
+      toast.error(`Ошибка при работе с креативом: ${e?.message || e}`)
     } finally {
       setLoading('creative', false)
     }

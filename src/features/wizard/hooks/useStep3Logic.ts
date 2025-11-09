@@ -25,31 +25,37 @@ const isLikelyUrl = (value: string): boolean => {
 
 export const useStep3Logic = () => {
   const creative = useWizardCreative()
-  const { updateCreative, setCreativeMediaFiles } = useWizardActions()
+  const { updateCreative, setCreativeMediaFiles, setErid } = useWizardActions()
   const { createCreative, guessKktyByText } = useContractAndCreative()
 
   const [kktyHints, setKktyHints] = useState<AiKktyItem[]>([])
   const [contentUrlDraft, setContentUrlDraft] = useState('')
 
   const clearStep3 = useCallback(() => {
+    // ВАЖНО: Генерируем НОВЫЙ externalId при очистке полей
     updateCreative({
       externalId: nowTimestampString(),
       contractExternalIds: [],
       kktus: [],
       format: VkOrdCreativeForm.Banner,
       contentUrls: [],
-      targetAudience: null,
       text: null,
       name: null
     })
     setCreativeMediaFiles([])
     setKktyHints([])
-  }, [updateCreative, setCreativeMediaFiles])
+    // Сбрасываем ERID, чтобы кнопка снова показывала "Получить ERID"
+    setErid(null)
+  }, [updateCreative, setCreativeMediaFiles, setErid])
 
   const handleGuessKkty = useCallback(async () => {
     const hints = await guessKktyByText()
     if (hints) {
-      setKktyHints(hints)
+      // Преобразуем KktyItem[] в AiKktyItem[] (фильтруем null/undefined)
+      const validHints = hints.filter((h): h is AiKktyItem => 
+        !!h.code && !!h.fullName && !!h.reason && h.relevanceScore !== undefined
+      )
+      setKktyHints(validHints)
     }
   }, [guessKktyByText])
 

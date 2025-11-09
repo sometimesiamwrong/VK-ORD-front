@@ -376,7 +376,12 @@ export const PartyContractSelector: React.FC<PartyContractSelectorProps> = ({
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+      <Box sx={{
+        display: 'flex',
+        flexDirection: { xs: 'column', md: 'row' },
+        gap: 2,
+        mb: 3
+      }}>
         {/* Party 1 */}
         <Card
           sx={{
@@ -563,7 +568,7 @@ export const PartyContractSelector: React.FC<PartyContractSelectorProps> = ({
                 </Typography>
               </Box>
 
-              <Box sx={{ display: 'flex', gap: 2, mb: 1 }}>
+              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2, mb: 1 }}>
                 <Box sx={{ flex: 1 }}>
                   <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
                     {party1Label}
@@ -577,13 +582,22 @@ export const PartyContractSelector: React.FC<PartyContractSelectorProps> = ({
                 </Box>
 
                 <Box sx={{
-                  display: 'flex',
+                  display: { xs: 'none', md: 'flex' },
                   alignItems: 'center',
                   color: 'text.secondary',
                   px: 1
                 }}>
                   ↔
                 </Box>
+
+                {/* Divider on mobile */}
+                <Box sx={{
+                  display: { xs: 'block', md: 'none' },
+                  width: '100%',
+                  height: '1px',
+                  bgcolor: 'divider',
+                  my: 1
+                }} />
 
                 <Box sx={{ flex: 1 }}>
                   <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
@@ -719,17 +733,30 @@ export const PartyContractSelector: React.FC<PartyContractSelectorProps> = ({
               }
 
               return (
-                <li {...props} key={option.externalId}>
+                <li {...props} key={option.externalId} style={{ padding: 0 }}>
                   <Box sx={{
                     width: '100%',
                     display: 'grid',
-                    gridTemplateColumns: '1fr auto 1fr',
+                    gridTemplateColumns: {
+                      xs: '1fr',           // Single column on mobile - stack vertically
+                      sm: '1fr',           // Single column on small screens
+                      md: '1fr auto 1fr'   // Three columns on desktop
+                    },
                     gap: 1.5,
                     alignItems: 'center',
-                    py: 0.5
+                    py: 1.5,
+                    px: 2,
+                    borderBottom: '1px solid',
+                    borderColor: 'divider',
+                    '&:hover': {
+                      bgcolor: 'action.hover'
+                    }
                   }}>
                     {/* Клиент - слева */}
-                    <Box sx={{ minWidth: 0 }}>
+                    <Box sx={{
+                      minWidth: 0,
+                      textAlign: { xs: 'left', md: 'left' }
+                    }}>
                       <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
                         Клиент
                       </Typography>
@@ -739,7 +766,10 @@ export const PartyContractSelector: React.FC<PartyContractSelectorProps> = ({
                     </Box>
 
                     {/* Номер и дата - по центру */}
-                    <Box sx={{ textAlign: 'center', px: 1 }}>
+                    <Box sx={{
+                      textAlign: { xs: 'left', md: 'center' },
+                      px: { xs: 0, md: 1 }
+                    }}>
                       <Typography variant="body2" fontWeight="600" color="primary.main" noWrap>
                         {serial}
                       </Typography>
@@ -751,7 +781,10 @@ export const PartyContractSelector: React.FC<PartyContractSelectorProps> = ({
                     </Box>
 
                     {/* Контрактор - справа */}
-                    <Box sx={{ minWidth: 0, textAlign: 'right' }}>
+                    <Box sx={{
+                      minWidth: 0,
+                      textAlign: { xs: 'left', md: 'right' }
+                    }}>
                       <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
                         Контрактор
                       </Typography>

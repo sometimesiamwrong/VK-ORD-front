@@ -20,7 +20,7 @@ import {
 } from '@/stores/wizardStore'
 import type { ContractDto } from '@/types'
 import type { PartyContractSelectionResult } from '@/components/ui/PartyContractSelector'
-import { generateContractExternalId } from '@/utils'
+import { generateContractExternalId, parseRoles } from '@/utils'
 
 interface WizardCreationFlowProps {
   onProceedToCreative: () => void
@@ -92,7 +92,7 @@ export const WizardCreationFlow: React.FC<WizardCreationFlowProps> = ({ onProcee
     // Сохраняем данные в store
     // Рекламодатель
     setAdvertiserInn(advertiser.juridicalDetails?.inn || '')
-    setAdvertiserRole(['advertiser'])
+    setAdvertiserRole(parseRoles(advertiser.roles))
     setAdvertiserInfo({
       external_id: advertiser.externalId || null,
       name: advertiser.name || null,
@@ -102,7 +102,7 @@ export const WizardCreationFlow: React.FC<WizardCreationFlowProps> = ({ onProcee
 
     // Исполнитель
     setContractorInn(contractor.juridicalDetails?.inn || '')
-    setContractorRole(['publisher'])
+    setContractorRole(parseRoles(contractor.roles))
     setContractorInfo({
       external_id: contractor.externalId || null,
       name: contractor.name || null,

@@ -102,6 +102,8 @@ export const useStep1Logic = () => {
     const displayName = party.name || 'Неизвестно'
     const type = party.juridicalDetails?.type
     const info = `${displayName} (${type === 'ip' ? 'ИП' : type === 'juridical' ? 'ЮР лицо' : type === 'physical' ? 'Физ. лицо' : type})`
+    console.log('Applying counterparty:', kind, inn, displayName, info)
+    console.log(party);
 
     if (kind === 'advertiser') {
       setAdvertiserInn(inn)

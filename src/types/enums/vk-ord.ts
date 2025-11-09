@@ -12,7 +12,7 @@
  *
  * @example
  * ```ts
- * const creativeType = VkOrdCreativeForm.Banner // 0
+ * const creativeType = VkOrdCreativeForm.TextGraphicBlock // 2
  * ```
  */
 export const VkOrdCreativeForm = {

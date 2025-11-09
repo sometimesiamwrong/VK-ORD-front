@@ -218,7 +218,6 @@ export interface CreateCreativeRequest extends IRequestWithVkOrdKey {
     kktus: string[]
     type: VkOrdCreativeForm
     targetUrls?: string[] | null
-    targetAudience?: string | null
     texts?: string[] | null
     name?: string | null
     personExternalId?: string | null

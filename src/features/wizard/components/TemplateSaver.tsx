@@ -10,8 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { useCreateTemplate, useUpdateTemplate } from '../hooks/useFlowTemplates'
-import { FlowTemplateType, type TemplateExternalIds, type TemplateEnrichedData } from '../../../types/flowTemplates'
+import { useCreateTemplate, useUpdateTemplate, useTemplateById } from '../hooks/useFlowTemplates'
+import { FlowTemplateType, type TemplateExternalIds } from '../../../types/flowTemplates'
 
 interface TemplateSaverProps {
   open: boolean
@@ -34,6 +34,11 @@ export const TemplateSaver: React.FC<TemplateSaverProps> = ({
 
   const createMutation = useCreateTemplate()
   const updateMutation = useUpdateTemplate()
+  
+  // Fetch existing template data when updating
+  const { data: existingTemplate } = useTemplateById(
+    saveMode === 'update' ? existingTemplateId : null
+  )
 
   // Reset state when dialog closes
   useEffect(() => {
@@ -46,10 +51,20 @@ export const TemplateSaver: React.FC<TemplateSaverProps> = ({
 
   const handleSave = async () => {
     try {
-      if (saveMode === 'update' && existingTemplateId) {
+      if (saveMode === 'update' && existingTemplateId && existingTemplate) {
+        // Send full UpdateFlowTemplateRequest with all required fields
+        // templateData contains CURRENT wizard state (including latest creative_external_id)
+        // Other fields (name, type, description, tags, isActive) are preserved from existing template
         await updateMutation.mutateAsync({
           id: existingTemplateId,
-          data: { value: templateData }
+          data: {
+            name: existingTemplate.name,
+            type: existingTemplate.type,
+            description: existingTemplate.description || '',
+            value: templateData, // Uses current wizard state with latest creative_external_id
+            tags: existingTemplate.tags || [],
+            isActive: existingTemplate.isActive
+          }
         })
       } else {
         if (!name.trim()) {

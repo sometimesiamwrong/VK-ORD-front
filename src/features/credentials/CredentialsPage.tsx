@@ -3,12 +3,6 @@ import {
   Typography,
   Paper,
   Box,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -21,6 +15,7 @@ import {
   Alert,
   Chip,
   Tooltip,
+  IconButton,
 } from '@mui/material'
 import { Button } from '@/components/ui/button'
 import {
@@ -29,6 +24,8 @@ import {
   Delete as DeleteIcon,
   VpnKey as VpnKeyIcon,
 } from '@mui/icons-material'
+import { ResponsiveDataView } from '@/components/data-display'
+import type { Column } from '@/components/data-display'
 import { useCredentials, useCreateCredential, useUpdateCredential, useDeleteCredential } from './hooks'
 import type { Credential, CreateCredentialRequest, UpdateCredentialRequest } from '../../types'
 
@@ -131,6 +128,49 @@ export const CredentialsPage: React.FC = () => {
     return token.substring(0, 4) + '*'.repeat(token.length - 8) + token.substring(token.length - 4)
   }
 
+  const columns: Column<Credential>[] = [
+    {
+      key: 'displayName',
+      header: 'Название',
+      render: (value) => value || 'Без названия',
+    },
+    {
+      key: 'environment',
+      header: 'Окружение',
+      render: (value) => (
+        <Chip
+          label={value}
+          color={value === 'Production' ? 'error' : 'default'}
+          size="small"
+        />
+      ),
+    },
+    {
+      key: 'id',
+      header: 'Токен',
+      mobileLabel: 'Токен',
+      render: () => (
+        <Tooltip title="Токен скрыт для безопасности">
+          <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+            {maskToken('placeholder-token-text')}
+          </Typography>
+        </Tooltip>
+      ),
+    },
+    {
+      key: 'createdAt',
+      header: 'Создан',
+      hideOnMobile: true,
+      render: (value) => value ? new Date(value).toLocaleDateString('ru-RU') : 'Неизвестно',
+    },
+    {
+      key: 'updatedAt',
+      header: 'Обновлен',
+      hideOnMobile: true,
+      render: (value) => value ? new Date(value).toLocaleDateString('ru-RU') : 'Неизвестно',
+    },
+  ];
+
   if (isLoading) {
     return <Typography>Загрузка credentials...</Typography>
   }
@@ -155,82 +195,47 @@ export const CredentialsPage: React.FC = () => {
         </Button>
       </Box>
 
-      {(!credentials || credentials.length === 0) ? (
-        <Paper sx={{ p: 4, textAlign: 'center' }}>
-          <VpnKeyIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-          <Typography variant="h6" color="text.secondary" gutterBottom>
-            Нет сохраненных токенов
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Добавьте токен VK ORD для работы с API
-          </Typography>
-          <Button onClick={handleOpenCreateDialog}>
-            <AddIcon className="mr-2 h-4 w-4" />
-            Добавить первый токен
-          </Button>
-        </Paper>
-      ) : (
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Название</TableCell>
-                <TableCell>Окружение</TableCell>
-                <TableCell>Токен</TableCell>
-                <TableCell>Создан</TableCell>
-                <TableCell>Обновлен</TableCell>
-                <TableCell align="right">Действия</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {credentials.map((credential, index) => (
-                <TableRow key={credential.id || `credential-${index}`}>
-                  <TableCell>
-                    {credential.displayName || 'Без названия'}
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={credential.environment}
-                      color={credential.environment === 'Production' ? 'error' : 'default'}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Tooltip title="Токен скрыт для безопасности">
-                      <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
-                        {maskToken('placeholder-token-text')}
-                      </Typography>
-                    </Tooltip>
-                  </TableCell>
-                  <TableCell>
-                    {credential.createdAt ? new Date(credential.createdAt).toLocaleDateString('ru-RU') : 'Неизвестно'}
-                  </TableCell>
-                  <TableCell>
-                    {credential.updatedAt ? new Date(credential.updatedAt).toLocaleDateString('ru-RU') : 'Неизвестно'}
-                  </TableCell>
-                  <TableCell align="right">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleOpenEditDialog(credential)}
-                    >
-                      <EditIcon className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => credential.id && handleDelete(credential.id)}
-                      disabled={!credential.id}
-                    >
-                      <DeleteIcon className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      )}
+      <ResponsiveDataView
+        data={credentials || []}
+        columns={columns}
+        keyExtractor={(cred) => cred.id || String(Math.random())}
+        loading={isLoading}
+        emptyState={
+          <Paper sx={{ p: 4, textAlign: 'center' }}>
+            <VpnKeyIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+            <Typography variant="h6" color="text.secondary" gutterBottom>
+              Нет сохраненных токенов
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Добавьте токен VK ORD для работы с API
+            </Typography>
+            <Button onClick={handleOpenCreateDialog}>
+              <AddIcon className="mr-2 h-4 w-4" />
+              Добавить первый токен
+            </Button>
+          </Paper>
+        }
+        cardActions={(credential) => (
+          <>
+            <IconButton
+              size="small"
+              onClick={() => handleOpenEditDialog(credential)}
+              sx={{ minWidth: 44, minHeight: 44 }}
+            >
+              <EditIcon />
+            </IconButton>
+            <IconButton
+              size="small"
+              onClick={() => credential.id && handleDelete(credential.id)}
+              disabled={!credential.id}
+              color="error"
+              sx={{ minWidth: 44, minHeight: 44 }}
+            >
+              <DeleteIcon />
+            </IconButton>
+          </>
+        )}
+      />
 
       {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>

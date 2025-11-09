@@ -14,7 +14,6 @@ export interface CreativeDetails {
   kktus: string[] // renamed from kktyCodes
   format: string
   contentUrls?: string[]
-  targetAudience?: string
   text?: string
   name?: string
   erid?: string

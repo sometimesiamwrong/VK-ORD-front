@@ -71,7 +71,6 @@ export const useCounterpartiesByInnQuery = (params: GetCounterpartiesByInnParams
 }
 
 export const useCounterpartyContractsQuery = (params: GetCounterpartyContractsParams, enabled = true) => {
-  console.log('useCounterpartyContractsQuery called with params:', params, 'enabled:', enabled)
   return useQuery({
     queryKey: ['counterparties', 'contracts', params.externalId, params],
     queryFn: async () => {

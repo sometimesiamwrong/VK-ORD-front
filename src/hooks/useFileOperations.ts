@@ -23,7 +23,6 @@ export const useFileOperations = () => {
         kktus: wizardState.creative.kktus,
         format: wizardState.creative.format,
         contentUrls: wizardState.creative.contentUrls,
-        targetAudience: wizardState.creative.targetAudience,
         text: wizardState.creative.text,
         name: wizardState.creative.name
       },

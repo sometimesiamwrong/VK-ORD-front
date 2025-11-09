@@ -60,11 +60,19 @@ export interface CreateFlowTemplateRequest {
 }
 
 export interface UpdateFlowTemplateRequest {
-  name?: string
-  description?: string
-  value?: TemplateExternalIds
-  tags?: string[]
-  isActive?: boolean
+  name: string
+  type: FlowTemplateType
+  description: string
+  value: TemplateExternalIds
+  tags: string[]
+  isActive: boolean
+}
+
+export interface UpdateFlowTemplateHeadersRequest {
+  name: string
+  description: string
+  tags: string[]
+  isActive: boolean
 }
 
 export interface ActivateFlowTemplateRequest {

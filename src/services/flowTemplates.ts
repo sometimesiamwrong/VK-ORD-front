@@ -35,6 +35,7 @@ import type {
   FlowTemplateResponse,
   CreateFlowTemplateRequest,
   UpdateFlowTemplateRequest,
+  UpdateFlowTemplateHeadersRequest,
   FlowTemplateTypesResponse,
   GetTemplatesParams
 } from '../types/flowTemplates'
@@ -155,6 +156,27 @@ export class FlowTemplatesService {
   static async updateTemplate(id: number, data: UpdateFlowTemplateRequest): Promise<FlowTemplateResponse> {
     const response = await http.put<FlowTemplateResponse>(`${this.BASE_URL}/v1/${id}`, data)
     return response.data
+  }
+
+  /**
+   * Update template headers (metadata only - name, description, tags, isActive)
+   * Does not update the template value/content
+   *
+   * @param id - Template ID
+   * @param data - Updated header data
+   *
+   * @example
+   * ```ts
+   * await FlowTemplatesService.updateTemplateHeaders(123, {
+   *   name: 'Updated Name',
+   *   description: 'Updated description',
+   *   tags: ['tag1', 'tag2'],
+   *   isActive: true
+   * })
+   * ```
+   */
+  static async updateTemplateHeaders(id: number, data: UpdateFlowTemplateHeadersRequest): Promise<void> {
+    await http.put(`${this.BASE_URL}/v1/${id}/headers`, data)
   }
 
   /**

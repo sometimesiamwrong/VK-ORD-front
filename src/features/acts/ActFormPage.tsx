@@ -139,11 +139,13 @@ export const ActFormPage: React.FC = () => {
     client?: any
     contractor?: any
     contract?: any
+    party?: any  // Add party for edit mode
   } | undefined
 
   const clientFromState = locationState?.client
   const contractorFromState = locationState?.contractor
   const contractFromState = locationState?.contract
+  const partyFromState = locationState?.party  // Party passed from ActsPage in edit mode
 
   const [activeTab, setActiveTab] = useState(0)
 
@@ -224,9 +226,6 @@ export const ActFormPage: React.FC = () => {
   const items = watch('items') || []
 
   // API hooks
-  const effectivePartyId = clientFromState?.externalId || ''
-  const { data: contractsData } = useContractsByParty(effectivePartyId)
-  const { data: creativesData } = useContractCreatives(contractExternalId)
   const { data: actDetails, isLoading: isLoadingActDetails } = useActDetails(actId || '')
 
   // Load contract details when editing (from actDetails.contractId)
@@ -235,6 +234,13 @@ export const ActFormPage: React.FC = () => {
     contractIdFromAct,
     isEditMode && !!contractIdFromAct
   )
+
+  // Get effectivePartyId from state or from loaded party
+  // In edit mode, use party passed from ActsPage
+  // In create mode, use client from wizard flow
+  const effectivePartyId = partyFromState?.externalId || clientFromState?.externalId || ''
+  const { data: contractsData } = useContractsByParty(effectivePartyId)
+  const { data: creativesData } = useContractCreatives(contractExternalId)
 
   // Mutations
   const createActMutation = useCreateAct()
@@ -866,25 +872,14 @@ export const ActFormPage: React.FC = () => {
                   name="clientRole"
                   control={control}
                   render={({ field, fieldState }) => {
-                    // Get available roles for client from clientFromState, normalize to lowercase
-                    const clientRoles = (clientFromState?.roles || []).map((r: string) => r.toLowerCase())
-                    console.log(clientFromState?.roles)
                     return (
                       <FormControl fullWidth error={!!fieldState.error}>
                         <InputLabel>Роль клиента</InputLabel>
                         <Select {...field} label="Роль клиента">
-                          {clientRoles.includes(ActRole.advertiser) && (
-                            <MenuItem value={ActRole.advertiser}>Рекламодатель</MenuItem>
-                          )}
-                          {clientRoles.includes(ActRole.agency) && (
-                            <MenuItem value={ActRole.agency}>Агентство</MenuItem>
-                          )}
-                          {clientRoles.includes(ActRole.publisher) && (
-                            <MenuItem value={ActRole.publisher}>Издатель</MenuItem>
-                          )}
-                          {clientRoles.includes(ActRole.mediator) && (
-                            <MenuItem value={ActRole.mediator}>Посредник</MenuItem>
-                          )}
+                          <MenuItem value={ActRole.advertiser}>Рекламодатель</MenuItem>
+                          <MenuItem value={ActRole.publisher}>Издатель</MenuItem>
+                          <MenuItem value={ActRole.agency}>Агентство</MenuItem>
+                          <MenuItem value={ActRole.mediator}>Посредник</MenuItem>
                         </Select>
                         {fieldState.error && (
                           <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
@@ -900,25 +895,14 @@ export const ActFormPage: React.FC = () => {
                   name="contractorRole"
                   control={control}
                   render={({ field, fieldState }) => {
-                    // Get available roles for contractor from contractorFromState, normalize to lowercase
-                    const contractorRoles = (contractorFromState?.roles || []).map((r: string) => r.toLowerCase())
-
                     return (
                       <FormControl fullWidth error={!!fieldState.error}>
                         <InputLabel>Роль исполнителя</InputLabel>
                         <Select {...field} label="Роль исполнителя">
-                          {contractorRoles.includes(ActRole.advertiser) && (
-                            <MenuItem value={ActRole.advertiser}>Рекламодатель</MenuItem>
-                          )}
-                          {contractorRoles.includes(ActRole.agency) && (
-                            <MenuItem value={ActRole.agency}>Агентство</MenuItem>
-                          )}
-                          {contractorRoles.includes(ActRole.publisher) && (
-                            <MenuItem value={ActRole.publisher}>Издатель</MenuItem>
-                          )}
-                          {contractorRoles.includes(ActRole.mediator) && (
-                            <MenuItem value={ActRole.mediator}>Посредник</MenuItem>
-                          )}
+                          <MenuItem value={ActRole.advertiser}>Рекламодатель</MenuItem>
+                          <MenuItem value={ActRole.publisher}>Издатель</MenuItem>
+                          <MenuItem value={ActRole.agency}>Агентство</MenuItem>
+                          <MenuItem value={ActRole.mediator}>Посредник</MenuItem>
                         </Select>
                         {fieldState.error && (
                           <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
@@ -1077,10 +1061,20 @@ export const ActFormPage: React.FC = () => {
                             options={itemCreatives}
                             value={controllerField.value || []}
                             onChange={(_, value) => {
-                              controllerField.onChange(value.map(v => ({
-                                erid: v.erid || v.data?.erid || '',
-                                creativeExternalId: v.externalId || v.data?.externalId || '',
-                              })))
+                              controllerField.onChange(value.map(v => {
+                                // If v already has creativeExternalId, it's from the form (already formatted)
+                                if (v.creativeExternalId !== undefined) {
+                                  return {
+                                    erid: v.erid || '',
+                                    creativeExternalId: v.creativeExternalId || '',
+                                  }
+                                }
+                                // Otherwise, it's from the API (creative object)
+                                return {
+                                  erid: v.erid || v.data?.erid || '',
+                                  creativeExternalId: v.externalId || v.data?.externalId || '',
+                                }
+                              }))
                             }}
                             getOptionLabel={(option) => {
                               if (typeof option === 'string') return option

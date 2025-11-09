@@ -44,7 +44,7 @@ export const useLogin = () => {
           setRefreshToken(data.refreshToken)
         }
         toast.success('Вход выполнен успешно')
-        navigate('/dashboard')
+        navigate('/wizard')
       } else {
         toast.error('Ошибка входа')
       }
@@ -69,7 +69,7 @@ export const useRegister = () => {
           setRefreshToken(data.refreshToken)
         }
         toast.success('Регистрация выполнена успешно')
-        navigate('/dashboard')
+        navigate('/wizard')
       } else {
         toast.error('Ошибка регистрации')
       }

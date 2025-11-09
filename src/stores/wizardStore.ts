@@ -11,6 +11,7 @@ interface PartyState {
   name: string | null
   shortWithOpf: string | null
   info: string | null
+  type: string | null
   role: PartyRole
 }
 
@@ -27,7 +28,6 @@ interface CreativeState {
   kktus: string[]
   format: VkOrdCreativeForm
   contentUrls: string[]
-  targetAudience: string | null
   text: string | null
   name: string | null
   mediaFiles: UploadedFile[]
@@ -92,12 +92,12 @@ interface WizardStoreState {
     // Advertiser actions
     setAdvertiserInn: (inn: string) => void
     setAdvertiserRole: (role: PartyRole) => void
-    setAdvertiserInfo: (info: { external_id?: string | null; name?: string | null; shortWithOpf?: string | null; info?: string | null }) => void
+    setAdvertiserInfo: (info: { external_id?: string | null; name?: string | null; shortWithOpf?: string | null; info?: string | null; type?: string | null }) => void
 
     // Contractor actions
     setContractorInn: (inn: string) => void
     setContractorRole: (role: PartyRole) => void
-    setContractorInfo: (info: { external_id?: string | null; name?: string | null; shortWithOpf?: string | null; info?: string | null }) => void
+    setContractorInfo: (info: { external_id?: string | null; name?: string | null; shortWithOpf?: string | null; info?: string | null; type?: string | null }) => void
 
     // Contract actions
     updateContract: (data: Partial<ContractState>) => void
@@ -113,7 +113,6 @@ interface WizardStoreState {
     setCreativeKktus: (kktus: string[]) => void
     setCreativeFormat: (format: VkOrdCreativeForm) => void
     setCreativeContentUrls: (urls: string[]) => void
-    setCreativeTargetAudience: (audience: string | null) => void
     setCreativeText: (text: string | null) => void
     setCreativeName: (name: string | null) => void
     setCreativeMediaFiles: (files: UploadedFile[]) => void
@@ -144,6 +143,7 @@ const initialAdvertiserState: PartyState = {
   name: null,
   shortWithOpf: null,
   info: null,
+  type: null,
   role: ['advertiser']
 }
 
@@ -153,6 +153,7 @@ const initialContractorState: PartyState = {
   name: null,
   shortWithOpf: null,
   info: null,
+  type: null,
   role: ['publisher']
 }
 
@@ -167,9 +168,8 @@ const initialCreativeState: CreativeState = {
   externalId: nowTimestampString(),
   contractExternalIds: [],
   kktus: [],
-  format: 0, // VkOrdCreativeForm.Banner
+  format: 2, // VkOrdCreativeForm.TextGraphicBlock
   contentUrls: [],
-  targetAudience: null,
   text: null,
   name: null,
   mediaFiles: []
@@ -241,14 +241,15 @@ export const useWizardStore = create<WizardStoreState>()(
             advertiser: { ...state.advertiser, role }
           })),
 
-        setAdvertiserInfo: ({ external_id, name, shortWithOpf, info }) =>
+        setAdvertiserInfo: ({ external_id, name, shortWithOpf, info, type }) =>
           set((state) => ({
             advertiser: {
               ...state.advertiser,
               external_id: external_id !== undefined ? external_id : state.advertiser.external_id,
               name: name !== undefined ? name : state.advertiser.name,
               shortWithOpf: shortWithOpf !== undefined ? shortWithOpf : state.advertiser.shortWithOpf,
-              info: info !== undefined ? info : state.advertiser.info
+              info: info !== undefined ? info : state.advertiser.info,
+              type: type !== undefined ? type : state.advertiser.type
             }
           })),
 
@@ -263,14 +264,15 @@ export const useWizardStore = create<WizardStoreState>()(
             contractor: { ...state.contractor, role }
           })),
 
-        setContractorInfo: ({ external_id, name, shortWithOpf, info }) =>
+        setContractorInfo: ({ external_id, name, shortWithOpf, info, type }) =>
           set((state) => ({
             contractor: {
               ...state.contractor,
               external_id: external_id !== undefined ? external_id : state.contractor.external_id,
               name: name !== undefined ? name : state.contractor.name,
               shortWithOpf: shortWithOpf !== undefined ? shortWithOpf : state.contractor.shortWithOpf,
-              info: info !== undefined ? info : state.contractor.info
+              info: info !== undefined ? info : state.contractor.info,
+              type: type !== undefined ? type : state.contractor.type
             }
           })),
 
@@ -329,11 +331,6 @@ export const useWizardStore = create<WizardStoreState>()(
         setCreativeContentUrls: (urls) =>
           set((state) => ({
             creative: { ...state.creative, contentUrls: urls }
-          })),
-
-        setCreativeTargetAudience: (audience) =>
-          set((state) => ({
-            creative: { ...state.creative, targetAudience: audience }
           })),
 
         setCreativeText: (text) =>
@@ -424,8 +421,8 @@ export const useWizardStore = create<WizardStoreState>()(
             showCreativeFlow: false,
             advertiser: initialAdvertiserState,
             contractor: initialContractorState,
-            contract: initialContractState,
-            creative: initialCreativeState,
+            contract: { ...initialContractState, externalId: generateContractExternalId(new Date(), 1) },
+            creative: { ...initialCreativeState, externalId: nowTimestampString() },
             erid: null,
             loadedTemplateId: null,
             isTemplateLoaded: false,
@@ -464,7 +461,6 @@ export const useWizardStore = create<WizardStoreState>()(
           kktus: state.creative.kktus,
           format: state.creative.format,
           contentUrls: state.creative.contentUrls,
-          targetAudience: state.creative.targetAudience,
           text: state.creative.text,
           name: state.creative.name
           // Don't persist mediaFiles (File objects can't be serialized)
@@ -478,6 +474,12 @@ export const useWizardStore = create<WizardStoreState>()(
         // Ensure mediaFiles is always an array after rehydration
         if (state && !state.creative.mediaFiles) {
           state.creative.mediaFiles = []
+        }
+        
+        // ВАЖНО: Генерируем НОВЫЙ externalId для креатива при загрузке страницы
+        // Это гарантирует, что при refresh страницы креатив всегда будет новым
+        if (state) {
+          state.creative.externalId = nowTimestampString()
         }
       }
     }

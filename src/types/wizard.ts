@@ -48,7 +48,6 @@ export interface WizardState {
   kktus: string[] // renamed from kktyCodes
   format: VkOrdCreativeForm // updated enum type
   contentUrls: string[]
-  targetAudience?: string | null
   text?: string | null
   name?: string | null
   mediaExternalIds: string[]

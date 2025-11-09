@@ -1,12 +1,12 @@
 import { Button } from '../ui/button'
 import React from 'react'
 import {
-  useWizardStep,
   useWizardLoadingState,
   useWizardActions,
   useCanSubmitCreative,
   useWizardStore,
-  useWizardOpenSections
+  useWizardOpenSections,
+  useWizardErid
 } from '../../stores/wizardStore'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { TagSelector } from '../ui/TagSelector'
@@ -35,11 +35,11 @@ const FORMAT_OPTIONS = [
 ]
 
 export const Step3Creative: React.FC = () => {
-  const currentStep = useWizardStep()
   const loadingState = useWizardLoadingState()
   const canSubmitCreative = useCanSubmitCreative()
   const { isTemplateLoaded } = useWizardStore()
   const openSections = useWizardOpenSections()
+  const erid = useWizardErid()
   const { setStep, toggleSection } = useWizardActions()
 
   const {
@@ -77,7 +77,7 @@ export const Step3Creative: React.FC = () => {
           <label>
             Формат
             <Select
-              value={creative.format?.toString() || VkOrdCreativeForm.Banner.toString()}
+              value={creative.format?.toString() || VkOrdCreativeForm.TextGraphicBlock.toString()}
               onValueChange={value => updateCreative({
                 format: parseInt(value as string) as VkOrdCreativeForm
               })}
@@ -108,16 +108,6 @@ export const Step3Creative: React.FC = () => {
             <UrlTagList
               urls={creative.contentUrls || []}
               onRemove={removeUrlAt}
-            />
-          </label>
-          <label>
-            Целевая аудитория
-            <input
-              className="vk-input"
-              value={creative.targetAudience || ''}
-              onChange={e => updateCreative({
-                targetAudience: e.target.value
-              })}
             />
           </label>
           <label>
@@ -182,8 +172,15 @@ export const Step3Creative: React.FC = () => {
           <Button
             disabled={!canSubmitCreative || loadingState['creative']}
             onClick={createCreative}
+            variant={erid ? 'default' : 'default'}
+            className={erid ? 'bg-green-300 hover:bg-green-400' : ''}
           >
-            {loadingState['creative'] ? 'Отправка…' : 'Получить ERID'}
+            {loadingState['creative'] 
+              ? 'Отправка…' 
+              : erid 
+                ? '🔄 Обновить креатив' 
+                : '✨ Получить ERID'
+            }
           </Button>
         </div>
       </div>

@@ -62,8 +62,12 @@ export const ActsPage: React.FC = () => {
   }
 
   const handleActSelect = (act: ActSummary) => {
-    // Navigate to edit page instead of showing in current page
-    navigate(`/acts/${act.externalId}/edit`)
+    // Navigate to edit page with selected party info
+    navigate(`/acts/${act.externalId}/edit`, {
+      state: {
+        party: selectedParty
+      }
+    })
   }
 
   const handleCreateAct = () => {

@@ -14,11 +14,15 @@ import { saveToCookie, getCookie } from '../../utils'
 import { toast } from 'sonner'
 import { queryClient } from '../../api/queryClient'
 
+interface CredentialSelectorSimpleProps {
+  variant?: 'appbar' | 'drawer'
+}
+
 /**
  * Simplified credential selector for top bar
  * Manages VK ORD credentials and environment selection
  */
-export const CredentialSelectorSimple: React.FC = () => {
+export const CredentialSelectorSimple: React.FC<CredentialSelectorSimpleProps> = ({ variant = 'appbar' }) => {
   const { data: credentials, isLoading } = useCredentials()
   const { environment, setEnvironment } = useEnvironmentStore()
   const [selectedCredentialId, setSelectedCredentialId] = useState<string>('')
@@ -77,6 +81,35 @@ export const CredentialSelectorSimple: React.FC = () => {
     toast.info(`Переключено на ${newEnv === 'sandbox' ? 'Песочницу' : 'Продакшн'}`)
   }
 
+  // Styles based on variant
+  const isDrawer = variant === 'drawer'
+  const labelColor = isDrawer ? 'text.primary' : 'white'
+  const selectStyles = isDrawer ? {
+    '.MuiOutlinedInput-notchedOutline': {
+      borderColor: 'divider',
+    },
+    '&:hover .MuiOutlinedInput-notchedOutline': {
+      borderColor: 'primary.main',
+    },
+    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+      borderColor: 'primary.main',
+    },
+  } : {
+    color: 'white',
+    '.MuiOutlinedInput-notchedOutline': {
+      borderColor: 'rgba(255, 255, 255, 0.3)',
+    },
+    '&:hover .MuiOutlinedInput-notchedOutline': {
+      borderColor: 'rgba(255, 255, 255, 0.5)',
+    },
+    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+      borderColor: 'white',
+    },
+    '.MuiSvgIcon-root': {
+      color: 'white',
+    },
+  }
+
   if (isLoading) {
     return (
       <Box sx={{ minWidth: 200 }}>
@@ -88,10 +121,10 @@ export const CredentialSelectorSimple: React.FC = () => {
   }
 
   return (
-    <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+    <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: isDrawer ? 'column' : 'row' }, gap: 2, alignItems: { xs: 'stretch', sm: 'center' }, width: isDrawer ? '100%' : 'auto' }}>
       {/* Environment Selector */}
-      <FormControl size="small" sx={{ minWidth: 120 }}>
-        <InputLabel id="environment-select-label" sx={{ color: 'white' }}>
+      <FormControl size="small" sx={{ minWidth: isDrawer ? 'auto' : 120, width: isDrawer ? '100%' : 'auto' }}>
+        <InputLabel id="environment-select-label" sx={{ color: labelColor }}>
           Окружение
         </InputLabel>
         <Select
@@ -99,21 +132,7 @@ export const CredentialSelectorSimple: React.FC = () => {
           value={environment}
           label="Окружение"
           onChange={handleEnvironmentChange}
-          sx={{
-            color: 'white',
-            '.MuiOutlinedInput-notchedOutline': {
-              borderColor: 'rgba(255, 255, 255, 0.3)',
-            },
-            '&:hover .MuiOutlinedInput-notchedOutline': {
-              borderColor: 'rgba(255, 255, 255, 0.5)',
-            },
-            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-              borderColor: 'white',
-            },
-            '.MuiSvgIcon-root': {
-              color: 'white',
-            },
-          }}
+          sx={selectStyles}
         >
           <MenuItem value="sandbox">Песочница</MenuItem>
           <MenuItem value="prod">Продакшн</MenuItem>
@@ -121,8 +140,8 @@ export const CredentialSelectorSimple: React.FC = () => {
       </FormControl>
 
       {/* Credential Selector */}
-      <FormControl size="small" sx={{ minWidth: 200 }}>
-        <InputLabel id="credential-select-label" sx={{ color: 'white' }}>
+      <FormControl size="small" sx={{ minWidth: isDrawer ? 'auto' : 200, width: isDrawer ? '100%' : 'auto' }}>
+        <InputLabel id="credential-select-label" sx={{ color: labelColor }}>
           VK ORD Ключ
         </InputLabel>
         <Select
@@ -131,21 +150,7 @@ export const CredentialSelectorSimple: React.FC = () => {
           label="VK ORD Ключ"
           onChange={handleCredentialChange}
           disabled={filteredCredentials.length === 0}
-          sx={{
-            color: 'white',
-            '.MuiOutlinedInput-notchedOutline': {
-              borderColor: 'rgba(255, 255, 255, 0.3)',
-            },
-            '&:hover .MuiOutlinedInput-notchedOutline': {
-              borderColor: 'rgba(255, 255, 255, 0.5)',
-            },
-            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-              borderColor: 'white',
-            },
-            '.MuiSvgIcon-root': {
-              color: 'white',
-            },
-          }}
+          sx={selectStyles}
         >
           <MenuItem value="">
             <em>-- Выберите ключ --</em>
@@ -159,7 +164,7 @@ export const CredentialSelectorSimple: React.FC = () => {
       </FormControl>
 
       {filteredCredentials.length === 0 && (
-        <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+        <Typography variant="caption" sx={{ color: isDrawer ? 'text.secondary' : 'rgba(255, 255, 255, 0.7)' }}>
           Нет доступных ключей
         </Typography>
       )}

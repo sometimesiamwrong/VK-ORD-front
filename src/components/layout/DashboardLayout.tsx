@@ -78,15 +78,15 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
   }
 
   const menuItems = [
-    { text: 'Дашборд', icon: <DashboardIcon />, path: '/dashboard' },
-    { text: 'Визард ERID', icon: <AutoAwesomeIcon />, path: '/wizard' },
+    //{ text: 'Дашборд', icon: <DashboardIcon />, path: '/dashboard' },
+    { text: 'Получить ERID', icon: <AutoAwesomeIcon />, path: '/wizard' },
     { text: 'Контрагенты', icon: <PeopleIcon />, path: '/parties' },
     { text: 'Акты', icon: <ReceiptIcon />, path: '/acts' },
     { text: 'Профиль', icon: <PersonIcon />, path: '/profile' },
-    { text: 'Credentials', icon: <VpnKeyIcon />, path: '/credentials' },
-    { text: 'Контракты', icon: <DescriptionIcon />, path: '/contracts' },
-    { text: 'Креативы', icon: <MovieIcon />, path: '/creatives' },
-    { text: 'Медиа', icon: <ImageIcon />, path: '/media' },
+    { text: 'Учетные данные', icon: <VpnKeyIcon />, path: '/credentials' },
+    //{ text: 'Контракты', icon: <DescriptionIcon />, path: '/contracts' },
+    //{ text: 'Креативы', icon: <MovieIcon />, path: '/creatives' },
+    //{ text: 'Медиа', icon: <ImageIcon />, path: '/media' },
   ]
 
   const drawer = (
@@ -96,6 +96,14 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
           VK ORD Cabinet
         </Typography>
       </Toolbar>
+
+      {/* Credential Selector - visible on mobile in drawer */}
+      {isMobile && (
+        <Box sx={{ p: 2, pb: 1 }}>
+          <CredentialSelectorSimple variant="drawer" />
+        </Box>
+      )}
+
       <List>
         {menuItems.map((item) => (
           <ListItem key={item.text} disablePadding>
@@ -103,6 +111,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
               component={Link}
               to={item.path}
               onClick={() => isMobile && setMobileOpen(false)}
+              sx={{ minHeight: 44 }}
             >
               <ListItemIcon>
                 {item.icon}
@@ -239,12 +248,12 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
         component="main"
         sx={{
           flexGrow: 1,
-          p: 3,
+          p: { xs: 2, sm: 2.5, md: 3 },
           width: { md: `calc(100% - ${drawerWidth}px)` }
         }}
       >
         <Toolbar />
-        <Container maxWidth="lg">
+        <Container maxWidth="lg" disableGutters={{ xs: true, sm: false }}>
           {children || <Outlet />}
         </Container>
       </Box>

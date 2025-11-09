@@ -210,7 +210,7 @@ export const useMyData = (id: string) => {
 ### VK ORD Specific Types
 
 The application uses VK ORD enums defined as const objects:
-- `VkOrdCreativeForm` - Creative formats (Banner, Video, etc.)
+- `VkOrdCreativeForm` - Creative formats (TextGraphicBlock, Video, etc.)
 - `VkOrdPersonRoles` - Party roles (Advertiser, Publisher, Agency, ORS)
 - `VkOrdContractType` - Contract types
 - `VkOrdPayType` - Payment types (CPM, CPC, CPA, CPView)

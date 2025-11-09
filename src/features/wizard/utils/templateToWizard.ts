@@ -8,6 +8,7 @@
 import type { TemplateEnrichedData } from '../../../types/flowTemplates'
 import type { PartyRole } from '../../../types/wizard'
 import { VkOrdCreativeForm } from '../../../types'
+import { parseRoles } from '../../../utils'
 
 /**
  * Convert string enum value to numeric enum value
@@ -33,6 +34,7 @@ export interface MappedWizardState {
     name: string | null
     shortWithOpf: string | null
     info: string | null
+    juridicalDetails: any | null
     role: PartyRole
   }
   contractor: {
@@ -41,6 +43,7 @@ export interface MappedWizardState {
     name: string | null
     shortWithOpf: string | null
     info: string | null
+    juridicalDetails: any | null
     role: PartyRole
   }
   contract: {
@@ -53,7 +56,6 @@ export interface MappedWizardState {
     format: number
     contractExternalIds: string[]
     contentUrls: string[]
-    targetAudience: string | null
     kktus: string[]
   }
 }
@@ -64,33 +66,58 @@ export interface MappedWizardState {
  * According to requirements:
  * - Step 1 (Parties): Fill ALL fields
  * - Step 2 (Contract): Fill ALL fields
- * - Step 3 (Creative): Fill ONLY: format, contractExternalIds, contentUrls, targetAudience, kktus
+ * - Step 3 (Creative): Fill ONLY: format, contractExternalIds, contentUrls, kktus
  *
  * @param template - Template data from backend (enriched with full DTO objects)
  * @returns Mapped wizard state
  */
+/**
+ * Format counterparty info string for display
+ */
+const formatCounterpartyInfo = (name: string | null | undefined, type: string | null | undefined): string | null => {
+  if (!name) return null
+
+  const displayName = name
+  const typeLabel = type === 'Ip' || type === 'ip'
+    ? 'ИП'
+    : type === 'Juridical' || type === 'juridical'
+    ? 'ЮР лицо'
+    : type === 'Physical' || type === 'physical'
+    ? 'Физ. лицо'
+    : type || ''
+
+  return typeLabel ? `${displayName} (${typeLabel})` : displayName
+}
+
 export const mapTemplateToWizardState = (template: TemplateEnrichedData): MappedWizardState => {
   const { client, contractor, contract, creative } = template
+
+  const clientName = client.data?.name || null
+  const clientType = client.data?.juridicalDetails?.type || null
+  const contractorName = contractor.data?.name || null
+  const contractorType = contractor.data?.juridicalDetails?.type || null
 
   return {
     // Step 1: Advertiser (Client) - ALL fields
     advertiser: {
       inn: client.data?.juridicalDetails?.inn || '',
       external_id: client.externalId || null,
-      name: client.data?.name || null,
+      name: clientName,
       shortWithOpf: null, // Not available in CounterpartyDto
-      info: null, // Not available in CounterpartyDto
-      role: (client.data?.roles?.[0] ? [client.data.roles[0]] : ['advertiser']) as PartyRole
+      info: formatCounterpartyInfo(clientName, clientType),
+      juridicalDetails: client.data?.juridicalDetails || null,
+      role: parseRoles(client.data?.roles),
     },
 
     // Step 1: Contractor (Publisher) - ALL fields
     contractor: {
       inn: contractor.data?.juridicalDetails?.inn || '',
       external_id: contractor.externalId || null,
-      name: contractor.data?.name || null,
+      name: contractorName,
       shortWithOpf: null, // Not available in CounterpartyDto
-      info: null, // Not available in CounterpartyDto
-      role: (contractor.data?.roles?.[0] ? [contractor.data.roles[0]] : ['publisher']) as PartyRole
+      info: formatCounterpartyInfo(contractorName, contractorType),
+      juridicalDetails: contractor.data?.juridicalDetails || null,
+      role: parseRoles(contractor.data?.roles)
     },
 
     // Step 2: Contract - ALL fields
@@ -109,16 +136,17 @@ export const mapTemplateToWizardState = (template: TemplateEnrichedData): Mapped
       // Contract IDs: try data.contractExternalIds first, fallback to contract externalId
       contractExternalIds: creative.data?.contractExternalIds && creative.data.contractExternalIds.length > 0
         ? creative.data.contractExternalIds
-        : [contract.externalId || ''],
+        : contract.externalId ? [contract.externalId] : [],
       
       // Content URLs: map from targetUrls (note: snake_case in JSON, camelCase after http interceptor)
-      contentUrls: creative.data?.targetUrls || [],
-      
-      // Target audience: targeting field
-      targetAudience: creative.data?.targeting || null,
+      contentUrls: creative.data?.targetUrls && creative.data.targetUrls.length > 0 
+        ? creative.data.targetUrls 
+        : [],
       
       // KKTU codes: array of strings
-      kktus: creative.data?.kktus || []
+      kktus: creative.data?.kktus && creative.data.kktus.length > 0 
+        ? creative.data.kktus 
+        : []
     }
   }
 }

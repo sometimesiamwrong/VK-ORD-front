@@ -1,6 +1,7 @@
 # CLAUDE.md
 
 не создавай .md файлы, если это явно не указано в запросе пользователя.
+Избегай повторения кода в файлах, переиспользуй существующие функции и модули и типы.
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
@@ -212,7 +213,7 @@ export const useMyData = (id: string) => {
 ### VK ORD Specific Types
 
 The application uses VK ORD enums defined as const objects:
-- `VkOrdCreativeForm` - Creative formats (Banner, Video, etc.)
+- `VkOrdCreativeForm` - Creative formats (TextGraphicBlock, Video, etc.)
 - `VkOrdPersonRoles` - Party roles (Advertiser, Publisher, Agency, ORS)
 - `VkOrdContractType` - Contract types
 - `VkOrdPayType` - Payment types (CPM, CPC, CPA, CPView)

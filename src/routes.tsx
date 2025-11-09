@@ -22,6 +22,7 @@ import { MediaPage } from './features/media/MediaPage'
 import { WizardPage } from './features/wizard/WizardPage'
 import { PartiesPage } from './features/parties/PartiesPage'
 import { ActsPage, ActFormPage } from './features/acts';
+import { CredentialGuard } from './components/guards/CredentialGuard'
 
 // Auth guard component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -50,11 +51,11 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />
 }
 
-// Public route component (redirects to dashboard if authenticated)
+// Public route component (redirects to home page if authenticated)
 const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated } = useAuth()
 
-  return isAuthenticated ? <Navigate to="/dashboard" replace /> : <>{children}</>
+  return isAuthenticated ? <Navigate to="/" replace /> : <>{children}</>
 }
 
 // Main app router
@@ -79,6 +80,7 @@ export const AppRouter: React.FC = () => {
         <ErrorBoundary>
           <HashRouter>
             <Suspense fallback={<PageLoader />}>
+              <CredentialGuard />
               <Routes>
               {/* Public routes */}
               <Route
@@ -209,8 +211,17 @@ export const AppRouter: React.FC = () => {
               />
 
               {/* Default redirect */}
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+              <Route
+                path="/"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout>
+                      <WizardPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Suspense>
           </HashRouter>

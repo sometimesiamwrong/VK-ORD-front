@@ -20,7 +20,7 @@
  *   externalId: 'creative-001',
  *   contractExternalIds: ['contract-001'],
  *   kktus: ['01.01.01.001'],
- *   type: 0 // Banner
+ *   type: 2 // TextGraphicBlock
  * })
  * console.log(result.erid) // ERID identifier
  * ```
@@ -113,8 +113,8 @@ export class WizardService {
    *   externalId: 'creative-001',
    *   contractExternalIds: ['contract-001'],
    *   kktus: ['01.01.01.001'],
-   *   type: 0, // Banner
-   *   name: 'Summer sale banner',
+   *   type: 2, // TextGraphicBlock
+   *   name: 'Summer sale creative',
    *   texts: ['Скидки до 50%!'],
    *   payType: 0 // CPM
    * })

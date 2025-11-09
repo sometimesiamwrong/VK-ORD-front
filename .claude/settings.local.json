@@ -22,7 +22,17 @@
       "mcp__chrome-devtools__take_screenshot",
       "mcp__chrome-devtools__list_console_messages",
       "Bash(pkill -f \"vite\")",
-      "Bash(npx tsc --noEmit --project tsconfig.json)"
+      "Bash(npx tsc --noEmit --project tsconfig.json)",
+      "mcp__chrome-devtools__fill_form",
+      "Bash(timeout 3 sleep:*)",
+      "mcp__chrome-devtools__list_network_requests",
+      "mcp__chrome-devtools__navigate_page_history",
+      "Bash(timeout 2 sleep:*)",
+      "mcp__chrome-devtools__get_network_request",
+      "mcp__chrome-devtools__evaluate_script",
+      "Bash(npm run dev:*)",
+      "Bash(timeout 5 sleep:*)",
+      "mcp__chrome-devtools__resize_page"
     ],
     "deny": [],
     "ask": []

@@ -18,10 +18,11 @@ export const Wizard: React.FC = () => {
 
   const [selectorOpen, setSelectorOpen] = useState(false)
   const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(null)
-  
+  const [loadedTemplateName, setLoadedTemplateName] = useState<string | null>(null)
+
   const showCreativeFlow = useShowCreativeFlow()
 
-  const { data: templateData } = useTemplateById(selectedTemplateId)
+  const { data: templateData, isLoading: isLoadingTemplate } = useTemplateById(selectedTemplateId)
   const incrementUse = useIncrementTemplateUse()
 
   const { actions } = useWizardStore()
@@ -31,13 +32,15 @@ export const Wizard: React.FC = () => {
     if (templateData?.value && selectedTemplateId) {
       const mapped = mapTemplateToWizardState(templateData.value)
 
+      console.log('Mapped template to wizard state:', mapped)
       // Fill Step 1: Advertiser
       actions.setAdvertiserInn(mapped.advertiser.inn)
       actions.setAdvertiserInfo({
         external_id: mapped.advertiser.external_id,
         name: mapped.advertiser.name,
         shortWithOpf: mapped.advertiser.shortWithOpf,
-        info: mapped.advertiser.info
+        info: mapped.advertiser.info,
+        type: mapped.advertiser.juridicalDetails?.type || null
       })
       actions.setAdvertiserRole(mapped.advertiser.role)
 
@@ -47,7 +50,8 @@ export const Wizard: React.FC = () => {
         external_id: mapped.contractor.external_id,
         name: mapped.contractor.name,
         shortWithOpf: mapped.contractor.shortWithOpf,
-        info: mapped.contractor.info
+        info: mapped.contractor.info,
+        type: mapped.contractor.juridicalDetails?.type || null
       })
       actions.setContractorRole(mapped.contractor.role)
 
@@ -63,16 +67,20 @@ export const Wizard: React.FC = () => {
       })
 
       // Fill Step 3: Creative (only specified fields)
+      // ВАЖНО: Генерируем НОВЫЙ externalId при загрузке из шаблона
       actions.updateCreative({
+        externalId: Date.now().toString(), // Новый ID креатива
         format: mapped.creative.format as any,
         contractExternalIds: mapped.creative.contractExternalIds,
         contentUrls: mapped.creative.contentUrls,
-        targetAudience: mapped.creative.targetAudience,
         kktus: mapped.creative.kktus
       })
 
       // Mark template as loaded
       actions.setLoadedTemplate(selectedTemplateId)
+
+      // Save template name
+      setLoadedTemplateName(templateData.name)
 
       // Increment use count
       incrementUse.mutate(selectedTemplateId)
@@ -83,17 +91,22 @@ export const Wizard: React.FC = () => {
       // Show creative step after loading template
       actions.setShowCreativeFlow(true)
 
-      toast.success('Шаблон успешно загружен')
+      toast.success(`Шаблон "${templateData.name}" успешно загружен`)
     }
   }, [templateData, selectedTemplateId, actions, incrementUse])
 
   const handleProceedToCreative = () => {
     actions.setShowCreativeFlow(true)
+    // Закрываем секции 1 и 2, открываем 3
+    actions.setSection(1, false)
+    actions.setSection(2, false)
+    actions.setSection(3, true)
     actions.setStep(3)
   }
 
   const handleStartOver = () => {
     actions.clearAll()
+    setLoadedTemplateName(null)
     toast.info('Начинаем заново')
   }
 
@@ -104,17 +117,31 @@ export const Wizard: React.FC = () => {
 
       {/* Template and Action Buttons */}
       <div className="my-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
-        <div className="flex gap-3 flex-wrap">
-          <Button 
-            variant="default" 
+        <div className="flex gap-3 flex-wrap items-center">
+          <Button
+            variant="default"
             onClick={() => setSelectorOpen(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-md"
+            disabled={isLoadingTemplate}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-md disabled:opacity-50"
           >
-            📋 Загрузить из шаблона
+            {isLoadingTemplate ? (
+              <>
+                <span className="inline-block animate-spin mr-2">⏳</span>
+                Загрузка...
+              </>
+            ) : (
+              <>📋 Загрузить из шаблона</>
+            )}
           </Button>
+          {loadedTemplateName && (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-md border border-blue-300 shadow-sm">
+              <span className="text-sm text-gray-600">Из шаблона:</span>
+              <span className="text-sm font-semibold text-blue-700">{loadedTemplateName}</span>
+            </div>
+          )}
           {showCreativeFlow && (
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={handleStartOver}
               className="border-gray-700 hover:bg-gray-50"
             >

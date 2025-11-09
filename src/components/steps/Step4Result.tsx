@@ -23,10 +23,11 @@ export const Step4Result: React.FC = () => {
   const erid = useWizardErid()
   const { loadedTemplateId } = useWizardStore()
   const { clearAll } = useWizardActions()
-  const { exportJson } = useFileOperations()
 
   const [saverOpen, setSaverOpen] = useState(false)
 
+  // Map current wizard state to template data
+  // This ensures templateData always contains the LATEST creative_external_id
   const templateData = mapWizardStateToTemplate({
     advertiser,
     contractor,
@@ -52,21 +53,6 @@ export const Step4Result: React.FC = () => {
             onClick={() => navigator.clipboard.writeText(erid || '')}
           >
             Скопировать ERID
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => {
-              const url = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(erid || '')}`
-              window.open(url, '_blank')
-            }}
-          >
-            QR‑код
-          </Button>
-          <Button variant="outline" onClick={() => window.print()}>
-            Печать
-          </Button>
-          <Button variant="secondary" onClick={exportJson}>
-            Экспорт JSON
           </Button>
           <Button variant="outline"  className="border-gray-700 hover:bg-gray-50" onClick={() => setSaverOpen(true)}>
             💾 Сохранить шаблон

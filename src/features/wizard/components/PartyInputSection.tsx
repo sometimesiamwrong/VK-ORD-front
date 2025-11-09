@@ -38,6 +38,24 @@ export const PartyInputSection: React.FC<PartyInputSectionProps> = ({
   return (
     <>
       <div className="vk-label">{label}</div>
+
+      {/* Show counterparty name above INN input on mobile */}
+      {info && (
+        <div style={{
+          color: 'var(--vk-text)',
+          marginTop: 4,
+          marginBottom: 8,
+          fontSize: '15px',
+          fontWeight: 600,
+          padding: '8px 12px',
+          backgroundColor: 'var(--vk-success-bg)',
+          borderRadius: '8px',
+          border: '1px solid var(--vk-border)'
+        }}>
+          {info}
+        </div>
+      )}
+
       <div className="vk-mobile-stack">
         <div className="vk-inline-controls">
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -86,12 +104,6 @@ export const PartyInputSection: React.FC<PartyInputSectionProps> = ({
           </Button>
         </div>
       </div>
-
-      {info && (
-        <div style={{ color: 'var(--vk-muted)', marginTop: 4 }}>
-          {info}
-        </div>
-      )}
     </>
   )
 }

@@ -9,11 +9,28 @@ module.exports = {
   ],
   prefix: "",
   theme: {
+    // Унифицированные breakpoints с Material UI
+    screens: {
+      'xs': '0px',
+      'sm': '600px',
+      'md': '900px',
+      'lg': '1200px',
+      'xl': '1536px',
+    },
     container: {
       center: true,
-      padding: "2rem",
+      padding: {
+        DEFAULT: '1rem',
+        sm: '1.5rem',
+        md: '2rem',
+        lg: '2rem',
+        xl: '2rem',
+      },
       screens: {
-        "2xl": "1400px",
+        sm: '600px',
+        md: '900px',
+        lg: '1200px',
+        xl: '1536px',
       },
     },
     extend: {

@@ -96,6 +96,29 @@ export function loadFromCookie(key: string): string | null {
     }
 }
 
+/**
+ * Parse roles from backend format to wizard format
+ * Backend returns: ["Publisher", "Agency", "Advertiser"]
+ * Wizard expects: ["publisher", "agency", "advertiser"]
+ * 
+ * @param roles - Array of role strings from backend
+ * @returns Normalized role array in lowercase
+ * 
+ * @example
+ * ```ts
+ * parseRoles(['Publisher', 'Agency']) // returns ['publisher', 'agency']
+ * parseRoles(['ADVERTISER']) // returns ['advertiser']
+ * parseRoles(undefined) // returns ['advertiser'] (default)
+ * ```
+ */
+export function parseRoles(roles: string[] | undefined): ('advertiser' | 'agency' | 'ors' | 'publisher')[] {
+  if (!roles || !Array.isArray(roles) || roles.length === 0) {
+    return ['advertiser'] // Default fallback
+  }
+  
+  return roles.map(role => role.toLowerCase()) as ('advertiser' | 'agency' | 'ors' | 'publisher')[]
+}
+
 // Экспорт новых утилит для работы с куками
 export * from './cookies'
 

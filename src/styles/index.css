@@ -21,15 +21,23 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  /* Support for iOS devices with dynamic viewport height */
+  min-height: 100dvh;
   background: var(--vk-bg);
   color: var(--vk-text);
   font-family: -apple-system, system-ui, Segoe UI, Roboto, Inter, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  /* iOS Safe Area support */
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }
 
 #app {
   max-width: 1280px;
   margin: 0 auto;
   padding: 32px;
+  /* iOS Safe Area support - add extra padding at top and bottom */
+  padding-top: calc(32px + env(safe-area-inset-top));
+  padding-bottom: calc(32px + env(safe-area-inset-bottom));
 }
 
 h1 {
@@ -593,6 +601,11 @@ pre.vk-pre {
   /* Container and app layout */
   #app {
     padding: 16px;
+    /* iOS Safe Area support for mobile */
+    padding-top: calc(16px + env(safe-area-inset-top));
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
+    padding-left: calc(16px + env(safe-area-inset-left));
+    padding-right: calc(16px + env(safe-area-inset-right));
   }
 
   .vk-container {

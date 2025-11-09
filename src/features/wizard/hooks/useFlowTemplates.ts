@@ -12,6 +12,7 @@ import { getErrorMessage } from '../../../api/errorHandler'
 import type {
   CreateFlowTemplateRequest,
   UpdateFlowTemplateRequest,
+  UpdateFlowTemplateHeadersRequest,
   GetTemplatesParams
 } from '../../../types/flowTemplates'
 
@@ -128,6 +129,42 @@ export const useUpdateTemplate = () => {
     mutationFn: ({ id, data }: { id: number; data: UpdateFlowTemplateRequest }) =>
       FlowTemplatesService.updateTemplate(id, data),
     onSuccess: (updatedTemplate) => {
+      queryClient.invalidateQueries({ queryKey: [...FLOW_TEMPLATES_QUERY_KEY] })
+      toast.success('Шаблон успешно обновлен')
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Ошибка при обновлении шаблона'))
+    }
+  })
+}
+
+/**
+ * Hook for updating template headers (metadata only)
+ * Updates name, description, tags, and isActive without changing the template value
+ *
+ * @returns Mutation for updating template headers
+ *
+ * @example
+ * ```tsx
+ * const updateHeadersMutation = useUpdateTemplateHeaders()
+ * await updateHeadersMutation.mutateAsync({
+ *   id: 123,
+ *   data: {
+ *     name: 'Updated Name',
+ *     description: 'Updated description',
+ *     tags: ['tag1'],
+ *     isActive: true
+ *   }
+ * })
+ * ```
+ */
+export const useUpdateTemplateHeaders = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: UpdateFlowTemplateHeadersRequest }) =>
+      FlowTemplatesService.updateTemplateHeaders(id, data),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [...FLOW_TEMPLATES_QUERY_KEY] })
       toast.success('Шаблон успешно обновлен')
     },

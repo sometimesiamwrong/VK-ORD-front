@@ -19,6 +19,7 @@ import {
   ListItemSecondaryAction,
 } from '@mui/material'
 import { Button } from '@/components/ui/button'
+import { ResponsiveContainer } from '@/components/layout'
 import {
   Add as AddIcon,
   Delete as DeleteIcon,
@@ -44,7 +45,6 @@ export const CreativesPage: React.FC = () => {
     type: VkOrdCreativeForm.Banner,
     payType: 0, // VkOrdPayType.Cpm
     targetUrls: [],
-    targetAudience: '',
     texts: [],
     name: '',
   })
@@ -243,12 +243,12 @@ export const CreativesPage: React.FC = () => {
   }
 
   return (
-    <Box>
+    <ResponsiveContainer variant="full">
       <Typography variant="h4" gutterBottom>
         Управление креативами
       </Typography>
 
-      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 3 }}>
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: { xs: 2, md: 3 } }}>
         {/* Create Creative */}
         <Box sx={{ flex: 1 }}>
           <Paper sx={{ p: 3 }}>
@@ -258,7 +258,7 @@ export const CreativesPage: React.FC = () => {
             <Divider sx={{ mb: 3 }} />
 
             <Box component="form" onSubmit={handleCreateSubmit}>
-              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 2 }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 2 }}>
               <TextField
                 fullWidth
                 label="External ID"
@@ -372,16 +372,6 @@ export const CreativesPage: React.FC = () => {
                 <Box>
                   <TextField
                     fullWidth
-                    label="Target Audience"
-                    value={formData.targetAudience}
-                    onChange={handleChange('targetAudience')}
-                    multiline
-                    rows={2}
-                  />
-                </Box>
-                <Box>
-                  <TextField
-                    fullWidth
                     label="Text"
                     value={formData.texts?.join('\n') || ''}
                     onChange={handleChange('text')}
@@ -425,16 +415,18 @@ export const CreativesPage: React.FC = () => {
                 <Typography variant="h6" gutterBottom>
                   Список креативов
                 </Typography>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                  <Typography variant="body2" color="text.secondary">
+                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' }, gap: 1, mb: 1 }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
                     Показано {totalItemsCount > 0 ? `${listOffset + 1}–${Math.min(listOffset + listLimit, totalItemsCount)}` : 0} из {totalItemsCount}
                   </Typography>
-                  <Box sx={{ display: 'flex', gap: 1 }}>
-                    <Button variant="outline" onClick={() => setListOffset(0)} disabled={currentPage <= 1}>«</Button>
-                    <Button variant="outline" onClick={handlePrev} disabled={currentPage <= 1}>Назад</Button>
-                    <Typography variant="body2" color="text.secondary" sx={{ px: 1 }}>Стр. {currentPage}/{totalPages}</Typography>
-                    <Button variant="outline" onClick={handleNext} disabled={currentPage >= totalPages}>Вперед</Button>
-                    <Button variant="outline" onClick={() => setListOffset((totalPages - 1) * listLimit)} disabled={currentPage >= totalPages}>»</Button>
+                  <Box sx={{ display: 'flex', gap: 1, justifyContent: { xs: 'center', sm: 'flex-end' }, flexWrap: 'wrap' }}>
+                    <Button variant="outline" size="sm" onClick={() => setListOffset(0)} disabled={currentPage <= 1}>«</Button>
+                    <Button variant="outline" size="sm" onClick={handlePrev} disabled={currentPage <= 1}>Назад</Button>
+                    <Box sx={{ display: 'flex', alignItems: 'center', px: 1, minWidth: 80, justifyContent: 'center' }}>
+                      <Typography variant="body2" color="text.secondary">Стр. {currentPage}/{totalPages}</Typography>
+                    </Box>
+                    <Button variant="outline" size="sm" onClick={handleNext} disabled={currentPage >= totalPages}>Вперед</Button>
+                    <Button variant="outline" size="sm" onClick={() => setListOffset((totalPages - 1) * listLimit)} disabled={currentPage >= totalPages}>»</Button>
                   </Box>
                 </Box>
                 <List dense>
@@ -639,6 +631,6 @@ export const CreativesPage: React.FC = () => {
           </Box>
         )}
       </Box>
-    </Box>
+    </ResponsiveContainer>
   )
 }

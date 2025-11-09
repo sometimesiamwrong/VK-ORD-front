@@ -10,6 +10,7 @@ import {
   Divider,
 } from '@mui/material'
 import { Button } from '@/components/ui/button'
+import { ResponsiveContainer } from '@/components/layout'
 import { useMutation } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import http from '../../api/http'
@@ -97,12 +98,12 @@ export const ContractsPage: React.FC = () => {
   }
 
   return (
-    <Box>
+    <ResponsiveContainer variant="wide">
       <Typography variant="h4" gutterBottom>
         Управление контрактами
       </Typography>
 
-      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3 }}>
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: { xs: 2, md: 3 } }}>
         {/* Create/Update Contract */}
         <Box sx={{ flex: 1 }}>
           <Paper sx={{ p: 3 }}>
@@ -112,7 +113,7 @@ export const ContractsPage: React.FC = () => {
             <Divider sx={{ mb: 3 }} />
 
             <Box component="form" onSubmit={handleCreateSubmit}>
-              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 2 }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 2 }}>
               <TextField
                 fullWidth
                 label="External ID контракта"
@@ -253,6 +254,6 @@ export const ContractsPage: React.FC = () => {
           </Paper>
         </Box>
       </Box>
-    </Box>
+    </ResponsiveContainer>
   )
 }
