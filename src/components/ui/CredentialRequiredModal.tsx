@@ -96,14 +96,25 @@ export const CredentialRequiredModal: React.FC<CredentialRequiredModalProps> = (
           backgroundColor: 'rgba(0, 0, 0, 0.85)',
           backdropFilter: 'blur(8px)',
         },
+        '& .MuiDialog-paper': {
+          margin: { xs: 2, sm: 4 },
+          maxWidth: { xs: 'calc(100vw - 32px)', sm: '600px' },
+        },
       }}
     >
-      <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      <DialogTitle sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1,
+        p: { xs: 2, sm: 3 }
+      }}>
         <VpnKeyIcon color="primary" />
-        <Typography variant="h6">Требуется выбрать API ключ</Typography>
+        <Typography variant="h6" sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
+          Требуется выбрать API ключ
+        </Typography>
       </DialogTitle>
-      
-      <DialogContent>
+
+      <DialogContent sx={{ p: { xs: 2, sm: 3 } }}>
         <Alert severity="warning" sx={{ mb: 3 }}>
           <AlertTitle>Внимание</AlertTitle>
           Для работы с VK ORD необходимо выбрать API ключ. Без выбранного ключа вы не сможете создавать контракты и креативы.
@@ -147,7 +158,17 @@ export const CredentialRequiredModal: React.FC<CredentialRequiredModalProps> = (
         </Typography>
       </DialogContent>
 
-      <DialogActions sx={{ p: 2, gap: 1 }}>
+      <DialogActions sx={{
+        p: { xs: 1.5, sm: 2 },
+        gap: { xs: 0.5, sm: 1 },
+        flexDirection: { xs: 'column', sm: 'row' },
+        '& > button': {
+          width: { xs: '100%', sm: 'auto' },
+          height: { xs: '36px', sm: '40px' },
+          fontSize: { xs: '0.875rem', sm: '0.875rem' },
+          padding: { xs: '8px 12px', sm: '8px 16px' }
+        }
+      }}>
         <Button
           variant="outline"
           onClick={handleGoToCredentials}

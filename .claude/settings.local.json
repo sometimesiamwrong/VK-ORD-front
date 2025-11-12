@@ -32,7 +32,9 @@
       "mcp__chrome-devtools__evaluate_script",
       "Bash(npm run dev:*)",
       "Bash(timeout 5 sleep:*)",
-      "mcp__chrome-devtools__resize_page"
+      "mcp__chrome-devtools__resize_page",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)"
     ],
     "deny": [],
     "ask": []

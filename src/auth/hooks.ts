@@ -1,8 +1,9 @@
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import http from '../api/http'
 import { useTokenStore, useDeviceStore } from './tokenStore'
 import { toast } from 'sonner'
+import { clearAllStorageData } from '../utils/storage'
 import type {
   LoginRequest,
   RegisterRequest,
@@ -79,6 +80,7 @@ export const useRegister = () => {
 
 export const useLogout = () => {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { clearTokens } = useTokenStore()
 
   return useMutation({
@@ -87,13 +89,24 @@ export const useLogout = () => {
       return response.data
     },
     onSuccess: () => {
+      // 1. Clear Zustand tokens
       clearTokens()
+
+      // 2. Clear React Query cache (all cached queries)
+      queryClient.clear()
+
+      // 3. Clear all browser storage (cookies, localStorage, sessionStorage)
+      clearAllStorageData()
+
       toast.success('Выход выполнен успешно')
       navigate('/login')
     },
     onError: () => {
-      // Even if logout fails, clear local tokens
+      // Even if logout fails on server, clear everything locally
       clearTokens()
+      queryClient.clear()
+      clearAllStorageData()
+
       navigate('/login')
     },
   })

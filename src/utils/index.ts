@@ -125,6 +125,9 @@ export * from './cookies'
 // Экспорт трансформеров для работы с DTO
 export * from './transformers'
 
+// Экспорт утилит для управления хранилищем
+export * from './storage'
+
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 
