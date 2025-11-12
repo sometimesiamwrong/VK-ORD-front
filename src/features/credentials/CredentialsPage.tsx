@@ -16,6 +16,7 @@ import {
   Chip,
   Tooltip,
   IconButton,
+  CircularProgress,
 } from '@mui/material'
 import { Button } from '@/components/ui/button'
 import {
@@ -291,12 +292,19 @@ export const CredentialsPage: React.FC = () => {
               (!editingCredential && !formData.tokenPlain)
             }
           >
-            {createMutation.isPending || updateMutation.isPending
-              ? 'Сохранение...'
-              : editingCredential
-                ? 'Обновить'
-                : 'Создать'
-            }
+            {createMutation.isPending || updateMutation.isPending ? (
+              <>
+                <CircularProgress size={16} className="mr-2" sx={{ color: 'inherit' }} />
+                {editingCredential
+                  ? 'Обновление...'
+                  : 'Синхронизация (до 5 минут, выполняется один раз)...'
+                }
+              </>
+            ) : editingCredential ? (
+              'Обновить'
+            ) : (
+              'Создать'
+            )}
           </Button>
         </DialogActions>
       </Dialog>
