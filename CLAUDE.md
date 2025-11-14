@@ -18,6 +18,8 @@ This is a React-based frontend application for VK ORD (Обязательная 
 ### Additional Commands
 - `npm run registry:start` - Start local shadcn/ui component registry server on port 8080
 - `npm run mcp:ts-dev` - Run TypeScript development helper via MCP
+- `npm run storybook` - Start Storybook dev server on port 6006 for component development
+- `npm run build-storybook` - Build static Storybook for deployment
 
 ### Testing Credentials
 Use these credentials for development and testing:
@@ -62,12 +64,18 @@ src/
 │   ├── creatives/          # Creative management
 │   ├── media/              # Media file management
 │   ├── parties/            # Counterparty management
-│   ├── invoices/               # Act creation and management
+│   ├── acts/               # Act creation and management
 │   └── wizard/             # Wizard flow for contract creation
 ├── hooks/                  # Custom React hooks
 ├── services/               # API service classes (contracts, counterparties, etc.)
+├── stores/                 # Zustand stores (wizardStore)
 ├── types/                  # TypeScript type definitions
-├── utils/                  # Utility functions
+│   ├── enums/              # VK ORD enums (vk-ord.ts)
+│   └── common/             # Common type definitions
+├── constants/              # Application constants (KKTY data)
+├── utils/                  # Utility functions (logger, storage, transformers)
+├── lib/                    # Third-party library utilities (cn, etc.)
+├── stories/                # Storybook stories
 └── routes.tsx              # Main routing configuration
 ```
 
@@ -112,23 +120,30 @@ Backend returns validation errors as `BrokenRule[]` with code + message. The htt
 
 ### State Management
 
-**Two State Systems:**
+**Three State Systems:**
 
 1. **Legacy Wizard Context** (`context/AppContext.tsx`):
    - Uses React useReducer pattern
    - Manages multi-step wizard state
    - Auto-saves to localStorage every 2 seconds
    - Includes party history, consent, INN validation
+   - **DEPRECATED**: Being gradually replaced by wizardStore
 
-2. **Modern Zustand Stores** (`auth/tokenStore.ts`):
-   - `useTokenStore` - Access/refresh tokens
-   - `useDeviceStore` - Device identification
-   - `useEnvironmentStore` - Sandbox vs Production toggle
+2. **Modern Zustand Stores**:
+   - `auth/tokenStore.ts`:
+     - `useTokenStore` - Access/refresh tokens
+     - `useDeviceStore` - Device identification
+     - `useEnvironmentStore` - Sandbox vs Production toggle
+   - `stores/wizardStore.ts`:
+     - Modern replacement for AppContext
+     - Persisted to localStorage
+     - Manages wizard flow (parties, contracts, creatives)
+     - Includes loading states, template management, party history
 
-**Server State:**
-- All API calls use TanStack Query (React Query)
-- Service classes in `src/services/` provide static methods
-- Hooks in feature folders or `src/hooks/` wrap mutations/queries
+3. **Server State**:
+   - All API calls use TanStack Query (React Query)
+   - Service classes in `src/services/` provide static methods
+   - Hooks in feature folders or `src/hooks/` wrap mutations/queries
 
 ### Routing & Guards
 
@@ -141,7 +156,18 @@ Backend returns validation errors as `BrokenRule[]` with code + message. The htt
 **Route Structure:**
 - `/login`, `/register` - Public routes
 - `/dashboard` - Main dashboard (no layout wrapper)
-- All other routes wrapped in `DashboardLayout`
+- `/` - Default route redirects to wizard page
+- All other routes wrapped in `DashboardLayout`:
+  - `/profile` - User profile management
+  - `/credentials` - VK ORD credentials
+  - `/contracts` - Contract list
+  - `/creatives` - Creative list
+  - `/media` - Media file management
+  - `/wizard` - Main wizard for ERID generation
+  - `/parties` - Counterparty management
+  - `/acts` - Act creation and management
+  - `/acts/new` - Create new act
+  - `/acts/:actId/edit` - Edit existing act
 
 ### Environment Switching
 
@@ -151,7 +177,86 @@ The application supports switching between VK ORD sandbox and production environ
 - Default is "sandbox"
 - Persisted in localStorage
 
+### Guards & Modals
+
+**CredentialGuard** (`components/guards/CredentialGuard.tsx`):
+- Monitors VK ORD credential selection across the app
+- Shows modal when credential is required but not selected
+- Mounted at app root level in routes.tsx
+- Non-blocking component that overlays when needed
+
+### Utility Functions
+
+**Logger** (`utils/logger.ts`):
+- Environment-aware logging utility
+- `logger.debug()` - Development only
+- `logger.info()` - General information
+- `logger.warn()` - Warnings
+- `logger.error()` - Errors with stack traces
+- Can be extended to send logs to external service in production
+
+**Storage Management** (`utils/storage.ts`):
+- Centralized storage utilities
+- `clearAllCookies()` - Removes all app cookies
+- `clearAllStorage()` - Clears localStorage and sessionStorage
+- `clearAuthStorage()` - Clears only authentication-related storage
+- Defines constants for all storage keys and cookie names
+
+**Transformers** (`utils/transformers.ts`):
+- Data transformation utilities
+- Case conversion helpers
+- Date/time formatting
+- String manipulation for Russian locale
+
+**Cookies** (`utils/cookies.ts`):
+- Cookie management utilities
+- `getCookie(name)` - Retrieve cookie value
+- `setCookie(name, value, options)` - Set cookie
+- `deleteCookie(name)` - Remove cookie
+
 ## Development Guidelines
+
+### Feature-Based Architecture
+
+Each feature in `src/features/` follows a consistent structure:
+
+```
+src/features/[feature-name]/
+├── [FeatureName]Page.tsx    # Main page component
+├── components/              # Feature-specific components
+│   ├── [Component1].tsx
+│   └── [Component2].tsx
+├── hooks/                   # Feature-specific hooks
+│   ├── use[Feature]List.ts
+│   └── use[Feature]By[Id].ts
+├── utils/                   # Feature-specific utilities
+│   └── [helper].ts
+└── index.ts                 # Public exports
+```
+
+**Example: Acts Feature**:
+```
+src/features/acts/
+├── ActsPage.tsx             # List of acts
+├── ActFormPage.tsx          # Create/edit act form
+├── components/
+│   ├── ActCreationFlow.tsx
+│   ├── ActEditor.tsx
+│   ├── ActHintsSidebar.tsx
+│   └── PartyLookup.tsx
+├── hooks/
+│   └── [act-specific hooks]
+├── utils/
+│   └── formToBackendMapper.ts
+└── index.ts
+```
+
+**Key Principles**:
+1. Each feature is self-contained with its own components and hooks
+2. Shared components go in `src/components/`
+3. Feature-specific types can be in the feature folder or `src/types/`
+4. Service classes in `src/services/` are shared across features
+5. Export only what's needed from `index.ts`
 
 ### Component Patterns
 
@@ -215,7 +320,125 @@ The application uses VK ORD enums defined as const objects:
 - `VkOrdContractType` - Contract types
 - `VkOrdPayType` - Payment types (CPM, CPC, CPA, CPView)
 
-These are defined in `src/types/index.ts` starting at line 57.
+These are defined in `src/types/enums/vk-ord.ts`.
+
+### Constants
+
+**KKTY Data** (`constants/kkty-data.ts`):
+- Contains all KKTU (ККТУ) advertising category codes
+- Large dataset (~31KB) with Russian advertising categories
+- Used for AI-powered KKTU suggestion
+- Categories mapped to description and codes
+
+## Testing & Quality
+
+### Testing Infrastructure
+
+**Vitest Configuration**:
+- Primary test runner using Vitest
+- Browser mode testing with Playwright
+- Coverage reporting with v8
+- Configuration in `vite.config.ts`
+- Shims for Playwright: `vitest.shims.d.ts`
+
+**Test Location**:
+- No test files currently exist in the codebase
+- Test files should follow pattern: `*.test.ts`, `*.test.tsx`, `*.spec.ts`, `*.spec.tsx`
+- Place tests adjacent to source files or in `__tests__` directories
+
+**Running Tests**:
+- Not configured in package.json yet
+- Add `"test": "vitest"` to scripts when writing tests
+- Use `vitest --ui` for interactive test UI
+
+### Storybook
+
+**Configuration** (`.storybook/main.ts`):
+- Framework: React + Vite
+- Stories location: `src/**/*.stories.@(js|jsx|mjs|ts|tsx)` and `src/**/*.mdx`
+- Addons:
+  - `@chromatic-com/storybook` - Visual testing
+  - `@storybook/addon-docs` - Documentation
+  - `@storybook/addon-a11y` - Accessibility testing
+  - `@storybook/addon-vitest` - Vitest integration
+  - `@storybook/addon-onboarding` - Onboarding guide
+
+**Existing Stories**:
+- `src/stories/Button.stories.ts`
+- `src/stories/Header.stories.ts`
+- `src/stories/Page.stories.ts`
+- `src/stories/Configure.mdx`
+- `src/components/ui/button.stories.tsx`
+- `src/components/ui/skeleton.stories.tsx`
+
+**Writing Stories**:
+```typescript
+import type { Meta, StoryObj } from '@storybook/react'
+import { MyComponent } from './MyComponent'
+
+const meta: Meta<typeof MyComponent> = {
+  title: 'Components/MyComponent',
+  component: MyComponent,
+  tags: ['autodocs'],
+}
+
+export default meta
+type Story = StoryObj<typeof MyComponent>
+
+export const Default: Story = {
+  args: {
+    prop: 'value'
+  }
+}
+```
+
+## CI/CD & Deployment
+
+### GitLab CI Pipeline
+
+**Configuration** (`.gitlab-ci.yml`):
+- Two stages: `build` and `deploy`
+- Uses Alpine Linux as base image
+
+**Build Stage**:
+- Runs on Node.js 20 Alpine
+- Commands: `npm ci` → `npm run build`
+- Produces `dist/` artifact
+
+**Deploy Stage**:
+- Uses `lftp` for FTP deployment
+- Deploys to `/www/ad-lawyer.ru/` on hosting server
+- Mirror mode with `--delete` flag (removes old files)
+- Parallel transfers for speed (10 connections)
+- Only runs on `main` branch
+
+**Environment Variables** (GitLab CI/CD Settings):
+- `FTP_USER` - FTP username
+- `FTP_PASSWORD` - FTP password
+- `FTP_HOST` - FTP server host
+
+### Environment Variables
+
+**Development** (`.env.development`):
+```
+VITE_API_BASE_URL=localhost:5000
+```
+
+**Production** (`.env.production`):
+```
+VITE_API_BASE_URL=https://criminally-astute-kangaroo.cloudpub.ru
+```
+
+**Usage in Code**:
+- Access via `import.meta.env.VITE_API_BASE_URL`
+- `import.meta.env.DEV` - true in development
+- `import.meta.env.PROD` - true in production
+- `import.meta.env.MODE` - current mode (development/production)
+
+**Proxy Behavior**:
+- Development: Vite proxies `/api/*` to `localhost:5000`
+- Production: Direct requests to `VITE_API_BASE_URL`
+- Configured in `vite.config.ts`
 
 ## shadcn/ui Integration
 
@@ -224,6 +447,30 @@ These are defined in `src/types/index.ts` starting at line 57.
 - Component path: `src/components/ui/`
 - Utils path: `src/lib/utils.ts`
 - Tailwind config: `tailwind.config.js`
+- Uses Tailwind CSS v4 with `@tailwindcss/vite` plugin
+
+### Installed Components
+
+**Base shadcn/ui Components**:
+- `button` - Button variants (default, destructive, outline, ghost, link)
+- `dialog` - Modal dialogs
+- `input` - Text inputs
+- `label` - Form labels
+- `select` - Dropdown selects
+- `textarea` - Multi-line text inputs
+- `badge` - Status badges
+- `skeleton` - Loading skeletons
+- `sonner` - Toast notifications (using Sonner library)
+
+**Custom Components** (in `src/components/ui/`):
+- `CredentialRequiredModal` - Modal for credential selection
+- `CredentialSelector` - Dropdown for VK ORD credentials
+- `CredentialSelectorSimple` - Simplified credential selector
+- `FileUploader` - Drag-and-drop file upload
+- `PartyContractSelector` - Complex party/contract selection
+- `PartyModal` - Modal for party management
+- `PartySelector` - Party selection dropdown
+- `TagSelector` - Tag selection component
 
 ### Adding Components
 ```bash
@@ -240,16 +487,61 @@ The project includes a custom component registry in `registry/` folder:
 ## API Endpoint Patterns
 
 All endpoints use lowercase paths (recent refactor from PascalCase):
-- `/api/auth/login` - Authentication
-- `/api/auth/register` - Registration
-- `/api/auth/refresh` - Token refresh (uses cookies only, empty body)
-- `/api/auth/logout` - Logout
-- `/api/users/me` - Current user profile
-- `/api/credentials` - VK ORD credentials management
-- `/api/v1/contracts/{externalId}/details` - Contract details with creatives
-- `/api/v1/counterparties/by-inn/{inn}` - Lookup counterparty by INN
-- `/api/client/counterparties/{externalId}/contracts` - Counterparty contracts
-- `/api/media/upload` - Media file upload
+
+**Authentication**:
+- `POST /api/auth/login` - User login
+- `POST /api/auth/register` - User registration
+- `POST /api/auth/refresh` - Token refresh (uses cookies only, empty body)
+- `POST /api/auth/logout` - User logout
+
+**User Management**:
+- `GET /api/users/me` - Current user profile
+- `PUT /api/users/me` - Update user profile
+
+**VK ORD Credentials**:
+- `GET /api/credentials` - List all credentials
+- `POST /api/credentials` - Create new credential
+- `PUT /api/credentials/{id}` - Update credential
+- `DELETE /api/credentials/{id}` - Delete credential
+
+**Contracts**:
+- `GET /api/v1/contracts` - List contracts
+- `GET /api/v1/contracts/{externalId}/details` - Contract details with creatives
+- `POST /api/v1/contracts` - Create contract
+
+**Counterparties**:
+- `GET /api/v1/counterparties/by-inn/{inn}` - Lookup counterparty by INN
+- `GET /api/client/counterparties/{externalId}/contracts` - Counterparty contracts
+
+**Creatives**:
+- `GET /api/v1/creatives` - List creatives
+- `GET /api/v1/creatives/by-erid/{erid}` - Get creative by ERID
+- `POST /api/v1/creatives` - Create creative
+- `DELETE /api/v1/creatives/{externalId}` - Delete creative
+
+**Media**:
+- `POST /api/media/upload` - Upload media file
+- `GET /api/media/{externalId}` - Get media details
+
+**Acts**:
+- `GET /api/acts` - List acts
+- `GET /api/acts/{id}` - Get act details
+- `POST /api/acts` - Create act
+- `PUT /api/acts/{id}` - Update act
+- `DELETE /api/acts/{id}` - Delete act
+
+**AI & Utilities**:
+- `POST /api/ai/suggest-kktu` - AI-powered KKTU suggestion
+- `GET /api/dadata/suggest/party` - DaData API proxy for party suggestions
+
+**Templates**:
+- `GET /api/flow-templates` - List wizard flow templates
+- `POST /api/flow-templates` - Create template
+- `PUT /api/flow-templates/{id}` - Update template
+- `DELETE /api/flow-templates/{id}` - Delete template
+
+**Statistics**:
+- `GET /api/statistics/dashboard` - Dashboard statistics
 
 ## Important Implementation Notes
 
@@ -268,6 +560,21 @@ All API request/response data is automatically converted between camelCase (fron
 ### Proxy Configuration
 In development, Vite proxies `/api/*` requests to `http://localhost:5000`. In production, requests go directly to the configured API base URL.
 
+### Loading States
+All async operations (especially button clicks) should show loading indicators:
+- Material UI Buttons: Use `loading` prop with `CircularProgress`
+- Form submissions: Disable buttons during submission
+- API calls: Show skeleton loaders for data fetching
+- Recent implementation: Credential creation/update buttons have loading indicators
+
+### Storage Management
+The application uses multiple storage mechanisms:
+- **localStorage**: Zustand persisted stores (tokens, device, environment, wizard state)
+- **sessionStorage**: Currently unused
+- **Cookies**: Refresh tokens, VK ORD credential ID
+- Use utility functions from `utils/storage.ts` for cleanup operations
+- Recent implementation: `clearAuthStorage()` for logout operations
+
 ## Common Pitfalls to Avoid
 
 1. **Never use class components** - Only functional components with hooks
@@ -278,6 +585,12 @@ In development, Vite proxies `/api/*` requests to `http://localhost:5000`. In pr
 6. **Don't duplicate code** - Extract common logic into hooks or services
 7. **Don't manipulate DOM directly** - Use React state and refs
 8. **Don't store secrets in code** - Use environment variables
+9. **Don't manually convert case** - Axios interceptors handle camelCase/snake_case conversion automatically
+10. **Don't retry auth endpoints** - The refresh interceptor already handles token refresh
+11. **Don't use AppContext for new features** - Use wizardStore (Zustand) instead
+12. **Always use logger utility** - Don't use console.log directly in production code
+13. **Don't forget loading states** - Use loading indicators on all async buttons
+14. **Don't bypass CredentialGuard** - Respect credential requirements for VK ORD API calls
 
 ## Build Verification
 
@@ -289,13 +602,45 @@ After completing work, ALWAYS run `npm run build` to verify:
 
 The build configuration suppresses certain warnings (like "use client" directives) to reduce noise.
 
+## Recent Changes & Features
+
+### Latest Updates (November 2024)
+
+**Authentication & Storage**:
+- Added loading indicators to credential creation/update buttons
+- Enhanced logout functionality with comprehensive storage cleanup
+- Implemented `clearAuthStorage()` utility for secure logout
+- Fixed production API endpoint configuration in `.env.production`
+
+**State Management**:
+- Migrating from AppContext (useReducer) to wizardStore (Zustand)
+- wizardStore now includes template management and party history
+- Improved persistence strategy with localStorage
+
+**UI/UX Improvements**:
+- Added CredentialGuard for better credential management UX
+- Implemented loading states across async operations
+- Enhanced error handling with Broken Rules error mapping
+
+**API Integration**:
+- Updated all endpoints to use lowercase paths
+- Added comprehensive endpoint documentation
+- Improved enum handling with automatic lowercase normalization
+
 ## MCP Server Integration
 
-This project includes MCP (Model Context Protocol) server for AI integration:
-- **Chrome DevTools MCP**: For UI automation, screenshots, and performance analysis
-- **Component Registry MCP**: For browsing and adding shadcn/ui components
+This project includes MCP (Model Context Protocol) servers for AI integration:
 
-Configuration is in `.cursor/mcp.json`.
+**Available MCP Servers**:
+- **Chrome DevTools MCP**: UI automation, screenshots, performance analysis
+- **shadcn MCP**: Component browsing and installation
+- **Context7 MCP**: Library documentation lookup
+- **IDE MCP**: Code diagnostics and execution
+
+**Configuration**:
+- MCP configuration in `mcp.json` (root level)
+- Also configured in `.cursor/mcp.json` for Cursor IDE
+- TypeScript helper available via `npm run mcp:ts-dev`
 
 ## Agent System
 
