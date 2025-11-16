@@ -6,6 +6,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a React-based frontend application for VK ORD (Обязательная Регистрация Данных) - a Russian advertising registration system. The application manages the full lifecycle of advertising contracts, creatives, and media files through integration with VK ORD API.
 
+## Project Status
+
+**Current State** (January 2025):
+- **Production Status**: ✅ Production-ready, deployed via GitLab CI/CD
+- **Codebase Size**: ~7,766 lines of TypeScript/React code
+- **Features**: 10 fully implemented features (Acts, Wizard, Contracts, Creatives, etc.)
+- **Components**: 35+ UI components (shadcn/ui + custom)
+- **API Integration**: 10 service classes with TanStack Query hooks
+- **Testing**: ⚠️ Infrastructure ready (Vitest, Playwright) but 0 test files
+- **Documentation**: ✅ Comprehensive (CLAUDE.md, agents.md, feature READMEs)
+- **Git Branch**: `claude/create-claude-md-01D34t9bht7aQQJ7r2Ef5Spc`
+- **Last Commit**: Merge PR #4 - CLAUDE.md documentation update
+
 ## Development Commands
 
 ### Running the Application
@@ -29,14 +42,15 @@ Use these credentials for development and testing:
 ## Architecture Overview
 
 ### Core Technology Stack
-- **React 19** with TypeScript and functional components
-- **Vite** as build tool and dev server
-- **TanStack Query (React Query)** for server state management
-- **Zustand** for client-side state management (tokens, environment)
-- **React Router v7** with HashRouter for client-side routing
-- **Material UI** for primary UI components
-- **shadcn/ui + Tailwind CSS** for modern utility-first styling
-- **Axios** with automatic camelCase/snake_case conversion
+- **React 19.2** with TypeScript 5.8 and functional components
+- **Vite 7.1** as build tool and dev server
+- **TanStack Query 5.90** (React Query) for server state management
+- **Zustand 5.0** for client-side state management (tokens, environment)
+- **React Router 7.9** with HashRouter for client-side routing
+- **Material UI 7.3** for primary UI components
+- **shadcn/ui + Tailwind CSS v4** for modern utility-first styling
+- **Axios 1.12** with automatic camelCase/snake_case conversion
+- **Zod 3.25** + **React Hook Form 7.65** for form validation
 
 ### Project Structure
 
@@ -102,9 +116,9 @@ src/
 ### API Integration
 
 **HTTP Client Features:**
-1. **Base URL Configuration** (vite.config.ts:7-8):
-   - Development: Uses proxy to localhost:5000
-   - Production: Uses cloud domain from env or default
+1. **Base URL Configuration** (vite.config.ts:8-9):
+   - Development: Uses Vite proxy to localhost:5000 (vite.config.ts:31-37)
+   - Production: Direct to `https://criminally-astute-kangaroo.cloudpub.ru`
 2. **Request Interceptors**:
    - Adds Authorization Bearer token
    - Adds `x-api-vk-env` header (sandbox/prod)
@@ -144,6 +158,7 @@ Backend returns validation errors as `BrokenRule[]` with code + message. The htt
    - All API calls use TanStack Query (React Query)
    - Service classes in `src/services/` provide static methods
    - Hooks in feature folders or `src/hooks/` wrap mutations/queries
+   - Centralized query key factory in `src/api/queryKeys.ts` for type-safe cache management
 
 ### Routing & Guards
 
@@ -185,6 +200,28 @@ The application supports switching between VK ORD sandbox and production environ
 - Mounted at app root level in routes.tsx
 - Non-blocking component that overlays when needed
 
+### Common Components
+
+**Utility Components**:
+- `ErrorBoundary` - Catches React errors and displays fallback UI
+- `PageLoader` - Loading indicator for page transitions (with Storybook story)
+- `EmptyState` - Empty state component for lists and tables (with Storybook story)
+
+**Responsive Layout Components** (`components/layout/`):
+- `ResponsiveContainer` - Adaptive container with breakpoint-based padding
+- `ResponsiveGrid` - Grid layout that adapts to screen size
+- `ResponsiveStack` - Vertical/horizontal stack with responsive spacing
+- `ResponsiveDataView` - Adaptive data display (table on desktop, cards on mobile)
+- `DashboardLayout` - Main application layout with sidebar and header
+
+**Custom UI Components** (`components/ui/`):
+- `CredentialSelector` - Dropdown for VK ORD credentials with auto-save
+- `CredentialSelectorSimple` - Simplified credential selector
+- `FileUploader` - Drag-and-drop file upload with preview
+- `PartyModal` - Modal for party creation/editing
+- `PartySelector` - Party selection dropdown with search
+- `TagSelector` - Multi-select tag input
+
 ### Utility Functions
 
 **Logger** (`utils/logger.ts`):
@@ -215,6 +252,29 @@ The application supports switching between VK ORD sandbox and production environ
 - `deleteCookie(name)` - Remove cookie
 
 ## Development Guidelines
+
+### Feature Overview
+
+**10 Implemented Features**:
+
+| Feature | Route | Complexity | Description |
+|---------|-------|-----------|-------------|
+| **Auth** | /login, /register | Low | User authentication and registration |
+| **Dashboard** | /dashboard | Low | Main dashboard with statistics overview |
+| **Profile** | /profile | Low | User profile management |
+| **Credentials** | /credentials | Medium | VK ORD API credentials management (4 hooks) |
+| **Contracts** | /contracts | Medium | Contract list and management |
+| **Creatives** | /creatives | Medium | Creative list and ERID lookup (2 hooks) |
+| **Media** | /media | Low | Media file management and uploads |
+| **Parties** | /parties | Medium | Counterparty management (2 hooks) |
+| **Acts** | /acts, /acts/new, /acts/:id/edit | **VERY HIGH** | Act creation/editing (2 pages, 5 components, 13 hooks) |
+| **Wizard** | /wizard (default route) | **HIGH** | Multi-step ERID generation flow (11 components, 4 hooks) |
+
+**Comprehensive Feature READMEs**:
+- Each feature has detailed documentation in `src/features/README.md` (16KB total)
+- Covers all 10 features with architecture diagrams and usage examples
+- Acts feature documentation is the most comprehensive (most complex feature)
+- Use feature READMEs as reference when working on existing features
 
 ### Feature-Based Architecture
 
@@ -285,6 +345,17 @@ export const MyComponent: React.FC<MyComponentProps> = ({ prop }) => {
 
 ### API Service Pattern
 
+**Available Services** (`src/services/`):
+- `ActsService` - Act creation, editing, and management
+- `AiService` - AI-powered KKTU suggestion
+- `ContractsService` - Contract CRUD operations
+- `CounterpartiesService` - Counterparty lookup and contracts
+- `DadataService` - DaData API proxy for party suggestions
+- `FlowTemplatesService` - Wizard flow template management
+- `MediaService` - Media file uploads and retrieval
+- `StatisticsService` - Dashboard statistics
+- `WizardService` - Wizard-specific operations
+
 Service classes provide static methods for API calls:
 ```typescript
 export class MyService {
@@ -299,11 +370,41 @@ Hook wraps service with React Query:
 ```typescript
 export const useMyData = (id: string) => {
   return useQuery({
-    queryKey: ['myData', id],
+    queryKey: queryKeys.feature.byId(id), // Use queryKeys factory
     queryFn: () => MyService.getData(id)
   })
 }
 ```
+
+### Custom Hooks Architecture
+
+**40+ Custom Hooks** organized by location:
+
+**Auth Hooks** (`src/auth/hooks.ts`):
+- `useLogin` - User login mutation
+- `useRegister` - User registration mutation
+- `useLogout` - Logout mutation with storage cleanup
+- `useAutoRefresh` - Automatic token refresh on app start
+- `useAuth` - Authentication state accessor
+
+**Global Hooks** (`src/hooks/`):
+- `useCurrentUser` - Current user profile query
+- `useUpdateUser` - User profile update mutation
+- `useContracts` - Contract list query
+- `useCredentials` - VK ORD credentials list query
+- `useCreateCredential`, `useUpdateCredential`, `useDeleteCredential` - Credential mutations
+- `usePartyContractsByInn` - Party contracts query by INN
+- `useDadataPartySuggestions` - DaData party suggestions query
+- 4+ more utility hooks
+
+**Feature-Specific Hooks** (in feature folders):
+- Acts: 13 hooks (most complex - creation, editing, list, party lookup, etc.)
+- Wizard: 4 hooks (template management, flow state)
+- Creatives: 2 hooks (list, by ERID)
+- Parties: 2 hooks (list, operations)
+- Credentials: 4 hooks (CRUD operations)
+
+All hooks follow React Query patterns with proper cache invalidation and error handling.
 
 ### TypeScript Type Conventions
 
@@ -342,14 +443,17 @@ These are defined in `src/types/enums/vk-ord.ts`.
 - Shims for Playwright: `vitest.shims.d.ts`
 
 **Test Location**:
-- No test files currently exist in the codebase
+- **⚠️ CRITICAL**: No test files currently exist in the codebase (0 test files)
+- Testing infrastructure is fully configured and ready to use
 - Test files should follow pattern: `*.test.ts`, `*.test.tsx`, `*.spec.ts`, `*.spec.tsx`
 - Place tests adjacent to source files or in `__tests__` directories
 
 **Running Tests**:
+- Infrastructure ready: Vitest 3.2, Playwright 1.56, Coverage v8
 - Not configured in package.json yet
 - Add `"test": "vitest"` to scripts when writing tests
 - Use `vitest --ui` for interactive test UI
+- Browser mode testing with Playwright available
 
 ### Storybook
 
@@ -363,13 +467,15 @@ These are defined in `src/types/enums/vk-ord.ts`.
   - `@storybook/addon-vitest` - Vitest integration
   - `@storybook/addon-onboarding` - Onboarding guide
 
-**Existing Stories**:
-- `src/stories/Button.stories.ts`
-- `src/stories/Header.stories.ts`
-- `src/stories/Page.stories.ts`
-- `src/stories/Configure.mdx`
-- `src/components/ui/button.stories.tsx`
-- `src/components/ui/skeleton.stories.tsx`
+**Existing Stories** (7 total):
+- `src/stories/Button.stories.ts` - Button component examples
+- `src/stories/Header.stories.ts` - Header component examples
+- `src/stories/Page.stories.ts` - Page layout examples
+- `src/stories/Configure.mdx` - Storybook configuration docs
+- `src/components/PageLoader.stories.tsx` - Loading state component
+- `src/components/EmptyState.stories.tsx` - Empty state component
+- `src/components/ui/button.stories.tsx` - shadcn/ui button variants
+- `src/components/ui/skeleton.stories.tsx` - shadcn/ui skeleton loaders
 
 **Writing Stories**:
 ```typescript
@@ -589,8 +695,10 @@ The application uses multiple storage mechanisms:
 10. **Don't retry auth endpoints** - The refresh interceptor already handles token refresh
 11. **Don't use AppContext for new features** - Use wizardStore (Zustand) instead
 12. **Always use logger utility** - Don't use console.log directly in production code
+    - ⚠️ **Known issue**: routes.tsx has 5 console.log statements (lines 34-50) that should be removed or replaced with logger utility
 13. **Don't forget loading states** - Use loading indicators on all async buttons
 14. **Don't bypass CredentialGuard** - Respect credential requirements for VK ORD API calls
+15. **Don't commit without building** - Always run `npm run build` before committing to catch TypeScript errors
 
 ## Build Verification
 
@@ -604,28 +712,43 @@ The build configuration suppresses certain warnings (like "use client" directive
 
 ## Recent Changes & Features
 
-### Latest Updates (November 2024)
+### Latest Updates (January 2025)
+
+**Project State**:
+- Codebase: ~7,766 lines of TypeScript/React code across 10 features
+- Production-ready with comprehensive documentation
+- All 10 features fully implemented and functional
+- No test files yet despite complete testing infrastructure
 
 **Authentication & Storage**:
 - Added loading indicators to credential creation/update buttons
 - Enhanced logout functionality with comprehensive storage cleanup
 - Implemented `clearAuthStorage()` utility for secure logout
-- Fixed production API endpoint configuration in `.env.production`
+- Production API endpoint: `https://criminally-astute-kangaroo.cloudpub.ru`
 
 **State Management**:
 - Migrating from AppContext (useReducer) to wizardStore (Zustand)
-- wizardStore now includes template management and party history
+- wizardStore includes template management and party history
 - Improved persistence strategy with localStorage
+- All Zustand stores use persist middleware
 
 **UI/UX Improvements**:
 - Added CredentialGuard for better credential management UX
+- Responsive components: ResponsiveDataView, ResponsiveGrid, ResponsiveStack
 - Implemented loading states across async operations
-- Enhanced error handling with Broken Rules error mapping
+- Enhanced error handling with 30 Broken Rules error mappings
+- PageLoader and EmptyState components with Storybook documentation
 
 **API Integration**:
 - Updated all endpoints to use lowercase paths
 - Added comprehensive endpoint documentation
 - Improved enum handling with automatic lowercase normalization
+- Centralized query key factory for type-safe React Query keys
+
+**Feature Complexity**:
+- **Acts** - Most complex feature (2 pages, 5 components, 13 hooks)
+- **Wizard** - High complexity (11 components, 4 hooks, multi-step flow)
+- All other features - Low to medium complexity with standard CRUD operations
 
 ## MCP Server Integration
 
