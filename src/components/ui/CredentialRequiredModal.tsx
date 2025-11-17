@@ -11,6 +11,9 @@ import {
   MenuItem,
   Alert,
   AlertTitle,
+  ToggleButton,
+  ToggleButtonGroup,
+  Box,
 } from '@mui/material'
 import type { SelectChangeEvent } from '@mui/material'
 import { Button } from './button'
@@ -18,9 +21,9 @@ import { useNavigate } from 'react-router-dom'
 import { VpnKey as VpnKeyIcon } from '@mui/icons-material'
 import { useCredentials } from '../../features/credentials/hooks'
 import { useEnvironmentStore } from '../../auth/tokenStore'
+import { queryClient } from '@/api/queryClient'
 import { saveToCookie } from '../../utils'
 import { toast } from 'sonner'
-import { queryClient } from '../../api/queryClient'
 
 interface CredentialRequiredModalProps {
   open: boolean
@@ -39,7 +42,7 @@ export const CredentialRequiredModal: React.FC<CredentialRequiredModalProps> = (
 }) => {
   const navigate = useNavigate()
   const { data: credentials, isLoading } = useCredentials()
-  const { environment } = useEnvironmentStore()
+  const { environment, setEnvironment } = useEnvironmentStore()
   const [tempSelectedId, setTempSelectedId] = React.useState<string>(selectedCredentialId)
 
   React.useEffect(() => {
@@ -51,6 +54,26 @@ export const CredentialRequiredModal: React.FC<CredentialRequiredModalProps> = (
   const filteredCredentials = credsArray.filter(
     c => c.environment === (environment === 'sandbox' ? 'Sandbox' : 'Production') && c.publicId
   )
+
+  const handleEnvironmentChange = (_: React.MouseEvent<HTMLElement>, value: 'sandbox' | 'prod' | null) => {
+    if (!value) return
+    if (value === environment) return
+
+    // Update environment store
+    setEnvironment(value)
+
+    // Clear selected credential cookie (it may be invalid for the new environment)
+    saveToCookie('vkord-credential-id', '')
+    saveToCookie('vkord-use-sandbox', (value === 'sandbox').toString())
+    setTempSelectedId('')
+
+    // Clear React Query cache to avoid showing old data
+    try {
+      queryClient.clear()
+    } catch (e) {
+      // ignore
+    }
+  }
 
   const handleCredentialChange = (event: SelectChangeEvent<string>) => {
     setTempSelectedId(event.target.value)
@@ -120,9 +143,26 @@ export const CredentialRequiredModal: React.FC<CredentialRequiredModalProps> = (
           Для работы с VK ORD необходимо выбрать API ключ. Без выбранного ключа вы не сможете создавать контракты и креативы.
         </Alert>
 
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Текущее окружение: <strong>{environment === 'sandbox' ? 'Песочница' : 'Продакшн'}</strong>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+          Текущее окружение: <strong>{environment === 'sandbox' ? 'Песочница' : 'Основной'}</strong>
         </Typography>
+
+        <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+          <ToggleButtonGroup
+            value={environment}
+            exclusive
+            onChange={handleEnvironmentChange}
+            aria-label="environment"
+            size="small"
+          >
+            <ToggleButton value="sandbox" aria-label="sandbox">
+              Песочница
+            </ToggleButton>
+            <ToggleButton value="prod" aria-label="prod">
+              Основной
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </Box>
 
         {filteredCredentials.length > 0 ? (
           <FormControl fullWidth sx={{ mb: 2 }}>
@@ -154,7 +194,7 @@ export const CredentialRequiredModal: React.FC<CredentialRequiredModalProps> = (
         )}
 
         <Typography variant="caption" color="text.secondary">
-          Вы можете переключить окружение (Песочница/Продакшн) в верхней панели после выбора ключа.
+          Вы можете переключить окружение (Песочница/Основной).
         </Typography>
       </DialogContent>
 

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import http from '../api/http'
 import { useTokenStore, useDeviceStore } from './tokenStore'
 import { toast } from 'sonner'
+import { promptCredentialSelection } from '@/stores/credentialModalStore'
 import { clearAllStorageData } from '../utils/storage'
 import type {
   LoginRequest,
@@ -44,7 +45,15 @@ export const useLogin = () => {
         if (data.refreshToken) {
           setRefreshToken(data.refreshToken)
         }
-        toast.success('Вход выполнен успешно')
+          toast.success('Вход выполнен успешно')
+          // Prompt user to select API key if not selected
+          setTimeout(() => {
+            try {
+              promptCredentialSelection()
+            } catch (e) {
+              console.warn('promptCredentialSelection failed', e)
+            }
+          }, 50)
         navigate('/wizard')
       } else {
         toast.error('Ошибка входа')
@@ -69,7 +78,15 @@ export const useRegister = () => {
         if (data.refreshToken) {
           setRefreshToken(data.refreshToken)
         }
-        toast.success('Регистрация выполнена успешно')
+            toast.success('Регистрация выполнена успешно')
+            // Prompt user to select API key if not selected
+            setTimeout(() => {
+              try {
+                promptCredentialSelection()
+              } catch (e) {
+                console.warn('promptCredentialSelection failed', e)
+              }
+            }, 50)
         navigate('/wizard')
       } else {
         toast.error('Ошибка регистрации')
@@ -141,6 +158,14 @@ export const useAutoRefresh = () => {
         if (data.refreshToken) {
           setRefreshToken(data.refreshToken)
         }
+        // When refresh succeeded, check selected credential (open modal if missing)
+        setTimeout(() => {
+          try {
+            promptCredentialSelection()
+          } catch (e) {
+            console.warn('promptCredentialSelection failed', e)
+          }
+        }, 50)
       } else {
         console.log('useAutoRefresh: No data in response, navigating to login');
         navigate('/login')

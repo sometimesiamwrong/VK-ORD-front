@@ -9,12 +9,17 @@ import { useAuth } from '../../auth/hooks'
  * Guards application behind VK ORD credential requirement.
  * Renders a blocking modal when no credential is selected.
  */
+import { useCredentialModalStore } from '@/stores/credentialModalStore'
+import type { CredentialModalState } from '@/stores/credentialModalStore'
+
 export const CredentialGuard: React.FC = () => {
   const location = useLocation()
   const { environment } = useEnvironmentStore()
   const { isAuthenticated } = useAuth()
-  const [open, setOpen] = React.useState(false)
-  const [selectedCredentialId, setSelectedCredentialId] = React.useState('')
+  const open = useCredentialModalStore((s: CredentialModalState) => s.open)
+  const selectedCredentialId = useCredentialModalStore((s: CredentialModalState) => s.selectedCredentialId)
+  const setOpen = useCredentialModalStore((s: CredentialModalState) => s.setOpen)
+  const setSelectedCredentialId = useCredentialModalStore((s: CredentialModalState) => s.setSelectedCredentialId)
 
   React.useEffect(() => {
     if (!isAuthenticated) {
@@ -30,7 +35,7 @@ export const CredentialGuard: React.FC = () => {
 
     setSelectedCredentialId(credentialId)
     setOpen(!credentialId && !isCredentialsPage)
-  }, [location.pathname, environment, isAuthenticated])
+  }, [location.pathname, environment, isAuthenticated, setOpen, setSelectedCredentialId])
 
   const handleCredentialSelected = (credentialId: string) => {
     setSelectedCredentialId(credentialId)
