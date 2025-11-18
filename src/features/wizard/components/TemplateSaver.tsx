@@ -34,9 +34,9 @@ export const TemplateSaver: React.FC<TemplateSaverProps> = ({
 
   const createMutation = useCreateTemplate()
   const updateMutation = useUpdateTemplate()
-  
+
   // Fetch existing template data when updating
-  const { data: existingTemplate } = useTemplateById(
+  const { data: existingTemplate, isLoading: isLoadingTemplate } = useTemplateById(
     saveMode === 'update' ? existingTemplateId : null
   )
 
@@ -51,7 +51,11 @@ export const TemplateSaver: React.FC<TemplateSaverProps> = ({
 
   const handleSave = async () => {
     try {
-      if (saveMode === 'update' && existingTemplateId && existingTemplate) {
+      if (saveMode === 'update') {
+        // Button should be disabled if template is not loaded, but add safeguard
+        if (!existingTemplateId || !existingTemplate) {
+          return
+        }
         // Send full UpdateFlowTemplateRequest with all required fields
         // templateData contains CURRENT wizard state (including latest creative_external_id)
         // Other fields (name, type, description, tags, isActive) are preserved from existing template
@@ -84,7 +88,7 @@ export const TemplateSaver: React.FC<TemplateSaverProps> = ({
     }
   }
 
-  const isLoading = createMutation.isPending || updateMutation.isPending
+  const isLoading = createMutation.isPending || updateMutation.isPending || isLoadingTemplate
 
   // If template was loaded, first ask: update or create new
   if (existingTemplateId && saveMode === null) {
@@ -100,18 +104,19 @@ export const TemplateSaver: React.FC<TemplateSaverProps> = ({
               Вы использовали существующий шаблон. Хотите обновить его или создать новый?
             </p>
 
-            <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={onClose} disabled={isLoading}>
+            <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+              <Button variant="outline" onClick={onClose} disabled={isLoading} className="w-full sm:w-auto">
                 Отмена
               </Button>
               <Button
                 variant="outline"
                 onClick={() => setSaveMode('update')}
                 disabled={isLoading}
+                className="w-full sm:w-auto"
               >
-                Обновить существующий
+                Обновить
               </Button>
-              <Button onClick={() => setSaveMode('new')} disabled={isLoading}>
+              <Button onClick={() => setSaveMode('new')} disabled={isLoading} className="w-full sm:w-auto">
                 Создать новый
               </Button>
             </div>
@@ -168,15 +173,25 @@ export const TemplateSaver: React.FC<TemplateSaverProps> = ({
             </p>
           )}
 
-          <div className="flex gap-2 justify-end pt-2">
-            <Button variant="outline" onClick={onClose} disabled={isLoading}>
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end pt-2">
+            <Button variant="outline" onClick={onClose} disabled={isLoading} className="w-full sm:w-auto">
               Отмена
             </Button>
             <Button
               onClick={handleSave}
-              disabled={isLoading || (saveMode === 'new' && !name.trim())}
+              disabled={
+                isLoading ||
+                (saveMode === 'new' && !name.trim()) ||
+                (saveMode === 'update' && !existingTemplate)
+              }
+              className="w-full sm:w-auto"
             >
-              {isLoading ? 'Сохранение...' : 'Сохранить'}
+              {isLoadingTemplate
+                ? 'Загрузка...'
+                : (createMutation.isPending || updateMutation.isPending)
+                  ? 'Сохранение...'
+                  : 'Сохранить'
+              }
             </Button>
           </div>
         </div>

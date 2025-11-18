@@ -5,6 +5,7 @@ import {
   useWizardContractor,
   useWizardContract,
   useWizardCreative,
+  useWizardErid,
   useWizardActions
 } from '../stores/wizardStore'
 import WizardService from '../services/wizard'
@@ -16,6 +17,7 @@ export const useContractAndCreative = () => {
   const contractor = useWizardContractor()
   const contract = useWizardContract()
   const creative = useWizardCreative()
+  const currentErid = useWizardErid()
   const {
     updateContract,
     updateCreative,
@@ -109,8 +111,8 @@ export const useContractAndCreative = () => {
 
       if (erid) {
         // Показываем разные сообщения для создания и обновления
-        const isUpdate = !!setErid
-        toast.success(isUpdate ? 'Креатив успешно обновлён' : 'Креатив успешно создан')
+        const isUpdate = !!currentErid
+        toast.success(isUpdate ? 'Креатив успешно обновлён' : 'Токен получен')
         setErid(erid)
         setStep(4)
       } else {
@@ -121,7 +123,7 @@ export const useContractAndCreative = () => {
     } finally {
       setLoading('creative', false)
     }
-  }, [creative, contract.externalId, setErid, setStep, setLoading])
+  }, [creative, contract.externalId, currentErid, setErid, setStep, setLoading])
 
   const guessKktyByText = useCallback(async () => {
     const text = creative.text?.trim() || ''

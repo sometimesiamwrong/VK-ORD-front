@@ -2,8 +2,14 @@ import React from 'react'
 import {
   Box,
   Typography,
+  Drawer,
+  IconButton,
+  useTheme,
+  useMediaQuery,
+  Fab,
 } from '@mui/material'
 import { Button } from '@/components/ui/button'
+import { Info as InfoIcon, Close as CloseIcon } from '@mui/icons-material'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useActs, useParties, usePartiesSearch, useActDetails, useContractsByParty, useContractCreatives } from './hooks'
@@ -12,16 +18,21 @@ import { ActListPanel } from './components/ActListPanel'
 import { ActEditor } from './components/ActEditor'
 import { ActHintsSidebar } from './components/ActHintsSidebar'
 import { ActCreationFlow } from './components/ActCreationFlow'
+import { ResponsiveContainer } from '@/components/layout/ResponsiveContainer'
 import { toast } from 'sonner'
 import type { CounterpartyItem, ActSummary, ContractDto } from '../../types'
 
 export const ActsPage: React.FC = () => {
   const navigate = useNavigate()
+  const theme = useTheme()
+  const isDesktop = useMediaQuery(theme.breakpoints.up('lg'))
+
   const [selectedParty, setSelectedParty] = useState<CounterpartyItem | null>(null)
   const [selectedActId, setSelectedActId] = useState<string | null>(null)
   const [selectedContractId, setSelectedContractId] = useState<string>('')
   const [isCreatingNewAct, setIsCreatingNewAct] = useState(false)
   const [showCreationFlow, setShowCreationFlow] = useState(false)
+  const [hintsDrawerOpen, setHintsDrawerOpen] = useState(false)
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(10)
 
@@ -103,7 +114,7 @@ export const ActsPage: React.FC = () => {
 
 
   return (
-    <Box>
+    <ResponsiveContainer variant="medium">
       <Typography variant="h4" gutterBottom>
         Управление актами
       </Typography>
@@ -122,7 +133,7 @@ export const ActsPage: React.FC = () => {
 
       {/* Top Section: Party Search and Acts List */}
       {!showCreationFlow && (
-        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 3, mb: 3 }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: { xs: 2, sm: 3 }, mb: 3 }}>
           {/* Party Search Section */}
           <Box sx={{ flex: { xs: 1, lg: '0 0 33.333%' } }}>
             <PartyLookup
@@ -157,29 +168,80 @@ export const ActsPage: React.FC = () => {
 
       {/* Bottom Section: Act Editor with Sidebar */}
       {(selectedActId || isCreatingNewAct) && (
-        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 3 }}>
-          <Box sx={{ flex: 1 }}>
-            <ActEditor
-              act={selectedAct || null}
-              isLoading={isLoadingActDetails}
-              isCreatingNew={isCreatingNewAct}
-              contracts={contracts}
-              creatives={creatives}
-              onCancel={handleCancelCreateAct}
-              onContractSelect={handleContractSelect}
-              onSave={() => toast.info('Используйте страницу редактирования акта')}
-              onSubmit={() => toast.info('Используйте страницу редактирования акта')}
-              onExport={() => toast.info('Экспорт пока недоступен')}
-              onDelete={() => toast.info('Используйте страницу редактирования акта')}
-            />
+        <Box sx={{ position: 'relative' }}>
+          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: { xs: 2, sm: 3 } }}>
+            <Box sx={{ flex: 1 }}>
+              <ActEditor
+                act={selectedAct || null}
+                isLoading={isLoadingActDetails}
+                isCreatingNew={isCreatingNewAct}
+                contracts={contracts}
+                creatives={creatives}
+                onCancel={handleCancelCreateAct}
+                onContractSelect={handleContractSelect}
+                onSave={() => toast.info('Используйте страницу редактирования акта')}
+                onSubmit={() => toast.info('Используйте страницу редактирования акта')}
+                onExport={() => toast.info('Экспорт пока недоступен')}
+                onDelete={() => toast.info('Используйте страницу редактирования акта')}
+              />
+            </Box>
+
+            {/* Desktop: Sidebar in layout */}
+            {isDesktop && (
+              <ActHintsSidebar
+                act={selectedAct || null}
+                onCreateRelatedAct={() => toast.info('Используйте кнопку "Создать акт" выше')}
+                onCopyClientDetails={() => toast.info('Копирование пока недоступно')}
+              />
+            )}
           </Box>
-          <ActHintsSidebar
-            act={selectedAct || null}
-            onCreateRelatedAct={() => toast.info('Используйте кнопку "Создать акт" выше')}
-            onCopyClientDetails={() => toast.info('Копирование пока недоступно')}
-          />
+
+          {/* Mobile/Tablet: FAB button + Drawer */}
+          {!isDesktop && (
+            <>
+              <Fab
+                color="primary"
+                aria-label="подсказки"
+                onClick={() => setHintsDrawerOpen(true)}
+                sx={{
+                  position: 'fixed',
+                  bottom: 16,
+                  right: 16,
+                  zIndex: 1000,
+                }}
+              >
+                <InfoIcon />
+              </Fab>
+
+              <Drawer
+                anchor="right"
+                open={hintsDrawerOpen}
+                onClose={() => setHintsDrawerOpen(false)}
+                PaperProps={{
+                  sx: {
+                    width: { xs: '100%', sm: 400 },
+                    maxWidth: '100%',
+                  }
+                }}
+              >
+                <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: 1, borderColor: 'divider' }}>
+                  <Typography variant="h6">Подсказки</Typography>
+                  <IconButton onClick={() => setHintsDrawerOpen(false)} size="small">
+                    <CloseIcon />
+                  </IconButton>
+                </Box>
+                <Box sx={{ p: 2 }}>
+                  <ActHintsSidebar
+                    act={selectedAct || null}
+                    onCreateRelatedAct={() => toast.info('Используйте кнопку "Создать акт" выше')}
+                    onCopyClientDetails={() => toast.info('Копирование пока недоступно')}
+                  />
+                </Box>
+              </Drawer>
+            </>
+          )}
         </Box>
       )}
-    </Box>
+    </ResponsiveContainer>
   )
 }

@@ -79,7 +79,7 @@ export const ActHintsSidebar: React.FC<ActHintsSidebarProps> = ({
   ]
 
   return (
-    <Box sx={{ width: 300, flexShrink: 0 }}>
+    <Box sx={{ width: { xs: '100%', lg: 300 }, flexShrink: 0 }}>
       <Paper sx={{ p: 2, mb: 2 }}>
         <Typography variant="h6" gutterBottom>
           Проверочный лист

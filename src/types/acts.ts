@@ -64,6 +64,7 @@ export interface InvoiceAmount {
 export interface InvoiceItemCreative {
   erid?: string
   creativeExternalId?: string
+  name?: string  // Название креатива для отображения (не отправляется на бэкенд)
 }
 
 // Distribution item (matches backend VkOrdInvoiceV3Item)

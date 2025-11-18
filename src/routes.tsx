@@ -72,6 +72,17 @@ export const AppRouter: React.FC = () => {
     },
   })
 
+  // Fix URL when accessed with pathname instead of hash
+  useEffect(() => {
+    const { pathname, hash } = window.location
+    // If pathname is not root and there's a hash, we need to fix the URL
+    if (pathname !== '/' && pathname !== '/index.html') {
+      // Move pathname to hash
+      const newHash = hash ? `${pathname}${hash}` : pathname
+      window.location.replace(`${window.location.origin}/#${newHash}`)
+    }
+  }, [])
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />

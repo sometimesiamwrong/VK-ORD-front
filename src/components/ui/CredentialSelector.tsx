@@ -99,12 +99,12 @@ export const CredentialSelector: React.FC<CredentialSelectorProps> = ({
               checked={useSandbox}
               onChange={(e) => handleEnvironmentToggle(e.target.checked)}
             />
-            Окружение: <strong>{useSandbox ? 'Песочница (Sandbox)' : 'Продакшн (Production)'}</strong>
+            Окружение: <strong>{useSandbox ? 'Песочница (Sandbox)' : 'Основной (Production)'}</strong>
           </label>
           <div style={{ fontSize: 12, color: 'var(--vk-muted)', marginTop: 4, marginLeft: 24 }}>
             {useSandbox
               ? 'Тестовый режим для разработки и проверки интеграции'
-              : 'Продакшн режим для реальной маркировки рекламы'
+              : 'Основной режим для реальной маркировки рекламы'
             }
           </div>
         </div>

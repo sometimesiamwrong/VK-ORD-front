@@ -25,8 +25,8 @@ export const ResponsiveContainer: React.FC<ResponsiveContainerProps> = ({
       disableGutters={disableGutters}
       {...props}
       sx={{
-        px: disableGutters ? 0 : { xs: 2, sm: 3, md: 4 },
-        py: disableGutters ? 0 : { xs: 2, sm: 3 },
+        px: disableGutters ? 0 : { xs: 1, sm: 2, md: 3 },
+        py: disableGutters ? 0 : { xs: 1.5, sm: 3 },
         ...props.sx,
       }}
     >

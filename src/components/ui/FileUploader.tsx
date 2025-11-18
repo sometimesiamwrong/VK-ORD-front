@@ -28,16 +28,62 @@ const generateImagePreview = (file: File): Promise<string> => {
   })
 }
 
+const generateVideoPreview = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement('video')
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')
+
+    video.preload = 'metadata'
+    video.muted = true
+    video.playsInline = true
+
+    video.onloadedmetadata = () => {
+      video.currentTime = 0.1 // Seek to 0.1 second to get a frame
+    }
+
+    video.onseeked = () => {
+      canvas.width = video.videoWidth
+      canvas.height = video.videoHeight
+      ctx?.drawImage(video, 0, 0, canvas.width, canvas.height)
+      resolve(canvas.toDataURL('image/jpeg', 0.7))
+      URL.revokeObjectURL(video.src)
+    }
+
+    video.onerror = () => {
+      reject(new Error('Failed to load video'))
+      URL.revokeObjectURL(video.src)
+    }
+
+    video.src = URL.createObjectURL(file)
+  })
+}
+
+const formatFileSize = (bytes: number): string => {
+  if (bytes === 0) return '0 Bytes'
+  const k = 1024
+  const sizes = ['Bytes', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
+}
+
 const FilePreview: React.FC<{ file: UploadedFile }> = ({ file }) => {
   const fileType = getFileType(file.fileName)
 
   if (file.preview && (fileType === 'image' || fileType === 'video')) {
     return (
-      <img
-        src={file.preview}
-        alt={file.fileName}
-        className="h-20 w-20 rounded-md border object-cover"
-      />
+      <div className="relative h-20 w-20 flex-shrink-0">
+        <img
+          src={file.preview}
+          alt={file.fileName}
+          className="h-20 w-20 rounded-md border object-cover"
+        />
+        {fileType === 'video' && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-md">
+            <span className="text-2xl">▶️</span>
+          </div>
+        )}
+      </div>
     )
   }
 
@@ -51,9 +97,11 @@ const FilePreview: React.FC<{ file: UploadedFile }> = ({ file }) => {
   }
 
   return (
-    <span className="text-4xl">
-      {getFileIcon()}
-    </span>
+    <div className="h-20 w-20 flex-shrink-0 flex items-center justify-center">
+      <span className="text-4xl">
+        {getFileIcon()}
+      </span>
+    </div>
   )
 }
 
@@ -71,42 +119,58 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
       return
     }
 
-    const file = acceptedFiles[0]
-    if (!file) return
+    if (acceptedFiles.length === 0) return
+
+    // Limit files to not exceed maxFiles
+    const filesToUpload = acceptedFiles.slice(0, maxFiles - mediaFiles.length)
 
     setUploading(true)
     setError(null)
 
+    const uploadedFiles: UploadedFile[] = []
+
     try {
-      const formData = new FormData()
-      formData.append('file', file)
+      // Upload files sequentially
+      for (const file of filesToUpload) {
+        const formData = new FormData()
+        formData.append('file', file)
 
-      const response = await http.post<string>('/api/media/v1/upload', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      })
+        const response = await http.post<string>('/api/media/v1/upload', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        })
 
-      const externalId = response.data
-      const fileType = getFileType(file.name)
+        const externalId = response.data
+        const fileType = getFileType(file.name)
 
-      let preview: string | undefined
-      if (fileType === 'image') {
-        try {
-          preview = await generateImagePreview(file)
-        } catch (error) {
-          console.warn('Failed to generate image preview:', error)
+        let preview: string | undefined
+        if (fileType === 'image') {
+          try {
+            preview = await generateImagePreview(file)
+          } catch (error) {
+            console.warn('Failed to generate image preview:', error)
+          }
+        } else if (fileType === 'video') {
+          try {
+            preview = await generateVideoPreview(file)
+          } catch (error) {
+            console.warn('Failed to generate video preview:', error)
+          }
         }
+
+        const newFile: UploadedFile = {
+          externalId: externalId,
+          fileName: file.name,
+          url: '',
+          preview: preview,
+          fileSize: file.size
+        }
+
+        uploadedFiles.push(newFile)
       }
 
-      const newFile: UploadedFile = {
-        externalId: externalId,
-        fileName: file.name,
-        url: '',
-        preview: preview
-      }
-
-      onChange([...mediaFiles, newFile])
+      onChange([...mediaFiles, ...uploadedFiles])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ошибка при загрузке файла')
     } finally {
@@ -116,8 +180,7 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    maxFiles: 1,
-    multiple: false,
+    multiple: true,
     accept: {
       'image/*': [],
       'video/*': [],
@@ -169,13 +232,17 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
           {mediaFiles.map((file) => (
             <div
               key={file.externalId}
-              className="flex items-center justify-between rounded-md bg-secondary/10 p-2"
+              className="flex items-center justify-between rounded-md bg-secondary/10 p-2 overflow-hidden"
             >
-              <div className="flex min-w-0 items-center gap-2">
-                <FilePreview file={file} />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{file.fileName}</p>
-                  <p className="truncate text-xs text-muted-foreground">ID: {file.externalId}</p>
+              <div className="flex min-w-0 items-center gap-2 flex-1 overflow-hidden">
+                <div className="flex-shrink-0">
+                  <FilePreview file={file} />
+                </div>
+                <div className="min-w-0 flex-1 overflow-hidden">
+                  <p className="truncate text-sm font-medium break-all">{file.fileName}</p>
+                  {file.fileSize && (
+                    <p className="text-xs text-muted-foreground">{formatFileSize(file.fileSize)}</p>
+                  )}
                 </div>
               </div>
               <Button
@@ -183,7 +250,7 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
                 size="icon"
                 onClick={() => handleRemoveFile(file.externalId)}
                 title="Удалить файл"
-                className="h-auto w-auto p-1 text-destructive hover:bg-destructive/10"
+                className="h-auto w-auto p-1 text-destructive hover:bg-destructive/10 flex-shrink-0 ml-2"
               >
                 ✕
               </Button>

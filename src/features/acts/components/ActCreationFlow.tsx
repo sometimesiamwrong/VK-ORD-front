@@ -38,7 +38,7 @@ export const ActCreationFlow: React.FC<ActCreationFlowProps> = ({ onActCreate })
   }
 
   return (
-    <Paper sx={{ p: 3 }}>
+    <Paper sx={{ p: { xs: 1.5, sm: 2 } }}>
       <Typography variant="h6" gutterBottom>
         Создание нового акта
       </Typography>

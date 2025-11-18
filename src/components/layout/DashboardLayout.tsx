@@ -249,7 +249,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
         sx={{
           flexGrow: 1,
           p: { xs: 2, sm: 2.5, md: 3 },
-          width: { md: `calc(100% - ${drawerWidth}px)` }
+          width: { xs: '100%', md: `calc(100% - ${drawerWidth}px)` }
         }}
       >
         <Toolbar />

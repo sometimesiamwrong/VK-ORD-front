@@ -104,13 +104,14 @@ export const EditTemplateDialog: React.FC<EditTemplateDialogProps> = ({
             />
           </div>
 
-          <div className="flex gap-2 justify-end pt-2">
-            <Button variant="outline" onClick={onClose} disabled={isLoading}>
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end pt-2">
+            <Button variant="outline" onClick={onClose} disabled={isLoading} className="w-full sm:w-auto">
               Отмена
             </Button>
             <Button
               onClick={handleSave}
               disabled={isLoading || !name.trim()}
+              className="w-full sm:w-auto"
             >
               {isLoading ? 'Сохранение...' : 'Сохранить'}
             </Button>

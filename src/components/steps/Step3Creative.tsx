@@ -137,6 +137,7 @@ export const Step3Creative: React.FC = () => {
           {/* AI KKTY Suggestions with relevance highlighting */}
           <KktyHintsPanel hints={kktyHints} />
 
+          {/* Hidden: AI KKTY button
           <div className="vk-mobile-row" style={{ justifyContent: 'center', gap: 20 }}>
             <Button
               className="mt-2 mb-2"
@@ -146,6 +147,7 @@ export const Step3Creative: React.FC = () => {
               {loadingState['ai-kkty'] ? '✨ Подбор…' : '✨ Узнать ККТУ по тексту'}
             </Button>
           </div>
+          */}
 
           <TagSelector
             selectedCodes={creative.kktus && creative.kktus.length > 0 ? creative.kktus[0] : ''}
@@ -172,13 +174,16 @@ export const Step3Creative: React.FC = () => {
           <Button
             disabled={!canSubmitCreative || loadingState['creative']}
             onClick={createCreative}
-            variant={erid ? 'default' : 'default'}
-            className={erid ? 'bg-green-300 hover:bg-green-400' : ''}
+            variant="default"
+            className={erid
+              ? 'bg-green-500 hover:bg-green-600 text-white font-semibold shadow-md'
+              : 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold text-lg px-8 py-6 shadow-lg transform transition-all hover:scale-105'
+            }
           >
-            {loadingState['creative'] 
-              ? 'Отправка…' 
-              : erid 
-                ? '🔄 Обновить креатив' 
+            {loadingState['creative']
+              ? (erid ? 'Обновление…' : 'Отправка…')
+              : erid
+                ? '🔄 Обновить креатив'
                 : '✨ Получить ERID'
             }
           </Button>

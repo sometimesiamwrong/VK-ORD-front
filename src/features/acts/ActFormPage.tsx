@@ -25,6 +25,8 @@ import {
   InputLabel,
   InputAdornment,
   Tooltip,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material'
 import { Button } from '@/components/ui/button'
 import {
@@ -37,6 +39,7 @@ import {
   Info as InfoIcon,
 } from '@mui/icons-material'
 import { toast } from 'sonner'
+import { ResponsiveContainer } from '@/components/layout/ResponsiveContainer'
 import {
   useContractsByParty,
   useContractCreatives,
@@ -146,6 +149,9 @@ export const ActFormPage: React.FC = () => {
   const contractorFromState = locationState?.contractor
   const contractFromState = locationState?.contract
   const partyFromState = locationState?.party  // Party passed from ActsPage in edit mode
+
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
 
   const [activeTab, setActiveTab] = useState(0)
 
@@ -581,31 +587,55 @@ export const ActFormPage: React.FC = () => {
   }
 
   return (
-    <Box>
+    <ResponsiveContainer variant="medium">
       {/* Header */}
-      <Box sx={{ mb: 3, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, flex: 1 }}>
+      <Box sx={{ mb: { xs: 2, sm: 3 }, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: { xs: 1, sm: 2 } }}>
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: { xs: 1, sm: 2 }, flex: 1 }}>
           <IconButton onClick={() => navigate('/acts')} size="small">
             <ArrowBackIcon />
           </IconButton>
           <Box>
-            <Typography variant="h5">
+            <Typography variant="h5" sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
               {isEditMode ? `Редактирование акта ${watch('serial') || ''}` : 'Создание нового акта'}
             </Typography>
           </Box>
         </Box>
-        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-          <Button variant="outline" onClick={handleSaveDraft} disabled={createActMutation.isPending}>
-            <SaveIcon className="mr-2 h-4 w-4" />
-            Сохранить черновик
+        <Box sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          gap: { xs: 0.5, sm: 1 },
+          width: { xs: '100%', sm: 'auto' }
+        }}>
+          <Button
+            variant="outline"
+            onClick={handleSaveDraft}
+            disabled={createActMutation.isPending}
+            size="sm"
+            className="w-full sm:w-auto"
+          >
+            <SaveIcon className="mr-1 h-4 w-4" />
+            <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Сохранить черновик</Box>
+            <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>Сохранить</Box>
           </Button>
-          <Button onClick={handleSubmitToVkOrd} disabled={createActMutation.isPending || submitActMutation.isPending}>
-            <SendIcon className="mr-2 h-4 w-4" />
-            Отправить в VK ORD
+          <Button
+            onClick={handleSubmitToVkOrd}
+            disabled={createActMutation.isPending || submitActMutation.isPending}
+            size="sm"
+            className="w-full sm:w-auto"
+          >
+            <SendIcon className="mr-1 h-4 w-4" />
+            <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Отправить в VK ORD</Box>
+            <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>Отправить</Box>
           </Button>
           {isEditMode && (
-            <Button variant="destructive" onClick={handleDelete} disabled={deleteActMutation.isPending}>
-              <DeleteIcon className="mr-2 h-4 w-4" />
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deleteActMutation.isPending}
+              size="sm"
+              className="w-full sm:w-auto"
+            >
+              <DeleteIcon className="mr-1 h-4 w-4" />
               Удалить
             </Button>
           )}
@@ -614,8 +644,13 @@ export const ActFormPage: React.FC = () => {
 
       {/* Parties info panel */}
       {(clientFromState || contractorFromState) && (
-        <Alert severity="info" sx={{ mb: 3 }}>
-          <Box sx={{ display: 'flex', gap: 3, alignItems: 'center', flexWrap: 'wrap' }}>
+        <Alert severity="info" sx={{ mb: { xs: 2, sm: 3 } }}>
+          <Box sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', md: 'row' },
+            gap: { xs: 1.5, sm: 2, md: 3 },
+            alignItems: { xs: 'flex-start', md: 'center' }
+          }}>
             {clientFromState && (
               <Box>
                 <Typography variant="caption" color="text.secondary">Клиент (Заказчик)</Typography>
@@ -626,7 +661,13 @@ export const ActFormPage: React.FC = () => {
               </Box>
             )}
             {clientFromState && contractorFromState && (
-              <Typography variant="h6" color="text.secondary">↔</Typography>
+              <Typography
+                variant="h6"
+                color="text.secondary"
+                sx={{ display: { xs: 'none', md: 'block' } }}
+              >
+                ↔
+              </Typography>
             )}
             {contractorFromState && (
               <Box>
@@ -655,19 +696,19 @@ export const ActFormPage: React.FC = () => {
       )}
 
       {/* Summary panel */}
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 3 }}>
+      <Paper sx={{ p: { xs: 1.5, sm: 2 }, mb: { xs: 2, sm: 3 } }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(4, 1fr)' }, gap: { xs: 1.5, sm: 2, md: 3 } }}>
           <Box>
-            <Typography variant="body2" color="text.secondary">Сумма с НДС</Typography>
-            <Typography variant="h6">{getAmountValue(amount, 'includingVat').toLocaleString()} ₽</Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>Сумма с НДС</Typography>
+            <Typography variant="h6" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>{getAmountValue(amount, 'includingVat').toLocaleString()} ₽</Typography>
           </Box>
           <Box>
-            <Typography variant="body2" color="text.secondary">НДС ({getAmountValue(amount, 'vatRate')}%)</Typography>
-            <Typography variant="h6">{getAmountValue(amount, 'vat').toLocaleString()} ₽</Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>НДС ({getAmountValue(amount, 'vatRate')}%)</Typography>
+            <Typography variant="h6" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>{getAmountValue(amount, 'vat').toLocaleString()} ₽</Typography>
           </Box>
           <Box>
-            <Typography variant="body2" color="text.secondary">Без НДС</Typography>
-            <Typography variant="h6">{getAmountValue(amount, 'excludingVat').toLocaleString()} ₽</Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>Без НДС</Typography>
+            <Typography variant="h6" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>{getAmountValue(amount, 'excludingVat').toLocaleString()} ₽</Typography>
           </Box>
           <Box>
             <Controller
@@ -693,17 +734,23 @@ export const ActFormPage: React.FC = () => {
 
       {/* Main form */}
       <Paper>
-        <Tabs value={activeTab} onChange={handleTabChange} sx={{ borderBottom: 1, borderColor: 'divider', px: 2 }}>
+        <Tabs
+          value={activeTab}
+          onChange={handleTabChange}
+          variant="scrollable"
+          scrollButtons="auto"
+          sx={{ borderBottom: 1, borderColor: 'divider', px: { xs: 1.5, sm: 2 } }}
+        >
           <Tab label="Основные данные" />
           <Tab label="Распределение" />
           <Tab label="Статистика" />
         </Tabs>
 
-        <Box sx={{ px: 3 }}>
+        <Box sx={{ px: { xs: 1.5, sm: 2 } }}>
           {/* Tab 1: Main Data */}
           <TabPanel value={activeTab} index={0}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 1.5, sm: 2 } }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: { xs: 1.5, sm: 2 } }}>
                 <Controller
                   name="serial"
                   control={control}
@@ -727,9 +774,10 @@ export const ActFormPage: React.FC = () => {
                       value={selectedContract}
                       onChange={(_, value) => handleContractChange(value)}
                       getOptionLabel={(option) => {
-                        const serial = option.data?.serial
+                        const serial = option.data?.serial || option.externalId || 'Без номера'
+                        if (isMobile) return serial
                         const amountLabel = option.amount ? ` - ${Number(option.amount).toLocaleString()} ₽` : ''
-                        return `${serial || option.externalId || 'Без номера'}${amountLabel}`
+                        return `${serial}${amountLabel}`
                       }}
                       isOptionEqualToValue={(option, value) => {
                         return option.externalId === value?.externalId
@@ -748,7 +796,7 @@ export const ActFormPage: React.FC = () => {
                 />
               </Box>
 
-              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 3 }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, gap: { xs: 1.5, sm: 2 } }}>
                 <Controller
                   name="amount.includingVat"
                   control={control}
@@ -814,7 +862,7 @@ export const ActFormPage: React.FC = () => {
                 />
               </Box>
 
-              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3 }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: { xs: 1.5, sm: 2 } }}>
                 <Controller
                   name="dateStart"
                   control={control}
@@ -867,7 +915,7 @@ export const ActFormPage: React.FC = () => {
                 />
               </Box>
 
-              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3 }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: { xs: 1.5, sm: 2 } }}>
                 <Controller
                   name="clientRole"
                   control={control}
@@ -919,7 +967,7 @@ export const ActFormPage: React.FC = () => {
 
           {/* Tab 2: Distribution (Items) */}
           <TabPanel value={activeTab} index={1}>
-            <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Box sx={{ mb: { xs: 1.5, sm: 2 }, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Typography variant="h6">Распределение по договорам</Typography>
               <Button onClick={handleAddItem}>
                 <AddIcon className="mr-2 h-4 w-4" />
@@ -928,7 +976,7 @@ export const ActFormPage: React.FC = () => {
             </Box>
 
             {itemsMismatch && (
-              <Alert severity="warning" sx={{ mb: 2 }}>
+              <Alert severity="warning" sx={{ mb: { xs: 1.5, sm: 2 } }}>
                 Сумма распределения ({itemsTotal.toLocaleString()} ₽) не совпадает с общей суммой ({amount.includingVat.toLocaleString()} ₽)
               </Alert>
             )}
@@ -940,9 +988,9 @@ export const ActFormPage: React.FC = () => {
             )}
 
             {itemFields.map((field, index) => (
-              <Card key={field.id} sx={{ mb: 2 }}>
-                <CardContent>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Card key={field.id} sx={{ mb: { xs: 1.5, sm: 2 } }}>
+                <CardContent sx={{ p: { xs: 1.5, sm: 2 }, '&:last-child': { pb: { xs: 1.5, sm: 2 } } }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: { xs: 1, sm: 1.5 } }}>
                     <Typography variant="subtitle1" fontWeight="medium">
                       Распределение #{index + 1}
                     </Typography>
@@ -951,7 +999,7 @@ export const ActFormPage: React.FC = () => {
                     </IconButton>
                   </Box>
 
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 1.5, sm: 2 } }}>
                     <Controller
                       name={`items.${index}.contractExternalId`}
                       control={control}
@@ -983,7 +1031,7 @@ export const ActFormPage: React.FC = () => {
                       }}
                     />
 
-                    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2 }}>
+                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, gap: 2 }}>
                       <Controller
                         name={`items.${index}.amount.includingVat`}
                         control={control}
@@ -1067,12 +1115,14 @@ export const ActFormPage: React.FC = () => {
                                   return {
                                     erid: v.erid || '',
                                     creativeExternalId: v.creativeExternalId || '',
+                                    name: v.name || '',  // Сохраняем название для отображения
                                   }
                                 }
                                 // Otherwise, it's from the API (creative object)
                                 return {
                                   erid: v.erid || v.data?.erid || '',
                                   creativeExternalId: v.externalId || v.data?.externalId || '',
+                                  name: v.name || v.data?.name || '',  // Сохраняем название для отображения
                                 }
                               }))
                             }}
@@ -1083,9 +1133,26 @@ export const ActFormPage: React.FC = () => {
                               const externalId = option.externalId || option.data?.externalId
                               const name = option.name || option.data?.name
 
-                              // Priority: name with ERID > name with externalId > ERID > externalId > "Неизвестный креатив"
+                              // Mobile: приоритет у названия, токен в скобках
+                              if (isMobile) {
+                                if (name && erid) {
+                                  const shortName = name.length > 20 ? name.substring(0, 20) + '...' : name
+                                  return `${shortName} (${erid})`
+                                }
+                                if (name && externalId) {
+                                  const shortName = name.length > 20 ? name.substring(0, 20) + '...' : name
+                                  return `${shortName} (${externalId})`
+                                }
+                                if (name) return name.length > 30 ? name.substring(0, 30) + '...' : name
+                                if (erid) return erid
+                                if (externalId) return `ID: ${externalId}`
+                                return 'Неизвестный'
+                              }
+
+                              // Desktop: приоритет у названия, токен в скобках
                               if (name && erid) return `${name} (${erid})`
                               if (name && externalId) return `${name} (ID: ${externalId})`
+                              if (name) return name
                               if (erid) return erid
                               if (externalId) return `ID: ${externalId}`
                               return 'Неизвестный креатив'
@@ -1112,10 +1179,17 @@ export const ActFormPage: React.FC = () => {
                                 const externalId = option.creativeExternalId || option.externalId || option.data?.externalId
                                 const name = option.name || option.data?.name
 
+                                // Приоритет у названия, токен в скобках
                                 let label = 'Неизвестный креатив'
-                                if (erid) label = erid
-                                else if (externalId) label = `ID: ${externalId}`
-                                if (name) label = `${name} (${erid || externalId || '?'})`
+                                if (name && (erid || externalId)) {
+                                  label = `${name} (${erid || externalId})`
+                                } else if (name) {
+                                  label = name
+                                } else if (erid) {
+                                  label = erid
+                                } else if (externalId) {
+                                  label = `ID: ${externalId}`
+                                }
 
                                 return (
                                   <Chip
@@ -1123,6 +1197,15 @@ export const ActFormPage: React.FC = () => {
                                     label={label}
                                     {...tagProps}
                                     size="small"
+                                    sx={{
+                                      height: 'auto',
+                                      minHeight: '24px',
+                                      '& .MuiChip-label': {
+                                        whiteSpace: 'normal',
+                                        wordBreak: 'break-word',
+                                        padding: '4px 8px',
+                                      }
+                                    }}
                                   />
                                 )
                               })
@@ -1140,7 +1223,7 @@ export const ActFormPage: React.FC = () => {
 
           {/* Tab 3: Statistics */}
           <TabPanel value={activeTab} index={2}>
-            <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Box sx={{ mb: { xs: 1.5, sm: 2 }, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Typography variant="h6">Статистика</Typography>
               <Button onClick={handleAddStatistic}>
                 <AddIcon className="mr-2 h-4 w-4" />
@@ -1155,16 +1238,16 @@ export const ActFormPage: React.FC = () => {
             )}
 
             {statisticsFields.map((field, index) => (
-              <Card key={field.id} sx={{ mb: 2 }}>
-                <CardContent>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Card key={field.id} sx={{ mb: { xs: 1.5, sm: 2 } }}>
+                <CardContent sx={{ p: { xs: 1.5, sm: 2 }, '&:last-child': { pb: { xs: 1.5, sm: 2 } } }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: { xs: 1, sm: 1.5 } }}>
                     <Typography variant="subtitle1">Метрика #{index + 1}</Typography>
                     <IconButton onClick={() => handleRemoveStatistic(index)} color="error" size="small">
                       <RemoveIcon />
                     </IconButton>
                   </Box>
 
-                  <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: { xs: 1.5, sm: 2 } }}>
                     <Controller
                       name={`statistics.${index}.metric`}
                       control={control}
@@ -1203,20 +1286,41 @@ export const ActFormPage: React.FC = () => {
           </TabPanel>
         </Box>
 
-        <Box sx={{ p: 3, borderTop: 1, borderColor: 'divider', display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-          <Button variant="outline" onClick={() => navigate('/acts')}>
+        <Box sx={{
+          p: { xs: 1.5, sm: 2 },
+          borderTop: 1,
+          borderColor: 'divider',
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          justifyContent: 'flex-end',
+          gap: 1
+        }}>
+          <Button
+            variant="outline"
+            onClick={() => navigate('/acts')}
+            className="w-full sm:w-auto"
+          >
             Отмена
           </Button>
-          <Button variant="outline" onClick={handleSaveDraft} disabled={createActMutation.isPending}>
+          <Button
+            variant="outline"
+            onClick={handleSaveDraft}
+            disabled={createActMutation.isPending}
+            className="w-full sm:w-auto"
+          >
             <SaveIcon className="mr-2 h-4 w-4" />
             Сохранить черновик
           </Button>
-          <Button onClick={handleSubmitToVkOrd} disabled={createActMutation.isPending || submitActMutation.isPending}>
+          <Button
+            onClick={handleSubmitToVkOrd}
+            disabled={createActMutation.isPending || submitActMutation.isPending}
+            className="w-full sm:w-auto"
+          >
             <SendIcon className="mr-2 h-4 w-4" />
             Отправить в VK ORD
           </Button>
         </Box>
       </Paper>
-    </Box>
+    </ResponsiveContainer>
   )
 }

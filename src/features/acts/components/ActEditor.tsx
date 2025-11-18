@@ -32,6 +32,7 @@ import {
 } from '@mui/icons-material'
 import { ActStatus } from '../../../types'
 import type { ActDetails, ContractDto, CreativeDto } from '../../../types'
+import { ResponsiveDataView, type Column } from '@/components/data-display/ResponsiveDataView'
 
 interface TabPanelProps {
   children?: React.ReactNode
@@ -321,40 +322,54 @@ export const ActEditor: React.FC<ActEditorProps> = ({
 
       <TabPanel value={activeTab} index={2}>
         <Typography variant="h6" gutterBottom>Статистика и метрики</Typography>
-        <TableContainer>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>Метрика</TableCell>
-                <TableCell>Значение</TableCell>
-                <TableCell>Единица</TableCell>
-                <TableCell>Платформа</TableCell>
-                <TableCell>Период</TableCell>
-                <TableCell>Валидировано</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {(act?.statistics || []).map((stat, index) => (
-                <TableRow key={index}>
-                  <TableCell>{stat.metric}</TableCell>
-                  <TableCell>{stat.value.toLocaleString()}</TableCell>
-                  <TableCell>{stat.unit}</TableCell>
-                  <TableCell>{stat.platform}</TableCell>
-                  <TableCell>{stat.period}</TableCell>
-                  <TableCell>
-                    {stat.isValidated ? (
-                      <CheckCircleIcon color="success" />
-                    ) : stat.isManual ? (
-                      <Chip label="Вручную" size="small" color="warning" />
-                    ) : (
-                      <Chip label="Не проверено" size="small" />
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <ResponsiveDataView
+          data={act?.statistics || []}
+          columns={[
+            {
+              key: 'metric',
+              header: 'Метрика',
+            },
+            {
+              key: 'value',
+              header: 'Значение',
+              render: (value) => (value as number).toLocaleString(),
+            },
+            {
+              key: 'unit',
+              header: 'Единица',
+              hideOnMobile: true,
+            },
+            {
+              key: 'platform',
+              header: 'Платформа',
+              hideOnMobile: true,
+            },
+            {
+              key: 'period',
+              header: 'Период',
+              hideOnMobile: true,
+            },
+            {
+              key: 'isValidated',
+              header: 'Валидировано',
+              render: (value, row: any) => {
+                if (value) {
+                  return <CheckCircleIcon color="success" fontSize="small" />
+                } else if (row.isManual) {
+                  return <Chip label="Вручную" size="small" color="warning" />
+                } else {
+                  return <Chip label="Не проверено" size="small" />
+                }
+              },
+            },
+          ] as Column<any>[]}
+          keyExtractor={(_, index) => index.toString()}
+          emptyState={
+            <Alert severity="info">
+              У этого акта пока нет статистических данных
+            </Alert>
+          }
+        />
       </TabPanel>
     </Paper>
   )

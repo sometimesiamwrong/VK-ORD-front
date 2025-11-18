@@ -78,7 +78,7 @@ export const CredentialSelectorSimple: React.FC<CredentialSelectorSimpleProps> =
     
     // Clear cache on environment change
     queryClient.clear()
-    toast.info(`Переключено на ${newEnv === 'sandbox' ? 'Песочницу' : 'Продакшн'}`)
+    toast.info(`Переключено на ${newEnv === 'sandbox' ? 'Песочницу' : 'Основной'}`)
   }
 
   // Styles based on variant
@@ -135,7 +135,7 @@ export const CredentialSelectorSimple: React.FC<CredentialSelectorSimpleProps> =
           sx={selectStyles}
         >
           <MenuItem value="sandbox">Песочница</MenuItem>
-          <MenuItem value="prod">Продакшн</MenuItem>
+          <MenuItem value="prod">Основной</MenuItem>
         </Select>
       </FormControl>
 

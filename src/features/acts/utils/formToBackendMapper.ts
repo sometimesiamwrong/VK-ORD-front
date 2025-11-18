@@ -53,8 +53,13 @@ export function mapFormDataToBackend(formData: ActFormData, externalId?: string)
     clientRole: formData.clientRole,
     contractorRole: formData.contractorRole,
     items: formData.items?.map(item => ({
-      ...item,
+      contractExternalId: item.contractExternalId,
       amount: toApiAmountElement(item.amount),
+      // Исключаем поле name из креативов при отправке на бэкенд
+      creatives: item.creatives?.map(creative => ({
+        erid: creative.erid,
+        creativeExternalId: creative.creativeExternalId,
+      })),
     })),
     status: (formData.status as any) || 'draft',
   }

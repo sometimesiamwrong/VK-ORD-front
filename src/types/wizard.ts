@@ -9,6 +9,7 @@ export interface UploadedFile {
   fileName: string
   url: string
   preview?: string
+  fileSize?: number // Size in bytes
 }
 
 export interface PartyHistoryItem {
