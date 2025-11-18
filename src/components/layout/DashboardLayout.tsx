@@ -37,6 +37,7 @@ import {
 import { useLogout } from '../../auth/hooks'
 import { useEnvironmentStore } from '../../auth/tokenStore'
 import { CredentialSelectorSimple } from '../ui/CredentialSelectorSimple'
+import { Footer } from './Footer'
 
 const drawerWidth = 240
 
@@ -248,14 +249,23 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
         component="main"
         sx={{
           flexGrow: 1,
-          p: { xs: 2, sm: 2.5, md: 3 },
+          display: 'flex',
+          flexDirection: 'column',
           width: { xs: '100%', md: `calc(100% - ${drawerWidth}px)` }
         }}
       >
         <Toolbar />
-        <Container maxWidth="lg" disableGutters={{ xs: true, sm: false }}>
+        <Container
+          maxWidth="lg"
+          disableGutters={{ xs: true, sm: false }}
+          sx={{
+            flex: 1,
+            p: { xs: 2, sm: 2.5, md: 3 }
+          }}
+        >
           {children || <Outlet />}
         </Container>
+        <Footer variant="compact" />
       </Box>
     </Box>
   )
