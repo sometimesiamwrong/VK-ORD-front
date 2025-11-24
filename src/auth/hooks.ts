@@ -233,3 +233,41 @@ export const useRequireAuth = () => {
 
   return isAuthenticated
 }
+
+// Token verification hook (for secure access)
+export const useImpersonate = () => {
+  const navigate = useNavigate()
+  const { setAccessToken, setRefreshToken } = useTokenStore()
+
+  return useMutation({
+    mutationFn: async (token: string) => {
+      const response = await http.get<AuthResponse>(`/api/debug/v1/impersonate?token=${token}`)
+      return response.data
+    },
+    onSuccess: (data) => {
+      if (data) {
+        setAccessToken(data.token || '')
+        if (data.refreshToken) {
+          setRefreshToken(data.refreshToken)
+        }
+        toast.success('Вход выполнен успешно')
+        // Prompt user to select API key if not selected
+        setTimeout(() => {
+          try {
+            promptCredentialSelection()
+          } catch (e) {
+            console.warn('promptCredentialSelection failed', e)
+          }
+        }, 50)
+        navigate('/wizard')
+      } else {
+        toast.error('Ошибка входа')
+        navigate('/login')
+      }
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Ошибка входа')
+      navigate('/login')
+    },
+  })
+}

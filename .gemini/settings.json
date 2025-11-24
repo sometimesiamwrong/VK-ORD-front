@@ -11,17 +11,23 @@
     },
     "shell": {
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-shell"],
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-shell"
+      ],
       "env": {
         "SHELL": "C:\\Program Files\\PowerShell\\7\\pwsh.exe"
       }
     },
     "shadcn": {
       "command": "npx",
-      "args": ["-y", "@shadcn/mcp-server"],
+      "args": [
+        "-y",
+        "@shadcn/mcp-server"
+      ],
       "env": {
         "NODE_ENV": "development"
       }
     }
   }
-}//
+} //

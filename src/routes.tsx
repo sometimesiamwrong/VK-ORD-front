@@ -12,6 +12,7 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { PageLoader } from './components/PageLoader'
 import { LoginPage } from './features/auth/LoginPage'
 import { RegisterPage } from './features/auth/RegisterPage'
+import { ImpersonatePage } from './features/auth/ImpersonatePage'
 import { DashboardPage } from './features/dashboard/DashboardPage'
 import { DashboardLayout } from './components/layout/DashboardLayout'
 import { ProfilePage } from './features/users/ProfilePage'
@@ -109,6 +110,10 @@ export const AppRouter: React.FC = () => {
                     <RegisterPage />
                   </PublicRoute>
                 }
+              />
+              <Route
+                path="/auth/verify"
+                element={<ImpersonatePage />}
               />
 
               {/* Protected routes */}
